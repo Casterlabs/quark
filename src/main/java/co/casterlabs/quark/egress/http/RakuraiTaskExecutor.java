@@ -2,8 +2,8 @@ package co.casterlabs.quark.egress.http;
 
 import co.casterlabs.rhs.util.TaskExecutor;
 
-class _RakuraiTaskExecutor implements TaskExecutor {
-    public static final _RakuraiTaskExecutor INSTANCE = new _RakuraiTaskExecutor();
+class RakuraiTaskExecutor implements TaskExecutor {
+    public static final RakuraiTaskExecutor INSTANCE = new RakuraiTaskExecutor();
 
     private static final Thread.Builder THREAD_FACTORY = Thread.ofVirtual().name("Http Task Pool - #", 0);
 

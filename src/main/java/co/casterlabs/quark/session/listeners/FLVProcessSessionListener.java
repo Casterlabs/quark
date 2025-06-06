@@ -6,10 +6,10 @@ import java.lang.ProcessBuilder.Redirect;
 
 import co.casterlabs.quark.session.QuarkSession;
 
-public class FLVProcSessionListener extends FLVMuxedSessionListener {
+public class FLVProcessSessionListener extends FLVMuxedSessionListener {
     private final Process proc;
 
-    public FLVProcSessionListener(QuarkSession session, Redirect out, Redirect err, String... command) throws IOException {
+    public FLVProcessSessionListener(QuarkSession session, Redirect out, Redirect err, String... command) throws IOException {
         this.proc = new ProcessBuilder()
             .command(command)
             .redirectOutput(out)

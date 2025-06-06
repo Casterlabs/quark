@@ -17,7 +17,7 @@ public class HTTPDaemon {
         final int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
 
         ApiFramework framework = new ApiFramework();
-        framework.register(new FLVRoutes());
+        framework.register(new _PlaybackRoutes());
 
         HttpServer server = new HttpServerBuilder()
             .withPort(port)
@@ -25,7 +25,7 @@ public class HTTPDaemon {
             .withKeepAliveSeconds(-1)
             .withMinSoTimeoutSeconds(60)
             .withServerHeader("Quark")
-            .withTaskExecutor(_RakuraiTaskExecutor.INSTANCE)
+            .withTaskExecutor(RakuraiTaskExecutor.INSTANCE)
             .with(new HttpProtocol(), framework.httpHandler)
             .with(new WebsocketProtocol(), framework.websocketHandler)
             .build();

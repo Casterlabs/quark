@@ -41,6 +41,7 @@ public class QuarkSession implements Closeable {
     public void removeListener(QuarkSessionListener listener) {
         this.listeners.remove(listener);
         listener.packetQueue.shutdownNow();
+        listener.onClose(this);
     }
 
 }
