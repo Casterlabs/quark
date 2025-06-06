@@ -129,7 +129,7 @@ public class _PlaybackRoutes implements EndpointProvider {
                 qSession,
                 "ffmpeg",
                 "-hide_banner",
-                "-loglevel", "verbose",
+                "-loglevel", "quiet",
                 "-i", "-",
                 "-c", "copy",
                 "-bsf:a", "aac_adtstoasc",
@@ -166,7 +166,7 @@ class RemuxedResponseContent implements ResponseContent {
                 Thread.ofVirtual().name("FFMpeg -> HTTP", 0)
                     .start(() -> {
                         try {
-                            StreamUtil.streamTransfer(this.stdout(), out, recommendedBufferSize);
+                            StreamUtil.streamTransfer(this.stdout(), out, 8192);
                         } catch (IOException e) {} finally {
                             waitFor.complete(null);
                         }
