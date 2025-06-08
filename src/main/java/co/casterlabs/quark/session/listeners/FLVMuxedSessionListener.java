@@ -42,7 +42,9 @@ public abstract class FLVMuxedSessionListener extends QuarkSessionListener {
 
         if (data instanceof FLVSequenceTag seq) {
             this.hasGottenSequence = true;
-            this.writeOut(session, seq.tag());
+            for (FLVTag tag : seq.tags()) {
+                this.writeOut(session, tag);
+            }
             return;
         }
 

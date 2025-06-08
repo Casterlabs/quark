@@ -17,12 +17,14 @@ import co.casterlabs.flv4j.actionscript.io.ASReader;
 import co.casterlabs.flv4j.actionscript.io.ASWriter;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
+import co.casterlabs.flv4j.flv.tags.script.FLVScriptTagData;
 import co.casterlabs.flv4j.rtmp.RTMPReader;
 import co.casterlabs.flv4j.rtmp.RTMPWriter;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPChunk;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageAudio;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageChunkSize;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageCommand0;
+import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageData0;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageVideo;
 import co.casterlabs.flv4j.rtmp.handshake.RTMPHandshake1;
 import co.casterlabs.flv4j.rtmp.handshake.RTMPHandshake2;
@@ -66,7 +68,7 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
 
     private final FastLogger logger;
 
-    private final List<FLVSequenceTag> sequenceTags = new LinkedList<>();
+    private final List<FLVTag> sequenceTags = new LinkedList<>();
 
     private final long dtsOffset = System.currentTimeMillis();
 
@@ -153,25 +155,27 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
             this.handleAudio((RTMPChunk<RTMPMessageAudio>) read);
         } else if (read.message() instanceof RTMPMessageVideo) {
             this.handleVideo((RTMPChunk<RTMPMessageVideo>) read);
+        } else if (read.message() instanceof RTMPMessageData0 data) {
+            if (data.arguments().size() != 3) {
+                return;
+            }
+            if (data.arguments().get(0) instanceof String0 str) {
+                if (str.value().equals("@setDataFrame")) {
+                    String0 method = (String0) data.arguments().get(1);
+                    ECMAArray0 value = (ECMAArray0) data.arguments().get(2);
+
+                    FLVScriptTagData payload = new FLVScriptTagData(method.value(), value);
+                    FLVTag tag = new FLVTag(FLVTagType.SCRIPT, 0, 0, payload);
+                    this.logger.debug("Got script sequence: %s", tag);
+                    this.sequenceTags.add(tag);
+                    this.session.data(new FLVSequenceTag(tag)); // /shrug/
+                }
+            }
+            return;
         } else {
             this.logger.trace("Unhandled packet: %s", read);
         }
 
-//        if (read.message() instanceof RTMPMessageData0 data) {
-//            if (data.arguments().size() != 3) {
-//                continue;
-//            }
-//            if (data.arguments().get(0) instanceof String0 str) {
-//                if (str.value().equals("@setDataFrame")) {
-//                    String0 method = (String0) data.arguments().get(1);
-//                    ECMAArray0 value = (ECMAArray0) data.arguments().get(2);
-//
-//                    FLVScriptTagData payload = new FLVScriptTagData(method.value(), value);
-//                    playbackMuxer.write(new FLVTag(FLVTagType.SCRIPT, 0, 0, payload));
-//                }
-//            }
-//            return;
-//        }
     }
 
     private void handleCommand(RTMPChunk<RTMPMessageCommand0> read) throws IOException {
@@ -297,10 +301,9 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
         FLVTag tag = new FLVTag(FLVTagType.AUDIO, timestamp, (int) read.messageStreamId(), read.message().payload());
 
         if (tag.data().isSequenceHeader()) {
-            FLVSequenceTag seq = new FLVSequenceTag(tag);
             this.logger.debug("Got audio sequence: %s", tag);
-            this.sequenceTags.add(seq);
-            this.session.data(seq);
+            this.sequenceTags.add(tag);
+            this.session.data(new FLVSequenceTag(tag)); // /shrug/
         } else {
             this.session.data(tag);
         }
@@ -319,10 +322,9 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
         FLVTag tag = new FLVTag(FLVTagType.VIDEO, timestamp, (int) read.messageStreamId(), read.message().payload());
 
         if (tag.data().isSequenceHeader()) {
-            FLVSequenceTag seq = new FLVSequenceTag(tag);
             this.logger.debug("Got video sequence: %s", tag);
-            this.sequenceTags.add(seq);
-            this.session.data(seq);
+            this.sequenceTags.add(tag);
+            this.session.data(new FLVSequenceTag(tag)); // /shrug/
         } else {
             this.session.data(tag);
         }
@@ -353,9 +355,7 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
 
     @Override
     public void onSequenceRequest(QuarkSession session) {
-        for (FLVSequenceTag seq : this.sequenceTags) {
-            session.data(seq);
-        }
+        session.data(new FLVSequenceTag(this.sequenceTags.toArray(new FLVTag[0])));
     }
 
     @Override
