@@ -175,6 +175,7 @@ class RemuxedResponseContent implements ResponseContent {
 
             @Override
             public void onClose(QuarkSession session) {
+                super.onClose(session);
                 waitFor.complete(null);
             }
         };
