@@ -68,6 +68,8 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
 
     private final List<FLVSequenceTag> sequenceTags = new LinkedList<>();
 
+    private final long dtsOffset = System.currentTimeMillis();
+
     private State state = State.INITIALIZING;
     private QuarkSession session;
     private String handshakeUrl = null;
@@ -291,7 +293,8 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
             return;
         }
 
-        FLVTag tag = new FLVTag(FLVTagType.AUDIO, read.timestamp(), (int) read.messageStreamId(), read.message().payload());
+        long timestamp = (System.currentTimeMillis() - this.dtsOffset) & 0xFFFFFFFF; // read.timestamp();
+        FLVTag tag = new FLVTag(FLVTagType.AUDIO, timestamp, (int) read.messageStreamId(), read.message().payload());
 
         if (tag.data().isSequenceHeader()) {
             FLVSequenceTag seq = new FLVSequenceTag(tag);
@@ -312,7 +315,8 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
             return;
         }
 
-        FLVTag tag = new FLVTag(FLVTagType.VIDEO, read.timestamp(), (int) read.messageStreamId(), read.message().payload());
+        long timestamp = (System.currentTimeMillis() - this.dtsOffset) & 0xFFFFFFFF; // read.timestamp();
+        FLVTag tag = new FLVTag(FLVTagType.VIDEO, timestamp, (int) read.messageStreamId(), read.message().payload());
 
         if (tag.data().isSequenceHeader()) {
             FLVSequenceTag seq = new FLVSequenceTag(tag);
