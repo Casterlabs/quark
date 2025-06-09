@@ -2,8 +2,6 @@ package co.casterlabs.quark.session;
 
 import java.io.Closeable;
 
-import co.casterlabs.flv4j.flv.tags.FLVTag;
-import co.casterlabs.quark.util.FLVSequenceTag;
 import co.casterlabs.quark.util.ModifiableArray;
 import lombok.RequiredArgsConstructor;
 
@@ -12,27 +10,23 @@ public class QuarkSession implements Closeable {
     private final ModifiableArray<QuarkSessionListener> listeners = new ModifiableArray<>((count) -> new QuarkSessionListener[count]);
 
     public final String id;
-    private volatile long timestamp = 0;
 
     private void sequenceRequest() {
         this.listeners.forEach((listener) -> listener.onSequenceRequest(this));
     }
 
-    /**
-     * @param data valid: {@link FLVTag}, {@link FLVSequenceTag}
-     */
-    public void data(Object data) {
-        if (data instanceof FLVTag tag) {
-            if (tag.timestamp() > this.timestamp) {
-                this.timestamp = tag.timestamp();
-            } else {
-                System.err.printf("Non monotonic timestamp: %d, off by %dms\n", tag.timestamp(), this.timestamp - tag.timestamp());
-            }
-        }
-
+    public void sequence(FLVSequence seq) {
         this.listeners.forEach((listener) -> {
             listener.packetQueue.submit(() -> {
-                listener.onPacket(this, data);
+                listener.onSequence(this, seq);
+            });
+        });
+    }
+
+    public void data(FLVData data) {
+        this.listeners.forEach((listener) -> {
+            listener.packetQueue.submit(() -> {
+                listener.onData(this, data);
             });
         });
     }

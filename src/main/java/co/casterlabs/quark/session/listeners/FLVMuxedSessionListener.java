@@ -8,9 +8,10 @@ import co.casterlabs.flv4j.flv.muxing.StreamFLVMuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
+import co.casterlabs.quark.session.FLVData;
+import co.casterlabs.quark.session.FLVSequence;
 import co.casterlabs.quark.session.QuarkSession;
 import co.casterlabs.quark.session.QuarkSessionListener;
-import co.casterlabs.quark.util.FLVSequenceTag;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
@@ -37,37 +38,38 @@ public abstract class FLVMuxedSessionListener extends QuarkSessionListener {
     }
 
     @Override
-    public void onPacket(QuarkSession session, Object data) {
+    public void onSequence(QuarkSession session, FLVSequence seq) {
         if (this.playbackMuxer == null) return; // Invalid state?
 
-        if (data instanceof FLVSequenceTag seq) {
-            this.hasGottenSequence = true;
-            for (FLVTag tag : seq.tags()) {
-                this.writeOut(session, tag);
-            }
+        this.hasGottenSequence = true;
+        for (FLVTag tag : seq.tags()) {
+            this.writeOut(session, tag);
+        }
+    }
+
+    @Override
+    public void onData(QuarkSession session, FLVData data) {
+        if (this.playbackMuxer == null) return; // Invalid state?
+
+        if (!this.hasGottenSequence) {
             return;
         }
 
-        if (data instanceof FLVTag tag) {
-            if (!this.hasGottenSequence) {
+        FLVTag tag = data.tag();
+
+        if (!this.hasOffset) {
+            if (tag.data() instanceof FLVVideoPayload video && video.frameType() == FLVVideoFrameType.KEY_FRAME) {
+                this.hasOffset = true;
+                this.playbackMuxer.timestampOffset = -tag.timestamp();
+                FastLogger.logStatic(LogLevel.DEBUG, "Got offset: %d", this.playbackMuxer.timestampOffset);
+                // fall through and write it out.
+            } else {
+//                FastLogger.logStatic(LogLevel.DEBUG, "Discarding tag before offset: %s", tag);
                 return;
             }
-
-            if (!this.hasOffset) {
-                if (tag.data() instanceof FLVVideoPayload video && video.frameType() == FLVVideoFrameType.KEY_FRAME) {
-                    this.hasOffset = true;
-                    this.playbackMuxer.timestampOffset = -tag.timestamp();
-                    FastLogger.logStatic(LogLevel.DEBUG, "Got offset: %d", this.playbackMuxer.timestampOffset);
-                    // fall through and write it out.
-                } else {
-//                    FastLogger.logStatic(LogLevel.DEBUG, "Discarding tag before offset: %s", tag);
-                    return;
-                }
-            }
-
-            this.writeOut(session, tag);
-            return;
         }
+
+        this.writeOut(session, tag);
     }
 
 }

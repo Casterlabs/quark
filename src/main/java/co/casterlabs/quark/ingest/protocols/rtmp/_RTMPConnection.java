@@ -29,10 +29,12 @@ import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageVideo;
 import co.casterlabs.flv4j.rtmp.handshake.RTMPHandshake1;
 import co.casterlabs.flv4j.rtmp.handshake.RTMPHandshake2;
 import co.casterlabs.quark.Quark;
+import co.casterlabs.quark.session.FLVData;
+import co.casterlabs.quark.session.FLVSequence;
 import co.casterlabs.quark.session.QuarkSession;
 import co.casterlabs.quark.session.QuarkSessionListener;
-import co.casterlabs.quark.util.FLVSequenceTag;
 import co.casterlabs.quark.util.SocketConnection;
+import co.casterlabs.quark.util.WallclockTS;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 
 class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
@@ -70,7 +72,7 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
 
     private final List<FLVTag> sequenceTags = new LinkedList<>();
 
-    private final long dtsOffset = System.currentTimeMillis();
+    private final WallclockTS dts = new WallclockTS();
 
     private State state = State.INITIALIZING;
     private QuarkSession session;
@@ -165,10 +167,10 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
                     ECMAArray0 value = (ECMAArray0) data.arguments().get(2);
 
                     FLVScriptTagData payload = new FLVScriptTagData(method.value(), value);
-                    FLVTag tag = new FLVTag(FLVTagType.SCRIPT, 0, 0, payload);
+                    FLVTag tag = new FLVTag(FLVTagType.SCRIPT, 0, (int) read.messageStreamId(), payload);
                     this.logger.debug("Got script sequence: %s", tag);
                     this.sequenceTags.add(tag);
-                    this.session.data(new FLVSequenceTag(tag)); // /shrug/
+                    this.session.sequence(new FLVSequence(tag)); // /shrug/
                 }
             }
             return;
@@ -297,15 +299,14 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
             return;
         }
 
-        long timestamp = (System.currentTimeMillis() - this.dtsOffset) & 0xFFFFFFFF; // read.timestamp();
-        FLVTag tag = new FLVTag(FLVTagType.AUDIO, timestamp, (int) read.messageStreamId(), read.message().payload());
+        FLVTag tag = new FLVTag(FLVTagType.AUDIO, this.dts.next(), (int) read.messageStreamId(), read.message().payload());
 
         if (tag.data().isSequenceHeader()) {
             this.logger.debug("Got audio sequence: %s", tag);
             this.sequenceTags.add(tag);
-            this.session.data(new FLVSequenceTag(tag)); // /shrug/
+            this.session.sequence(new FLVSequence(tag)); // /shrug/
         } else {
-            this.session.data(tag);
+            this.session.data(new FLVData(read.timestamp(), tag));
         }
     }
 
@@ -318,15 +319,14 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
             return;
         }
 
-        long timestamp = (System.currentTimeMillis() - this.dtsOffset) & 0xFFFFFFFF; // read.timestamp();
-        FLVTag tag = new FLVTag(FLVTagType.VIDEO, timestamp, (int) read.messageStreamId(), read.message().payload());
+        FLVTag tag = new FLVTag(FLVTagType.VIDEO, this.dts.next(), (int) read.messageStreamId(), read.message().payload());
 
         if (tag.data().isSequenceHeader()) {
             this.logger.debug("Got video sequence: %s", tag);
             this.sequenceTags.add(tag);
-            this.session.data(new FLVSequenceTag(tag)); // /shrug/
+            this.session.sequence(new FLVSequence(tag)); // /shrug/
         } else {
-            this.session.data(tag);
+            this.session.data(new FLVData(read.timestamp(), tag));
         }
     }
 
@@ -355,7 +355,7 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
 
     @Override
     public void onSequenceRequest(QuarkSession session) {
-        session.data(new FLVSequenceTag(this.sequenceTags.toArray(new FLVTag[0])));
+        session.sequence(new FLVSequence(this.sequenceTags.toArray(new FLVTag[0])));
     }
 
     @Override

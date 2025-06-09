@@ -21,7 +21,9 @@ public abstract class QuarkSessionListener {
 
     public void onSequenceRequest(QuarkSession session) {}
 
-    public void onPacket(QuarkSession session, Object data) {}
+    public void onSequence(QuarkSession session, FLVSequence seq) {}
+
+    public void onData(QuarkSession session, FLVData data) {}
 
     public abstract void onClose(QuarkSession session);
 
