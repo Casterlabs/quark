@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class QuarkSessionListener {
     private static final ThreadFactory THREAD_FACTORY = Thread.ofVirtual().name("Quark Session Listener - Write Queue", 0).factory();
-    private static final int MAX_OUTSTANDING_PACKETS = 100;
+    private static final int MAX_OUTSTANDING_PACKETS = 1000;
 
 //    final ExecutorService packetQueue = Executors.newSingleThreadExecutor(THREAD_FACTORY);
     final ExecutorService packetQueue = new ThreadPoolExecutor(
