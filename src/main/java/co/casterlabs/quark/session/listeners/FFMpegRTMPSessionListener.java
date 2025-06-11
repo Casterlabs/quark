@@ -5,19 +5,19 @@ import java.lang.ProcessBuilder.Redirect;
 
 import co.casterlabs.quark.session.QuarkSession;
 
-public class FFPlaySessionListener extends FLVProcessSessionListener {
+public class FFMpegRTMPSessionListener extends FLVProcessSessionListener {
 
-    public FFPlaySessionListener(QuarkSession session) throws IOException {
+    public FFMpegRTMPSessionListener(QuarkSession session, String address) throws IOException {
         super(
             session, Redirect.INHERIT, Redirect.INHERIT,
-            "ffplay",
+            "ffmpeg",
             "-hide_banner",
             "-loglevel", "warning",
-            "-x", "1280",
-            "-y", "720",
-            "-volume", "50",
             "-f", "flv",
-            "-"
+            "-i", "-",
+            "-c", "copy",
+            "-f", "flv",
+            address
         );
     }
 
