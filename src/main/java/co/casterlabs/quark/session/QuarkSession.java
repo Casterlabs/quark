@@ -17,17 +17,25 @@ public class QuarkSession implements Closeable {
 
     public void sequence(FLVSequence seq) {
         this.listeners.forEach((listener) -> {
-            listener.packetQueue.submit(() -> {
+            if (listener.async()) {
+                listener.packetQueue.submit(() -> {
+                    listener.onSequence(this, seq);
+                });
+            } else {
                 listener.onSequence(this, seq);
-            });
+            }
         });
     }
 
     public void data(FLVData data) {
         this.listeners.forEach((listener) -> {
-            listener.packetQueue.submit(() -> {
+            if (listener.async()) {
+                listener.packetQueue.submit(() -> {
+                    listener.onData(this, data);
+                });
+            } else {
                 listener.onData(this, data);
-            });
+            }
         });
     }
 

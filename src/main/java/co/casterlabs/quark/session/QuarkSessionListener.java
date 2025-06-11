@@ -27,4 +27,8 @@ public abstract class QuarkSessionListener {
 
     public abstract void onClose(QuarkSession session);
 
+    public boolean async() {
+        return true;
+    }
+
 }

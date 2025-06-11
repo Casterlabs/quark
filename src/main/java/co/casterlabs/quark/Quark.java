@@ -84,6 +84,11 @@ public class Quark {
             }
         };
 
+        @Override
+        public boolean async() {
+            return false;
+        }
+
     }
 
 }

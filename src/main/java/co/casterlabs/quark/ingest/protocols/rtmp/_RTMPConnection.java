@@ -365,6 +365,11 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
         } catch (IOException ignored) {}
     }
 
+    @Override
+    public boolean async() {
+        return false;
+    }
+
     /* ---------------- */
     /*      Misc.       */
     /* ---------------- */
