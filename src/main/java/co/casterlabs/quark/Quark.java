@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import org.jetbrains.annotations.Nullable;
+
 import co.casterlabs.commons.async.LockableResource;
 import co.casterlabs.quark.session.QuarkSession;
 import co.casterlabs.quark.session.QuarkSessionListener;
@@ -38,10 +40,11 @@ public class Quark {
         }
     }
 
-    public static QuarkSession session(String id) {
+    public static @Nullable QuarkSession session(String id, boolean createIfNotExists) {
         Map<String, QuarkSession> map = sessions.acquire();
         try {
             if (map.containsKey(id)) return map.get(id);
+            if (!createIfNotExists) return null;
 
             QuarkSession session = new QuarkSession(id);
             map.put(id, session);
@@ -67,7 +70,7 @@ public class Quark {
 
         // TODO
 
-        QuarkSession session = Quark.session(key);
+        QuarkSession session = Quark.session(key, true);
         session.addListener(listener);
         return session;
     }
