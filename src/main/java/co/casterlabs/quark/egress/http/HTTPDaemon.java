@@ -17,6 +17,7 @@ public class HTTPDaemon {
         final int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
 
         ApiFramework framework = new ApiFramework();
+        framework.register(new _RouteStreamControl());
         framework.register(new _RouteStreamEgressPlayback());
 
         HttpServer server = new HttpServerBuilder()

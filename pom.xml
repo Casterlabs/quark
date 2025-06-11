@@ -128,7 +128,7 @@
 			<version>2459ff7</version>
 			<scope>compile</scope>
 		</dependency>
-		
+
 		<!-- Ingest -->
 		<dependency>
 			<groupId>co.casterlabs</groupId>
@@ -136,8 +136,14 @@
 			<version>7cba8fa</version>
 			<scope>compile</scope>
 		</dependency>
-		
+
 		<!-- Util -->
+		<dependency>
+			<groupId>co.casterlabs</groupId>
+			<artifactId>Rson</artifactId>
+			<version>1.18.0</version>
+			<scope>compile</scope>
+		</dependency>
 		<dependency>
 			<groupId>co.casterlabs.commons</groupId>
 			<artifactId>async</artifactId>
