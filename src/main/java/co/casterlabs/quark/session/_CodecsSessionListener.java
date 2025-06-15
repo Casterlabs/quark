@@ -159,7 +159,7 @@ class _CodecsSessionListener implements SessionListener {
 
     private void update(String map, StreamInfo toUpdate) {
         try {
-            this.session.addAsyncListener(new FFProbeSessionListener(map, toUpdate));
+            this.session.addAsyncListener(new FFprobeSessionListener(map, toUpdate));
         } catch (IOException e) {
             if (Quark.DEBUG) {
                 e.printStackTrace();
@@ -167,9 +167,9 @@ class _CodecsSessionListener implements SessionListener {
         }
     }
 
-    private static class FFProbeSessionListener extends FLVProcessSessionListener {
+    private static class FFprobeSessionListener extends FLVProcessSessionListener {
 
-        public FFProbeSessionListener(String map, StreamInfo toUpdate) throws IOException {
+        public FFprobeSessionListener(String map, StreamInfo toUpdate) throws IOException {
             super(
                 Redirect.PIPE, Redirect.INHERIT,
                 "ffprobe",
@@ -183,7 +183,7 @@ class _CodecsSessionListener implements SessionListener {
                 "-"
             );
 
-            Thread.ofVirtual().name("FLV Probe", 0).start(() -> {
+            Thread.ofVirtual().name("Stream Probe", 0).start(() -> {
                 try {
                     // Wait for the result, then copy it.
                     String str = StreamUtil.toString(this.stdout(), StandardCharsets.UTF_8).replace("\r", "").replace("\n", "").replace(" ", "");

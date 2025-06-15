@@ -3,7 +3,7 @@ package co.casterlabs.quark.egress.http;
 import java.io.IOException;
 
 import co.casterlabs.quark.Quark;
-import co.casterlabs.quark.ingest.protocols.ffmpeg.FFMpegProvider;
+import co.casterlabs.quark.ingest.protocols.ffmpeg.FFmpegProvider;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
@@ -28,7 +28,7 @@ public class _RouteStreamIngress implements EndpointProvider {
 
             Session qSession = Quark.session(body.id, true);
 
-            new FFMpegProvider(qSession, body.source);
+            new FFmpegProvider(qSession, body.source);
 
             return HttpResponse.newFixedLengthResponse(StandardHttpStatus.CREATED, "Created stream: " + body.id);
         } catch (JsonParseException e) {

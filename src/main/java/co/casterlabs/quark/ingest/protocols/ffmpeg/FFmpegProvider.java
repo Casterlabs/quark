@@ -10,7 +10,7 @@ import co.casterlabs.quark.session.FLVData;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionProvider;
 
-public class FFMpegProvider implements SessionProvider {
+public class FFmpegProvider implements SessionProvider {
     private final Demuxer demuxer = new Demuxer();
 
     private final Session session;
@@ -20,7 +20,7 @@ public class FFMpegProvider implements SessionProvider {
 
     private final long dtsOffset;
 
-    public FFMpegProvider(Session session, String source) throws IOException {
+    public FFmpegProvider(Session session, String source) throws IOException {
         this.session = session;
         this.session.setProvider(this);
 

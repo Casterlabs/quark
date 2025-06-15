@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.Session;
-import co.casterlabs.quark.session.listeners.FFMpegRTMPSessionListener;
+import co.casterlabs.quark.session.listeners.FFmpegRTMPSessionListener;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
 import co.casterlabs.rakurai.json.serialization.JsonParseException;
@@ -30,7 +30,7 @@ public class _RouteStreamEgress implements EndpointProvider {
 
             EgressRTMPBody body = Rson.DEFAULT.fromJson(session.body().string(), EgressRTMPBody.class);
 
-            qSession.addAsyncListener(new FFMpegRTMPSessionListener(body.url));
+            qSession.addAsyncListener(new FFmpegRTMPSessionListener(body.url));
 
             return HttpResponse.newFixedLengthResponse(StandardHttpStatus.CREATED, "Created RTMP egress.");
         } catch (JsonParseException e) {
