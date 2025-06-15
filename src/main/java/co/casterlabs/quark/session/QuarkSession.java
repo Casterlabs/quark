@@ -1,9 +1,8 @@
 package co.casterlabs.quark.session;
 
 import java.io.Closeable;
-import java.util.HashMap;
-import java.util.Map;
 
+import co.casterlabs.quark.session.info.SessionInfo;
 import co.casterlabs.quark.util.ModifiableArray;
 import lombok.RequiredArgsConstructor;
 
@@ -11,13 +10,17 @@ import lombok.RequiredArgsConstructor;
 public class QuarkSession implements Closeable {
     private final ModifiableArray<QuarkSessionListener> listeners = new ModifiableArray<>((count) -> new QuarkSessionListener[count]);
 
-    public final Map<String, Object> attachments = new HashMap<>();
+    public final SessionInfo info = new SessionInfo();
     public final String id;
 
     public volatile long prevDts = 0;
     public volatile long prevPts = 0;
 
     private boolean closed = false;
+
+    {
+        this.addListener(new _CodecsSessionListener(this.info));
+    }
 
     private void sequenceRequest() {
         this.listeners.forEach((listener) -> listener.onSequenceRequest(this));
