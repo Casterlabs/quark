@@ -53,7 +53,7 @@ public class Quark {
 
             if (DEBUG) {
                 try {
-                    session.addListener(new FFPlaySessionListener(session));
+                    session.addListener(new FFPlaySessionListener());
                 } catch (IOException e) {
                     FastLogger.logStatic(LogLevel.WARNING, "Unable to start FFplay:\n%s", e);
                 }

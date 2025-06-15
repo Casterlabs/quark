@@ -26,7 +26,7 @@ class _RemuxedResponseContent implements ResponseContent {
         CompletableFuture<Void> waitFor = new CompletableFuture<>();
 
         QuarkSessionListener listener = new FLVProcessSessionListener(
-            qSession, Redirect.PIPE, Redirect.INHERIT,
+            Redirect.PIPE, Redirect.INHERIT,
             this.command
         ) {
 
