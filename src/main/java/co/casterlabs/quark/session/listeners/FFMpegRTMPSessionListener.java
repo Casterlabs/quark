@@ -14,7 +14,13 @@ public class FFMpegRTMPSessionListener extends FLVProcessSessionListener {
             "-f", "flv",
             "-i", "-",
             "-c", "copy",
-            "-f", "flv",
+            "-f", "fifo",
+            "-fifo_format", "flv",
+            "-drop_pkts_on_overflow", "1",
+            "-attempt_recovery", "1",
+            "-recovery_wait_time", "1",
+            "-rtmp_enhanced_codecs", "hvc1,av01,vp09",
+            "-map", "0",
             address
         );
     }
