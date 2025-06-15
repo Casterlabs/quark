@@ -120,7 +120,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             return HttpResponse.newFixedLengthResponse(StandardHttpStatus.NOT_FOUND, "Stream not found.");
         }
 
-        String formatStr = data.uriParameters().get("format");
+        String formatStr = data.uriParameters().get("format").toLowerCase();
         if (formatStr.equals("flv")) {
             return onFLVPlayback(session, data); // This one's special!
         }
