@@ -71,6 +71,7 @@ public class Quark {
         // TODO
 
         QuarkSession session = Quark.session(key, true);
+        session.jam();
         session.addListener(listener);
         return session;
     }

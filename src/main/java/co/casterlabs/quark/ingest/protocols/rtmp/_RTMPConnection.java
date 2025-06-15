@@ -73,10 +73,12 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
     private final List<FLVTag> sequenceTags = new LinkedList<>();
 
     private final WallclockTS dts = new WallclockTS();
+    private long ptsOffset = 0;
 
     private State state = State.INITIALIZING;
     private QuarkSession session;
     private String handshakeUrl = null;
+    private boolean jammed = false;
 
     _RTMPConnection(SocketConnection conn) throws IOException {
         this.conn = conn;
@@ -158,6 +160,7 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
         } else if (read.message() instanceof RTMPMessageVideo) {
             this.handleVideo((RTMPChunk<RTMPMessageVideo>) read);
         } else if (read.message() instanceof RTMPMessageData0 data) {
+            if (this.jammed) return; // Just in case.
             if (data.arguments().size() != 3) {
                 return;
             }
@@ -251,6 +254,8 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
 
                 this.logger.debug("Authenticating with %s @ %s", key, this.handshakeUrl);
                 this.session = Quark.authenticateSession(this, this.handshakeUrl, key);
+                this.dts.offset(-this.session.prevDts);
+                this.ptsOffset = this.session.prevPts;
 
                 if (this.session == null) {
                     this.logger.debug("Closing, stream rejected.");
@@ -291,6 +296,8 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
     }
 
     private void handleAudio(RTMPChunk<RTMPMessageAudio> read) throws IOException {
+        if (this.jammed) return; // Just in case.
+
 //        this.logger.trace("Audio packet: %s", read);
 
         if (this.session == null || this.state != State.RUNNING) {
@@ -306,11 +313,13 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
             this.sequenceTags.add(tag);
             this.session.sequence(new FLVSequence(tag)); // /shrug/
         } else {
-            this.session.data(new FLVData(read.timestamp(), tag));
+            this.session.data(new FLVData(read.timestamp() + this.ptsOffset, tag));
         }
     }
 
     private void handleVideo(RTMPChunk<RTMPMessageVideo> read) throws IOException {
+        if (this.jammed) return; // Just in case.
+
 //        this.logger.trace("Video packet: %s", read);
 
         if (this.session == null || this.state != State.RUNNING) {
@@ -326,7 +335,7 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
             this.sequenceTags.add(tag);
             this.session.sequence(new FLVSequence(tag)); // /shrug/
         } else {
-            this.session.data(new FLVData(read.timestamp(), tag));
+            this.session.data(new FLVData(read.timestamp() + this.ptsOffset, tag));
         }
     }
 
@@ -337,12 +346,12 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
         this.logger.debug("Closing...");
         this.state = State.CLOSING;
 
-        try {
-            if (this.session != null) {
+        if (this.session != null && !this.jammed) {
+            try {
                 this.session.close();
+            } catch (Throwable t) {
+                this.logger.warn("Exception whilst ending session, this could be bad!\n%s", t);
             }
-        } catch (Throwable t) {
-            this.logger.warn("Exception whilst ending session, this could be bad!\n%s", t);
         }
 
         this.conn.close();
@@ -352,6 +361,13 @@ class _RTMPConnection extends QuarkSessionListener implements AutoCloseable {
     /* ---------------- */
     /*  Quark Session   */
     /* ---------------- */
+
+    @Override
+    public void onJam(QuarkSession session) {
+        this.jammed = true;
+        this.logger.debug("Jammed!");
+        session.removeListener(this);
+    }
 
     @Override
     public void onSequenceRequest(QuarkSession session) {

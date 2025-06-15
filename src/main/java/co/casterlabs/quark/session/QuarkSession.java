@@ -1,6 +1,8 @@
 package co.casterlabs.quark.session;
 
 import java.io.Closeable;
+import java.util.HashMap;
+import java.util.Map;
 
 import co.casterlabs.quark.util.ModifiableArray;
 import lombok.RequiredArgsConstructor;
@@ -9,10 +11,22 @@ import lombok.RequiredArgsConstructor;
 public class QuarkSession implements Closeable {
     private final ModifiableArray<QuarkSessionListener> listeners = new ModifiableArray<>((count) -> new QuarkSessionListener[count]);
 
+    public final Map<String, Object> attachments = new HashMap<>();
     public final String id;
+
+    public volatile long prevDts = 0;
+    public volatile long prevPts = 0;
+
+    private boolean closed = false;
 
     private void sequenceRequest() {
         this.listeners.forEach((listener) -> listener.onSequenceRequest(this));
+    }
+
+    public void jam() {
+        this.listeners.forEach((listener) -> {
+            listener.onJam(this);
+        });
     }
 
     public void sequence(FLVSequence seq) {
@@ -28,6 +42,9 @@ public class QuarkSession implements Closeable {
     }
 
     public void data(FLVData data) {
+        this.prevDts = data.tag().timestamp();
+        this.prevPts = data.pts();
+
         this.listeners.forEach((listener) -> {
             if (listener.async()) {
                 listener.packetQueue.submit(() -> {
@@ -41,6 +58,8 @@ public class QuarkSession implements Closeable {
 
     @Override
     public void close() {
+        if (this.closed) return;
+        this.closed = true;
         this.listeners.forEach((listener) -> listener.onClose(this));
     }
 

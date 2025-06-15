@@ -1,8 +1,12 @@
 package co.casterlabs.quark.util;
 
 public class WallclockTS {
-    private final long base = System.currentTimeMillis();
+    private volatile long base = System.currentTimeMillis();
     private volatile long prevTimestamp = 0L;
+
+    public void offset(long offset) {
+        this.base += offset;
+    }
 
     public long next() {
         long now = System.currentTimeMillis() - this.base;

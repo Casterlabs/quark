@@ -2,6 +2,8 @@ package co.casterlabs.quark.egress.http;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +25,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
     private static final Map<String, MuxFormat> MUX_FORMATS = Map.of(
         // FLV is special since we use it internally :^)
         "mp3", new MuxFormat(
-            "audio/mpeg",
+            /*mime*/"audio/mpeg",
             "ffmpeg",
             "-hide_banner",
             "-loglevel", "quiet",
@@ -35,7 +37,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             "-"
         ),
         "ts", new MuxFormat(
-            "video/mp2t",
+            /*mime*/"video/mp2t",
             "ffmpeg",
             "-hide_banner",
             "-loglevel", "quiet",
@@ -45,7 +47,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             "-"
         ),
         "mp4", new MuxFormat(
-            "video/mp4",
+            /*mime*/"video/mp4",
             "ffmpeg",
             "-hide_banner",
             "-loglevel", "quiet",
@@ -59,9 +61,9 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
         )
     );
 
-    @HttpEndpoint(path = "/stream/:streamId/egress/playback/flv", allowedMethods = {
-            HttpMethod.GET
-    })
+    private static record MuxFormat(String mime, String... command) {
+    }
+
     public HttpResponse onFLVPlayback(HttpSession session, EndpointData<Void> data) {
         QuarkSession qSession = Quark.session(data.uriParameters().get("streamId"), false);
         if (qSession == null) {
@@ -97,7 +99,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
 
                 @Override
                 public long length() {
-                    return -1; // Chunked mode.
+                    return Long.MAX_VALUE; // infinite length. causes browsers to never seek, more efficient than chunked.
                 }
 
                 @Override
@@ -118,9 +120,16 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             return HttpResponse.newFixedLengthResponse(StandardHttpStatus.NOT_FOUND, "Stream not found.");
         }
 
-        MuxFormat format = MUX_FORMATS.get(data.uriParameters().get("format"));
+        String formatStr = data.uriParameters().get("format");
+        if (formatStr.equals("flv")) {
+            return onFLVPlayback(session, data); // This one's special!
+        }
+
+        MuxFormat format = MUX_FORMATS.get(formatStr);
         if (format == null) {
-            return HttpResponse.newFixedLengthResponse(StandardHttpStatus.BAD_REQUEST, "Invalid format.");
+            List<String> valid = new ArrayList<>(MUX_FORMATS.keySet());
+            valid.add("flv");
+            return HttpResponse.newFixedLengthResponse(StandardHttpStatus.BAD_REQUEST, "Invalid format. Valid: " + String.join(", ", valid));
         }
 
         return new HttpResponse(
@@ -130,9 +139,6 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             ),
             StandardHttpStatus.OK
         ).mime(format.mime);
-    }
-
-    private static record MuxFormat(String mime, String... command) {
     }
 
 }

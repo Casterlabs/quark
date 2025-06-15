@@ -19,6 +19,8 @@ public abstract class QuarkSessionListener {
         new ThreadPoolExecutor.DiscardPolicy()
     );
 
+    public void onJam(QuarkSession session) {}
+
     public void onSequenceRequest(QuarkSession session) {}
 
     public void onSequence(QuarkSession session, FLVSequence seq) {}

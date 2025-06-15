@@ -19,6 +19,7 @@ public class HTTPDaemon {
         ApiFramework framework = new ApiFramework();
         framework.register(new _RouteStreamControl());
         framework.register(new _RouteStreamEgressPlayback());
+        framework.register(new _RouteStreamIngress());
 
         HttpServer server = new HttpServerBuilder()
             .withPort(port)

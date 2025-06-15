@@ -60,7 +60,7 @@ class _RemuxedResponseContent implements ResponseContent {
 
     @Override
     public long length() {
-        return -1; // Chunked mode.
+        return Long.MAX_VALUE; // infinite length. causes browsers to never seek, more efficient than chunked.
     }
 
     @Override
