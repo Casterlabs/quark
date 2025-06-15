@@ -32,7 +32,7 @@ public abstract class FLVMuxedSessionListener extends QuarkSessionListener {
         try {
             this.playbackMuxer.write(tag);
         } catch (IOException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
             session.removeListener(this);
         }
     }

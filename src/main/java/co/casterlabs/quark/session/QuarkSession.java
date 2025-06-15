@@ -19,7 +19,7 @@ public class QuarkSession implements Closeable {
     private boolean closed = false;
 
     {
-        this.addListener(new _CodecsSessionListener(this.info));
+        this.addListener(new _CodecsSessionListener(this, this.info));
     }
 
     private void sequenceRequest() {

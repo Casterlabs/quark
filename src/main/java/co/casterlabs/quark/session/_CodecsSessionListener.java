@@ -1,5 +1,10 @@
 package co.casterlabs.quark.session;
 
+import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
+import java.nio.charset.StandardCharsets;
+
+import co.casterlabs.commons.io.streams.StreamUtil;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.flv4j.flv.tags.audio.FLVAudioFormat;
@@ -9,13 +14,20 @@ import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTrack;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoCodec;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
-import co.casterlabs.quark.session.info.AudioStream;
+import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.info.SessionInfo;
-import co.casterlabs.quark.session.info.VideoStream;
+import co.casterlabs.quark.session.info.StreamInfo;
+import co.casterlabs.quark.session.info.StreamInfo.AudioStreamInfo;
+import co.casterlabs.quark.session.info.StreamInfo.VideoStreamInfo;
+import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
+import co.casterlabs.rakurai.json.Rson;
+import co.casterlabs.rakurai.json.element.JsonArray;
+import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 class _CodecsSessionListener extends QuarkSessionListener {
+    private final QuarkSession session;
     private final SessionInfo info;
 
     private long lastKeyFrame = -1L;
@@ -27,20 +39,20 @@ class _CodecsSessionListener extends QuarkSessionListener {
         if (tag.data() instanceof FLVVideoPayload vstd) {
             // Note that we do not support the ex video payload yet. TODO
             if (this.info.video.length == 0) {
-                this.info.video = new VideoStream[] {
-                        new VideoStream(0, flvToFourCC(vstd.codec()))
+                this.info.video = new VideoStreamInfo[] {
+                        new VideoStreamInfo(0, flvToFourCC(vstd.codec()))
                 };
             }
         } else if (tag.data() instanceof FLVStandardAudioTagData astd) {
             if (!this.hasStdAudio) {
-                AudioStream std = new AudioStream(0, flvToFourCC(astd.format()));
+                AudioStreamInfo std = new AudioStreamInfo(0, flvToFourCC(astd.format()));
 
                 if (this.info.audio.length == 0) {
-                    this.info.audio = new AudioStream[] {
+                    this.info.audio = new AudioStreamInfo[] {
                             std
                     };
                 } else {
-                    AudioStream[] newAudio = new AudioStream[this.info.audio.length + 1];
+                    AudioStreamInfo[] newAudio = new AudioStreamInfo[this.info.audio.length + 1];
                     System.arraycopy(this.info.audio, 0, newAudio, 1, this.info.audio.length);
                     newAudio[0] = std;
                     this.info.audio = newAudio;
@@ -50,30 +62,47 @@ class _CodecsSessionListener extends QuarkSessionListener {
         } else if (tag.data() instanceof FLVExAudioTagData aex) {
             for (FLVExAudioTrack track : aex.tracks()) {
                 if (this.info.audio.length <= track.id()) {
-                    AudioStream[] newAudio = new AudioStream[this.info.audio.length + 1];
+                    AudioStreamInfo[] newAudio = new AudioStreamInfo[this.info.audio.length + 1];
                     System.arraycopy(this.info.audio, 0, newAudio, 0, this.info.audio.length);
                     this.info.audio = newAudio;
                 }
 
-                this.info.audio[track.id()] = new AudioStream(track.id(), track.codec().string());
+                this.info.audio[track.id()] = new AudioStreamInfo(track.id(), track.codec().string());
             }
         }
 
         if (tag.data() instanceof FLVVideoPayload video) {
             // Note that we do not support the ex video payload yet. TODO
+            VideoStreamInfo info = this.info.video[0];
 
             if (video.frameType() == FLVVideoFrameType.KEY_FRAME) {
                 long diff = tag.timestamp() - this.lastKeyFrame;
                 this.lastKeyFrame = tag.timestamp();
-                this.info.video[0].keyFrameInterval = (int) (diff / 1000);
+                info.keyFrameInterval = (int) (diff / 1000);
             }
 
-            this.info.video[0].bitrate.sample(video.size(), tag.timestamp());
+            info.bitrate.sample(video.size(), tag.timestamp());
+
+            if (video.isSequenceHeader()) {
+                update("v:0", info);
+            }
         } else if (tag.data() instanceof FLVStandardAudioTagData astd) {
-            this.info.audio[0].bitrate.sample(astd.size(), tag.timestamp());
+            AudioStreamInfo info = this.info.audio[0];
+
+            info.bitrate.sample(astd.size(), tag.timestamp());
+
+            if (astd.isSequenceHeader()) {
+                update("a:0", info);
+            }
         } else if (tag.data() instanceof FLVExAudioTagData aex) {
             for (FLVExAudioTrack track : aex.tracks()) {
-                this.info.audio[track.id()].bitrate.sample(track.data().size(), tag.timestamp());
+                AudioStreamInfo info = this.info.audio[track.id()];
+
+                info.bitrate.sample(track.data().size(), tag.timestamp());
+
+                if (aex.isSequenceHeader()) {
+                    update("a:" + track.id(), info);
+                }
             }
         }
     }
@@ -92,11 +121,6 @@ class _CodecsSessionListener extends QuarkSessionListener {
 
     @Override
     public void onClose(QuarkSession session) {} // NOOP
-
-    @Override
-    public boolean async() {
-        return false;
-    }
 
     /* https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h */
     private static String flvToFourCC(FLVVideoCodec codec) {
@@ -131,6 +155,59 @@ class _CodecsSessionListener extends QuarkSessionListener {
             default -> "unknown";
         };
         // @formatter:on
+    }
+
+    private void update(String map, StreamInfo toUpdate) {
+        if (toUpdate.isUpdatingFF) return;
+        toUpdate.isUpdatingFF = true;
+
+        try {
+            this.session.addListener(new FFProbeSessionListener(map, toUpdate));
+        } catch (IOException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static class FFProbeSessionListener extends FLVProcessSessionListener {
+
+        public FFProbeSessionListener(String map, StreamInfo toUpdate) throws IOException {
+            super(
+                Redirect.PIPE, Redirect.INHERIT,
+                "ffprobe",
+                "-hide_banner",
+                "-v", "quiet",
+                "-print_format", "json",
+                "-show_entries", "stream=pix_fmt",
+                "-show_streams",
+                "-select_streams", map,
+                "-f", "flv",
+                "-"
+            );
+
+            Thread.ofVirtual().name("FLV Probe", 0).start(() -> {
+                try {
+                    // Wait for the result, then copy it.
+                    String str = StreamUtil.toString(this.stdout(), StandardCharsets.UTF_8).replace("\r", "").replace("\n", "").replace(" ", "");
+
+                    JsonObject json = Rson.DEFAULT.fromJson(str, JsonObject.class);
+
+                    JsonArray streams = json.getArray("streams");
+                    if (!streams.isEmpty()) {
+                        JsonObject first = streams.getObject(0);
+                        toUpdate.apply(first);
+                    }
+                } catch (IOException e) {
+                    if (Quark.DEBUG) {
+                        e.printStackTrace();
+                    }
+                } finally {
+                    toUpdate.isUpdatingFF = false;
+                }
+            });
+        }
+
     }
 
 }
