@@ -9,8 +9,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import co.casterlabs.quark.Quark;
-import co.casterlabs.quark.session.QuarkSession;
-import co.casterlabs.quark.session.QuarkSessionListener;
+import co.casterlabs.quark.session.Session;
+import co.casterlabs.quark.session.SessionListener;
 import co.casterlabs.quark.session.listeners.FLVMuxedSessionListener;
 import co.casterlabs.rhs.HttpMethod;
 import co.casterlabs.rhs.HttpStatus.StandardHttpStatus;
@@ -65,7 +65,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
     }
 
     public HttpResponse onFLVPlayback(HttpSession session, EndpointData<Void> data) {
-        QuarkSession qSession = Quark.session(data.uriParameters().get("streamId"), false);
+        Session qSession = Quark.session(data.uriParameters().get("streamId"), false);
         if (qSession == null) {
             return HttpResponse.newFixedLengthResponse(StandardHttpStatus.NOT_FOUND, "Stream not found.");
         }
@@ -76,19 +76,19 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
                 public void write(int recommendedBufferSize, OutputStream out) throws IOException {
                     CompletableFuture<Void> waitFor = new CompletableFuture<>();
 
-                    QuarkSessionListener listener = new FLVMuxedSessionListener() {
+                    SessionListener listener = new FLVMuxedSessionListener() {
                         {
                             this.init(out);
                         }
 
                         @Override
-                        public void onClose(QuarkSession session) {
+                        public void onClose(Session session) {
                             waitFor.complete(null);
                         }
                     };
 
                     try {
-                        qSession.addListener(listener);
+                        qSession.addAsyncListener(listener);
                         waitFor.get();
                     } catch (InterruptedException | ExecutionException ignored) {
                         // NOOP
@@ -115,7 +115,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             HttpMethod.GET
     })
     public HttpResponse onMuxedPlayback(HttpSession session, EndpointData<Void> data) {
-        QuarkSession qSession = Quark.session(data.uriParameters().get("streamId"), false);
+        Session qSession = Quark.session(data.uriParameters().get("streamId"), false);
         if (qSession == null) {
             return HttpResponse.newFixedLengthResponse(StandardHttpStatus.NOT_FOUND, "Stream not found.");
         }

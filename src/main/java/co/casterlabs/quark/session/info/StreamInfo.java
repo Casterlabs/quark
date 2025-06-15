@@ -1,7 +1,6 @@
 package co.casterlabs.quark.session.info;
 
 import co.casterlabs.rakurai.json.annotating.JsonClass;
-import co.casterlabs.rakurai.json.annotating.JsonExclude;
 import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.RequiredArgsConstructor;
 
@@ -12,8 +11,6 @@ public abstract class StreamInfo {
     public final String codec;
 
     public final BitrateEstimator bitrate = new BitrateEstimator();
-
-    public @JsonExclude boolean isUpdatingFF = false;
 
     public abstract void apply(JsonObject ff);
 

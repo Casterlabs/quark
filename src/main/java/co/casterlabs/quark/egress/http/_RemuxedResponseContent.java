@@ -7,16 +7,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import co.casterlabs.commons.io.streams.StreamUtil;
-import co.casterlabs.quark.session.QuarkSession;
-import co.casterlabs.quark.session.QuarkSessionListener;
+import co.casterlabs.quark.session.Session;
+import co.casterlabs.quark.session.SessionListener;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.rhs.protocol.http.HttpResponse.ResponseContent;
 
 class _RemuxedResponseContent implements ResponseContent {
-    private final QuarkSession qSession;
+    private final Session qSession;
     private final String[] command;
 
-    _RemuxedResponseContent(QuarkSession qSession, String... command) {
+    _RemuxedResponseContent(Session qSession, String... command) {
         this.qSession = qSession;
         this.command = command;
     }
@@ -25,7 +25,7 @@ class _RemuxedResponseContent implements ResponseContent {
     public void write(int recommendedBufferSize, OutputStream out) throws IOException {
         CompletableFuture<Void> waitFor = new CompletableFuture<>();
 
-        QuarkSessionListener listener = new FLVProcessSessionListener(
+        SessionListener listener = new FLVProcessSessionListener(
             Redirect.PIPE, Redirect.INHERIT,
             this.command
         ) {
@@ -42,14 +42,14 @@ class _RemuxedResponseContent implements ResponseContent {
             }
 
             @Override
-            public void onClose(QuarkSession session) {
+            public void onClose(Session session) {
                 super.onClose(session);
                 waitFor.complete(null);
             }
         };
 
         try {
-            qSession.addListener(listener);
+            qSession.addAsyncListener(listener);
             waitFor.get();
         } catch (InterruptedException | ExecutionException ignored) {
             // NOOP

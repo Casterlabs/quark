@@ -1,7 +1,7 @@
 package co.casterlabs.quark.egress.http;
 
 import co.casterlabs.quark.Quark;
-import co.casterlabs.quark.session.QuarkSession;
+import co.casterlabs.quark.session.Session;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.element.JsonArray;
 import co.casterlabs.rakurai.json.element.JsonObject;
@@ -30,7 +30,7 @@ public class _RouteStreamControl implements EndpointProvider {
             HttpMethod.DELETE
     })
     public HttpResponse onEndStream(HttpSession session, EndpointData<Void> data) {
-        QuarkSession qSession = Quark.session(data.uriParameters().get("streamId"), false);
+        Session qSession = Quark.session(data.uriParameters().get("streamId"), false);
         if (qSession == null) {
             return HttpResponse.newFixedLengthResponse(StandardHttpStatus.NOT_FOUND, "Stream not found.");
         }
@@ -44,7 +44,7 @@ public class _RouteStreamControl implements EndpointProvider {
             HttpMethod.GET
     })
     public HttpResponse onGetStreamData(HttpSession session, EndpointData<Void> data) {
-        QuarkSession qSession = Quark.session(data.uriParameters().get("streamId"), false);
+        Session qSession = Quark.session(data.uriParameters().get("streamId"), false);
         if (qSession == null) {
             return HttpResponse.newFixedLengthResponse(StandardHttpStatus.NOT_FOUND, "Stream not found.");
         }

@@ -28,7 +28,7 @@ public class RTMPServer {
 
                             try (
                                 SocketConnection conn = new SocketConnection(sock);
-                                _RTMPConnection rtmp = new _RTMPConnection(conn)) {
+                                _RTMPProvider rtmp = new _RTMPProvider(conn)) {
                                 rtmp.run();
                             }
                         } catch (EndOfStreamException ignored) {

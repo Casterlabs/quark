@@ -10,12 +10,12 @@ import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
 import co.casterlabs.quark.session.FLVData;
 import co.casterlabs.quark.session.FLVSequence;
-import co.casterlabs.quark.session.QuarkSession;
-import co.casterlabs.quark.session.QuarkSessionListener;
+import co.casterlabs.quark.session.Session;
+import co.casterlabs.quark.session.SessionListener;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
-public abstract class FLVMuxedSessionListener extends QuarkSessionListener {
+public abstract class FLVMuxedSessionListener implements SessionListener {
     private StreamFLVMuxer playbackMuxer;
 
     private boolean hasGottenSequence = false;
@@ -28,7 +28,7 @@ public abstract class FLVMuxedSessionListener extends QuarkSessionListener {
         );
     }
 
-    private void writeOut(QuarkSession session, FLVTag tag) {
+    private void writeOut(Session session, FLVTag tag) {
         try {
             this.playbackMuxer.write(tag);
         } catch (IOException e) {
@@ -38,7 +38,7 @@ public abstract class FLVMuxedSessionListener extends QuarkSessionListener {
     }
 
     @Override
-    public void onSequence(QuarkSession session, FLVSequence seq) {
+    public void onSequence(Session session, FLVSequence seq) {
         if (this.playbackMuxer == null) return; // Invalid state?
 
         this.hasGottenSequence = true;
@@ -48,7 +48,7 @@ public abstract class FLVMuxedSessionListener extends QuarkSessionListener {
     }
 
     @Override
-    public void onData(QuarkSession session, FLVData data) {
+    public void onData(Session session, FLVData data) {
         if (this.playbackMuxer == null) return; // Invalid state?
 
         if (!this.hasGottenSequence) {

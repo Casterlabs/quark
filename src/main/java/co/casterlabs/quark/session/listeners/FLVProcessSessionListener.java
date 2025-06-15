@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ProcessBuilder.Redirect;
 
-import co.casterlabs.quark.session.QuarkSession;
+import co.casterlabs.quark.session.Session;
 
 public class FLVProcessSessionListener extends FLVMuxedSessionListener {
     private final Process proc;
@@ -29,7 +29,7 @@ public class FLVProcessSessionListener extends FLVMuxedSessionListener {
     }
 
     @Override
-    public void onClose(QuarkSession session) {
+    public void onClose(Session session) {
         this.proc.destroy();
     }
 

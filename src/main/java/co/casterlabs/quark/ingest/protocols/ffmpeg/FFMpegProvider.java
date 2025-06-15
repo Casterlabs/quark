@@ -1,34 +1,28 @@
 package co.casterlabs.quark.ingest.protocols.ffmpeg;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
-import java.util.LinkedList;
-import java.util.List;
 
 import co.casterlabs.flv4j.flv.FLVFileHeader;
 import co.casterlabs.flv4j.flv.muxing.NonSeekableFLVDemuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
-import co.casterlabs.flv4j.flv.tags.script.FLVScriptTagData;
 import co.casterlabs.quark.session.FLVData;
-import co.casterlabs.quark.session.FLVSequence;
-import co.casterlabs.quark.session.QuarkSession;
-import co.casterlabs.quark.session.QuarkSessionListener;
+import co.casterlabs.quark.session.Session;
+import co.casterlabs.quark.session.SessionProvider;
 
-public class FFMpegConnection extends QuarkSessionListener implements Closeable {
+public class FFMpegProvider implements SessionProvider {
     private final Demuxer demuxer = new Demuxer();
 
-    private final QuarkSession session;
+    private final Session session;
     private final Process proc;
 
-    private final List<FLVTag> sequenceTags = new LinkedList<>();
     private boolean jammed = false;
 
     private final long dtsOffset;
 
-    public FFMpegConnection(QuarkSession session, String source) throws IOException {
+    public FFMpegProvider(Session session, String source) throws IOException {
         this.session = session;
-        this.session.addListener(this);
+        this.session.setProvider(this);
 
         this.dtsOffset = this.session.prevDts; // The file already has accurate DTS, so we'll just offset (for jamming).
 
@@ -61,24 +55,9 @@ public class FFMpegConnection extends QuarkSessionListener implements Closeable 
     }
 
     @Override
-    public void onSequenceRequest(QuarkSession session) {
-        session.sequence(new FLVSequence(this.sequenceTags.toArray(new FLVTag[0])));
-    }
-
-    @Override
-    public void onJam(QuarkSession session) {
+    public void jam() {
         this.jammed = true;
-        session.removeListener(this);
-    }
-
-    @Override
-    public void onClose(QuarkSession session) {
         this.close();
-    }
-
-    @Override
-    public boolean async() {
-        return false;
     }
 
     @Override
@@ -105,18 +84,6 @@ public class FFMpegConnection extends QuarkSessionListener implements Closeable 
                 tag.streamId(),
                 tag.data()
             );
-
-            if (tag.data() instanceof FLVScriptTagData script) {
-                if (script.methodName().equals("@setDataFrame")) {
-                    sequenceTags.add(tag);
-                    session.sequence(new FLVSequence(tag)); // /shrug/
-                    return;
-                }
-            } else if (tag.data().isSequenceHeader()) {
-                sequenceTags.add(tag);
-                session.sequence(new FLVSequence(tag)); // /shrug/
-                return;
-            }
 
             session.data(new FLVData(tag.timestamp(), tag));
         }

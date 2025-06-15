@@ -3,7 +3,7 @@ package co.casterlabs.quark.egress.http;
 import java.io.IOException;
 
 import co.casterlabs.quark.Quark;
-import co.casterlabs.quark.session.QuarkSession;
+import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.listeners.FFMpegRTMPSessionListener;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
@@ -23,14 +23,14 @@ public class _RouteStreamEgress implements EndpointProvider {
     })
     public HttpResponse onMuxedPlayback(HttpSession session, EndpointData<Void> data) {
         try {
-            QuarkSession qSession = Quark.session(data.uriParameters().get("streamId"), false);
+            Session qSession = Quark.session(data.uriParameters().get("streamId"), false);
             if (qSession == null) {
                 return HttpResponse.newFixedLengthResponse(StandardHttpStatus.NOT_FOUND, "Stream not found.");
             }
 
             EgressRTMPBody body = Rson.DEFAULT.fromJson(session.body().string(), EgressRTMPBody.class);
 
-            qSession.addListener(new FFMpegRTMPSessionListener(body.url));
+            qSession.addAsyncListener(new FFMpegRTMPSessionListener(body.url));
 
             return HttpResponse.newFixedLengthResponse(StandardHttpStatus.CREATED, "Created RTMP egress.");
         } catch (JsonParseException e) {

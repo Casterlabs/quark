@@ -26,8 +26,8 @@ import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-class _CodecsSessionListener extends QuarkSessionListener {
-    private final QuarkSession session;
+class _CodecsSessionListener implements SessionListener {
+    private final Session session;
     private final SessionInfo info;
 
     private long lastKeyFrame = -1L;
@@ -108,19 +108,19 @@ class _CodecsSessionListener extends QuarkSessionListener {
     }
 
     @Override
-    public void onSequence(QuarkSession session, FLVSequence seq) {
+    public void onSequence(Session session, FLVSequence seq) {
         for (FLVTag tag : seq.tags()) {
             this.process(tag);
         }
     }
 
     @Override
-    public void onData(QuarkSession session, FLVData data) {
+    public void onData(Session session, FLVData data) {
         this.process(data.tag());
     }
 
     @Override
-    public void onClose(QuarkSession session) {} // NOOP
+    public void onClose(Session session) {} // NOOP
 
     /* https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h */
     private static String flvToFourCC(FLVVideoCodec codec) {
@@ -158,11 +158,8 @@ class _CodecsSessionListener extends QuarkSessionListener {
     }
 
     private void update(String map, StreamInfo toUpdate) {
-        if (toUpdate.isUpdatingFF) return;
-        toUpdate.isUpdatingFF = true;
-
         try {
-            this.session.addListener(new FFProbeSessionListener(map, toUpdate));
+            this.session.addAsyncListener(new FFProbeSessionListener(map, toUpdate));
         } catch (IOException e) {
             if (Quark.DEBUG) {
                 e.printStackTrace();
@@ -202,8 +199,6 @@ class _CodecsSessionListener extends QuarkSessionListener {
                     if (Quark.DEBUG) {
                         e.printStackTrace();
                     }
-                } finally {
-                    toUpdate.isUpdatingFF = false;
                 }
             });
         }

@@ -8,8 +8,9 @@ import java.util.function.Consumer;
 import org.jetbrains.annotations.Nullable;
 
 import co.casterlabs.commons.async.LockableResource;
-import co.casterlabs.quark.session.QuarkSession;
-import co.casterlabs.quark.session.QuarkSessionListener;
+import co.casterlabs.quark.session.Session;
+import co.casterlabs.quark.session.SessionListener;
+import co.casterlabs.quark.session.SessionProvider;
 import co.casterlabs.quark.session.listeners.FFPlaySessionListener;
 import xyz.e3ndr.fastloggingframework.FastLoggingFramework;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
@@ -29,10 +30,10 @@ public class Quark {
 
     public static void init() {} // dummy
 
-    private static final LockableResource<Map<String, QuarkSession>> sessions = new LockableResource<>(new HashMap<>());
+    private static final LockableResource<Map<String, Session>> sessions = new LockableResource<>(new HashMap<>());
 
-    public static void forEachSession(Consumer<QuarkSession> session) {
-        Map<String, QuarkSession> map = sessions.acquire();
+    public static void forEachSession(Consumer<Session> session) {
+        Map<String, Session> map = sessions.acquire();
         try {
             map.values().forEach(session);
         } finally {
@@ -40,20 +41,20 @@ public class Quark {
         }
     }
 
-    public static @Nullable QuarkSession session(String id, boolean createIfNotExists) {
-        Map<String, QuarkSession> map = sessions.acquire();
+    public static @Nullable Session session(String id, boolean createIfNotExists) {
+        Map<String, Session> map = sessions.acquire();
         try {
             if (map.containsKey(id)) return map.get(id);
             if (!createIfNotExists) return null;
 
-            QuarkSession session = new QuarkSession(id);
+            Session session = new Session(id);
             map.put(id, session);
 
-            session.addListener(new CloseListener());
+            session.addSyncListener(new CloseListener());
 
             if (DEBUG) {
                 try {
-                    session.addListener(new FFPlaySessionListener());
+                    session.addAsyncListener(new FFPlaySessionListener());
                 } catch (IOException e) {
                     FastLogger.logStatic(LogLevel.WARNING, "Unable to start FFplay:\n%s", e);
                 }
@@ -65,33 +66,27 @@ public class Quark {
         }
     }
 
-    public static QuarkSession authenticateSession(QuarkSessionListener listener, String url, String key) throws IOException {
+    public static Session authenticateSession(SessionProvider provider, String url, String key) throws IOException {
         if (url == null || key == null) return null;
 
         // TODO
 
-        QuarkSession session = Quark.session(key, true);
-        session.jam();
-        session.addListener(listener);
+        Session session = Quark.session(key, true);
+        session.setProvider(provider);
         return session;
     }
 
-    private static class CloseListener extends QuarkSessionListener {
+    private static class CloseListener implements SessionListener {
 
         @Override
-        public void onClose(QuarkSession session) {
-            Map<String, QuarkSession> map = sessions.acquire();
+        public void onClose(Session session) {
+            Map<String, Session> map = sessions.acquire();
             try {
                 map.remove(session.id);
             } finally {
                 sessions.release();
             }
         };
-
-        @Override
-        public boolean async() {
-            return false;
-        }
 
     }
 
