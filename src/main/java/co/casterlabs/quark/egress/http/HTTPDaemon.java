@@ -28,7 +28,7 @@ public class HTTPDaemon {
             .withKeepAliveSeconds(-1)
             .withMinSoTimeoutSeconds(60)
             .withServerHeader("Quark")
-            .withTaskExecutor(RakuraiTaskExecutor.INSTANCE)
+            .withTaskExecutor(_RakuraiTaskExecutor.INSTANCE)
             .with(new HttpProtocol(), framework.httpHandler)
             .with(new WebsocketProtocol(), framework.websocketHandler)
             .build();
