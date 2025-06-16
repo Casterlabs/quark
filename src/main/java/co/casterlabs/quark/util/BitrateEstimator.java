@@ -9,44 +9,51 @@ import lombok.NonNull;
 
 @JsonClass(serializer = BitrateEstimatorSerializer.class)
 public class BitrateEstimator {
-    private static final int WINDOW_SIZE = 60;
-
-    private record Sample(int sizeBytes, long timestampMillis) {
-    }
+    private static final int WINDOW_SIZE = 120;
 
     private final Sample[] samples = new Sample[WINDOW_SIZE];
-    private int index = 0;
-    private boolean isFull = false;
+    private int sampleWriteIdx = 0;
 
-    public void sample(int sizeBytes, long timestampMillis) {
-        this.samples[this.index] = new Sample(sizeBytes, timestampMillis);
-        this.index = (this.index + 1) % WINDOW_SIZE;
-        if (this.index == 0) {
-            this.isFull = true;
+    {
+        // initialize the array
+        for (int i = 0; i < WINDOW_SIZE; i++) {
+            this.samples[i] = new Sample();
         }
     }
 
-    public long estimate() {
-        int count = this.isFull ? WINDOW_SIZE : this.index;
-        if (count < 2) return 0;
+    public void sample(int sizeBytes, long timestampMillis) {
+        Sample sample = this.samples[this.sampleWriteIdx];
+        sample.sizeBytes = sizeBytes;
+        sample.timestampMillis = timestampMillis;
+        this.sampleWriteIdx = (this.sampleWriteIdx + 1) % WINDOW_SIZE; // circular
+    }
 
-        int totalBytes = 0;
+    public long estimate() {
+        long totalBytes = 0;
         long minTime = Long.MAX_VALUE;
         long maxTime = Long.MIN_VALUE;
 
-        for (int i = 0; i < count; i++) {
-            Sample s = this.samples[i];
-            if (s == null) continue;
-            totalBytes += s.sizeBytes();
-            long ts = s.timestampMillis();
+        for (Sample sample : this.samples) {
+            if (sample.sizeBytes == -1) continue;
+
+            totalBytes += sample.sizeBytes;
+
+            long ts = sample.timestampMillis;
             minTime = Math.min(minTime, ts);
             maxTime = Math.max(maxTime, ts);
         }
 
-        long durationMillis = maxTime - minTime;
-        if (durationMillis <= 0) return 0;
+        if (totalBytes == 0) return 0; // avoid math.
 
-        return (totalBytes * 8L * 1000) / durationMillis; // bits/sec
+        long windowDuration = maxTime - minTime;
+        if (windowDuration <= 0) return 0;
+
+        return (totalBytes * 8 * 1000 /* bits/ms */) / windowDuration; // dividing by window duration changes the unit to bits/second :^)
+    }
+
+    private static class Sample {
+        private int sizeBytes = -1; // -1 = uninitialized
+        private long timestampMillis;
     }
 
 }
