@@ -26,12 +26,10 @@ public enum ApiResponse {
     }
 
     public HttpResponse response() {
-        return HttpResponse.newFixedLengthResponse(this.status, this.json)
-            .mime("application/json; charset=utf-8");
-    }
-
-    public static HttpResponse success(HttpStatus status) {
-        return success(status, JsonObject.EMPTY_OBJECT);
+        return cors(
+            HttpResponse.newFixedLengthResponse(this.status, this.json)
+                .mime("application/json; charset=utf-8")
+        );
     }
 
     public static HttpResponse success(HttpStatus status, JsonElement data) {
@@ -40,8 +38,21 @@ public enum ApiResponse {
             .putNull("error")
             .toString(true);
 
-        return HttpResponse.newFixedLengthResponse(status, json)
-            .mime("application/json; charset=utf-8");
+        return cors(
+            HttpResponse.newFixedLengthResponse(status, json)
+                .mime("application/json; charset=utf-8")
+        );
+    }
+
+    public static HttpResponse success(HttpStatus status) {
+        return success(status, JsonObject.EMPTY_OBJECT);
+    }
+
+    public static HttpResponse cors(HttpResponse response) {
+        return response
+            .header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+            .header("Access-Control-Allow-Origin", "*")
+            .header("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS");
     }
 
 }

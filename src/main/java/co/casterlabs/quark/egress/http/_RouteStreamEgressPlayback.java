@@ -11,8 +11,8 @@ import co.casterlabs.commons.io.streams.StreamUtil;
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionListener;
-import co.casterlabs.quark.session.listeners.FLVSessionListener;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
+import co.casterlabs.quark.session.listeners.FLVSessionListener;
 import co.casterlabs.rhs.HttpMethod;
 import co.casterlabs.rhs.HttpStatus.StandardHttpStatus;
 import co.casterlabs.rhs.protocol.api.endpoints.EndpointData;
@@ -94,10 +94,12 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             String formatStr = data.uriParameters().get("format").toLowerCase();
             if (formatStr.equals("flv")) {
                 // This one's special!
-                return new HttpResponse(
-                    new FLVResponseContent(qSession),
-                    StandardHttpStatus.OK
-                ).mime("video/x-flv");
+                return ApiResponse.cors(
+                    new HttpResponse(
+                        new FLVResponseContent(qSession),
+                        StandardHttpStatus.OK
+                    ).mime("video/x-flv")
+                );
             }
 
             MuxFormat format = MUX_FORMATS.get(formatStr);
@@ -105,10 +107,12 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
                 return ApiResponse.BAD_REQUEST.response();
             }
 
-            return new HttpResponse(
-                new RemuxedResponseContent(qSession, format.command),
-                StandardHttpStatus.OK
-            ).mime(format.mime);
+            return ApiResponse.cors(
+                new HttpResponse(
+                    new RemuxedResponseContent(qSession, format.command),
+                    StandardHttpStatus.OK
+                ).mime(format.mime)
+            );
         } catch (Throwable t) {
             if (Quark.DEBUG) {
                 t.printStackTrace();
@@ -178,10 +182,10 @@ class RemuxedResponseContent implements ResponseContent {
         ) {
 
             {
-                Thread.ofVirtual().name("FFMpeg -> HTTP", 0)
+                Thread.ofVirtual().name("FFmpeg -> HTTP", 0)
                     .start(() -> {
                         try {
-                            StreamUtil.streamTransfer(this.stdout(), out, 8192);
+                            StreamUtil.streamTransfer(this.stdout(), out, recommendedBufferSize);
                         } catch (IOException e) {} finally {
                             waitFor.complete(null);
                         }
