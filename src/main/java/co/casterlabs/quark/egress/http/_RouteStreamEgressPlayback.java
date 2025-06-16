@@ -154,7 +154,7 @@ class FLVResponseContent implements ResponseContent {
 
     @Override
     public long length() {
-        return Long.MAX_VALUE; // infinite length. causes browsers to never seek, more efficient than chunked.
+        return -1;
     }
 
     @Override
@@ -211,7 +211,7 @@ class RemuxedResponseContent implements ResponseContent {
 
     @Override
     public long length() {
-        return Long.MAX_VALUE; // infinite length. causes browsers to never seek, more efficient than chunked.
+        return -1;
     }
 
     @Override
