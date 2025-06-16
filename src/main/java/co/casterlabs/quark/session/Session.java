@@ -43,22 +43,20 @@ public class Session implements Closeable {
         this.provider = provider;
     }
 
-    private void sequence(FLVSequence seq) {
-        for (SessionListener listener : this.listeners.get()) {
-            try {
-                listener.onSequence(this, seq);
-            } catch (Throwable t) {
-                if (Quark.DEBUG) {
-                    t.printStackTrace();
-                }
-            }
-        }
-    }
-
     public void data(FLVData data) {
         if (data.tag().data().isSequenceHeader() || data.tag().type() == FLVTagType.SCRIPT) {
             this.sequenceTags.add(data.tag());
-            this.sequence(new FLVSequence(data.tag())); // /shrug/
+
+            FLVSequence seq = new FLVSequence(data.tag()); // /shrug/
+            for (SessionListener listener : this.listeners.get()) {
+                try {
+                    listener.onSequence(this, seq);
+                } catch (Throwable t) {
+                    if (Quark.DEBUG) {
+                        t.printStackTrace();
+                    }
+                }
+            }
             return;
         }
 
