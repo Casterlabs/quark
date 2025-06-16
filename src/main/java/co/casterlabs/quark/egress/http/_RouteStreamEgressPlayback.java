@@ -51,6 +51,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
 
         // Passthrough remuxing:
         // Also includes FLV, since we use that internally!
+        // Can use https://github.com/xqq/mpegts.js for both ts and flv
         "ts", new MuxFormat(
             /*mime*/"video/mp2t",
             "ffmpeg",
@@ -63,7 +64,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
         ),
         "webm", new MuxFormat(
             // NB: this doesn't trick Firefox nor Safari into playing non-standard codecs,
-            // but it does trick Chrome into doing so!
+            // but it does trick Chrome into doing so, and it works surprisingly well!
             /*mime*/"video/webm",
             "ffmpeg",
             "-hide_banner",
