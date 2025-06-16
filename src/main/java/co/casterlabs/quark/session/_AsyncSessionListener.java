@@ -17,8 +17,7 @@ class _AsyncSessionListener implements SessionListener {
     private static final ThreadFactory THREAD_FACTORY = Thread.ofVirtual().name("Async Session Listener - Write Queue", 0).factory();
     private static final int MAX_OUTSTANDING_PACKETS = 1000;
 
-//    final ExecutorService packetQueue = Executors.newSingleThreadExecutor(THREAD_FACTORY);
-    final ExecutorService packetQueue = new ThreadPoolExecutor(
+    private final ExecutorService packetQueue = new ThreadPoolExecutor(
         1, 1,
         0L, TimeUnit.MILLISECONDS,
         new LinkedBlockingQueue<>(MAX_OUTSTANDING_PACKETS),
