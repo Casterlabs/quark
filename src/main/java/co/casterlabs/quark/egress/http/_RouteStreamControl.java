@@ -15,46 +15,65 @@ import co.casterlabs.rhs.protocol.http.HttpSession;
 
 public class _RouteStreamControl implements EndpointProvider {
 
-    @HttpEndpoint(path = "/streams", allowedMethods = {
+    @HttpEndpoint(path = "/sessions", allowedMethods = {
             HttpMethod.GET
     })
-    public HttpResponse onGetStreamIDs(HttpSession session, EndpointData<Void> data) {
-        JsonArray ids = new JsonArray();
-        Quark.forEachSession((s) -> ids.add(s.id));
+    public HttpResponse onGetsessionIds(HttpSession session, EndpointData<Void> data) {
+        try {
+            JsonArray ids = new JsonArray();
+            Quark.forEachSession((s) -> ids.add(s.id));
 
-        return HttpResponse.newFixedLengthResponse(StandardHttpStatus.OK, ids.toString(true))
-            .mime("application/json; charset=utf-8");
+            return ApiResponse.success(StandardHttpStatus.OK, ids);
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            return ApiResponse.INTERNAL_ERROR.response();
+        }
     }
 
-    @HttpEndpoint(path = "/stream/:streamId", allowedMethods = {
+    @HttpEndpoint(path = "/session/:sessionId", allowedMethods = {
             HttpMethod.DELETE
     })
     public HttpResponse onEndStream(HttpSession session, EndpointData<Void> data) {
-        Session qSession = Quark.session(data.uriParameters().get("streamId"), false);
-        if (qSession == null) {
-            return HttpResponse.newFixedLengthResponse(StandardHttpStatus.NOT_FOUND, "Stream not found.");
+        try {
+            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            if (qSession == null) {
+                return ApiResponse.SESSION_NOT_FOUND.response();
+            }
+
+            qSession.close();
+
+            return ApiResponse.success(StandardHttpStatus.OK);
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            return ApiResponse.INTERNAL_ERROR.response();
         }
-
-        qSession.close();
-
-        return HttpResponse.newFixedLengthResponse(StandardHttpStatus.OK, "Session closed.");
     }
 
-    @HttpEndpoint(path = "/stream/:streamId", allowedMethods = {
+    @HttpEndpoint(path = "/session/:sessionId", allowedMethods = {
             HttpMethod.GET
     })
     public HttpResponse onGetStreamData(HttpSession session, EndpointData<Void> data) {
-        Session qSession = Quark.session(data.uriParameters().get("streamId"), false);
-        if (qSession == null) {
-            return HttpResponse.newFixedLengthResponse(StandardHttpStatus.NOT_FOUND, "Stream not found.");
+        try {
+            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            if (qSession == null) {
+                return ApiResponse.SESSION_NOT_FOUND.response();
+            }
+
+            JsonObject json = new JsonObject()
+                .put("id", qSession.id)
+                .put("info", Rson.DEFAULT.toJson(qSession.info));
+
+            return ApiResponse.success(StandardHttpStatus.OK, json);
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            return ApiResponse.INTERNAL_ERROR.response();
         }
-
-        JsonObject json = new JsonObject()
-            .put("id", qSession.id)
-            .put("info", Rson.DEFAULT.toJson(qSession.info));
-
-        return HttpResponse.newFixedLengthResponse(StandardHttpStatus.OK, json.toString(true))
-            .mime("application/json; charset=utf-8");
     }
 
 }

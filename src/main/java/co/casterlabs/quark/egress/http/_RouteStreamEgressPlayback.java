@@ -3,8 +3,6 @@ package co.casterlabs.quark.egress.http;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.ProcessBuilder.Redirect;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -83,35 +81,40 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
     private static record MuxFormat(String mime, String... command) {
     }
 
-    @HttpEndpoint(path = "/stream/:streamId/egress/playback/:format", allowedMethods = {
+    @HttpEndpoint(path = "/session/:sessionId/egress/playback/:format", allowedMethods = {
             HttpMethod.GET
     })
     public HttpResponse onMuxedPlayback(HttpSession session, EndpointData<Void> data) {
-        Session qSession = Quark.session(data.uriParameters().get("streamId"), false);
-        if (qSession == null) {
-            return HttpResponse.newFixedLengthResponse(StandardHttpStatus.NOT_FOUND, "Stream not found.");
-        }
+        try {
+            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            if (qSession == null) {
+                return ApiResponse.SESSION_NOT_FOUND.response();
+            }
 
-        String formatStr = data.uriParameters().get("format").toLowerCase();
-        if (formatStr.equals("flv")) {
-            // This one's special!
+            String formatStr = data.uriParameters().get("format").toLowerCase();
+            if (formatStr.equals("flv")) {
+                // This one's special!
+                return new HttpResponse(
+                    new FLVResponseContent(qSession),
+                    StandardHttpStatus.OK
+                ).mime("video/x-flv");
+            }
+
+            MuxFormat format = MUX_FORMATS.get(formatStr);
+            if (format == null) {
+                return ApiResponse.BAD_REQUEST.response();
+            }
+
             return new HttpResponse(
-                new FLVResponseContent(qSession),
+                new RemuxedResponseContent(qSession, format.command),
                 StandardHttpStatus.OK
-            ).mime("video/x-flv");
+            ).mime(format.mime);
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            return ApiResponse.INTERNAL_ERROR.response();
         }
-
-        MuxFormat format = MUX_FORMATS.get(formatStr);
-        if (format == null) {
-            List<String> valid = new ArrayList<>(MUX_FORMATS.keySet());
-            valid.add("flv");
-            return HttpResponse.newFixedLengthResponse(StandardHttpStatus.BAD_REQUEST, "Invalid format. Valid: " + String.join(", ", valid));
-        }
-
-        return new HttpResponse(
-            new RemuxedResponseContent(qSession, format.command),
-            StandardHttpStatus.OK
-        ).mime(format.mime);
     }
 
 }

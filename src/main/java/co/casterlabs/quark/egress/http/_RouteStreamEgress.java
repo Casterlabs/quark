@@ -1,7 +1,5 @@
 package co.casterlabs.quark.egress.http;
 
-import java.io.IOException;
-
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.listeners.FFmpegRTMPSessionListener;
@@ -18,28 +16,28 @@ import co.casterlabs.rhs.protocol.http.HttpSession;
 
 public class _RouteStreamEgress implements EndpointProvider {
 
-    @HttpEndpoint(path = "/stream/:streamId/egress/rtmp", allowedMethods = {
+    @HttpEndpoint(path = "/session/:sessionId/egress/rtmp", allowedMethods = {
             HttpMethod.POST
     })
     public HttpResponse onMuxedPlayback(HttpSession session, EndpointData<Void> data) {
         try {
-            Session qSession = Quark.session(data.uriParameters().get("streamId"), false);
+            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
-                return HttpResponse.newFixedLengthResponse(StandardHttpStatus.NOT_FOUND, "Stream not found.");
+                return ApiResponse.SESSION_NOT_FOUND.response();
             }
 
             EgressRTMPBody body = Rson.DEFAULT.fromJson(session.body().string(), EgressRTMPBody.class);
 
             qSession.addAsyncListener(new FFmpegRTMPSessionListener(body.url));
 
-            return HttpResponse.newFixedLengthResponse(StandardHttpStatus.CREATED, "Created RTMP egress.");
+            return ApiResponse.success(StandardHttpStatus.CREATED);
         } catch (JsonParseException e) {
-            return HttpResponse.newFixedLengthResponse(StandardHttpStatus.BAD_REQUEST, "Invalid JSON.");
-        } catch (IOException e) {
+            return ApiResponse.BAD_REQUEST.response();
+        } catch (Throwable t) {
             if (Quark.DEBUG) {
-                e.printStackTrace();
+                t.printStackTrace();
             }
-            return HttpResponse.newFixedLengthResponse(StandardHttpStatus.INTERNAL_ERROR, "Could not start source.");
+            return ApiResponse.INTERNAL_ERROR.response();
         }
     }
 
