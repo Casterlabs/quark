@@ -23,7 +23,19 @@ import co.casterlabs.rhs.protocol.http.HttpSession;
 
 public class _RouteStreamEgressPlayback implements EndpointProvider {
     private static final Map<String, MuxFormat> MUX_FORMATS = Map.of(
-        // FLV is special since we use it internally :^)
+        // Audio reencoding:
+        "opus", new MuxFormat(
+            /*mime*/"audio/ogg",
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "quiet",
+            "-i", "-",
+            "-vn",
+            "-c:a", "libopus",
+            "-b:a", "320k",
+            "-f", "ogg",
+            "-"
+        ),
         "mp3", new MuxFormat(
             /*mime*/"audio/mpeg",
             "ffmpeg",
@@ -36,6 +48,9 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             "-f", "mp3",
             "-"
         ),
+
+        // Passthrough remuxing:
+        // Also includes FLV, since we use that internally!
         "ts", new MuxFormat(
             /*mime*/"video/mp2t",
             "ffmpeg",
@@ -46,17 +61,16 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             "-f", "mpegts",
             "-"
         ),
-        "mp4", new MuxFormat(
-            /*mime*/"video/mp4",
+        "webm", new MuxFormat(
+            // NB: this doesn't trick Firefox nor Safari into playing non-standard codecs,
+            // but it does trick Chrome into doing so!
+            /*mime*/"video/webm",
             "ffmpeg",
             "-hide_banner",
             "-loglevel", "quiet",
             "-i", "-",
             "-c", "copy",
-            "-bsf:a", "aac_adtstoasc",
-            "-bsf:v", "h264_mp4toannexb",
-            "-movflags", "+faststart+empty_moov",
-            "-f", "mp4",
+            "-f", "matroska",
             "-"
         )
     );
