@@ -11,7 +11,7 @@ import co.casterlabs.commons.async.LockableResource;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionListener;
 import co.casterlabs.quark.session.SessionProvider;
-import co.casterlabs.quark.session.listeners.FFPlaySessionListener;
+import co.casterlabs.quark.session.listeners.FFplaySessionListener;
 import xyz.e3ndr.fastloggingframework.FastLoggingFramework;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 import xyz.e3ndr.fastloggingframework.logging.LogLevel;
@@ -55,7 +55,7 @@ public class Quark {
 
             if (DEBUG) {
                 try {
-                    session.addAsyncListener(new FFPlaySessionListener());
+                    session.addAsyncListener(new FFplaySessionListener());
                 } catch (IOException e) {
                     FastLogger.logStatic(LogLevel.WARNING, "Unable to start FFplay:\n%s", e);
                 }

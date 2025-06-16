@@ -5,9 +5,9 @@ import java.lang.ProcessBuilder.Redirect;
 
 import co.casterlabs.quark.Quark;
 
-public class FFPlaySessionListener extends FLVProcessSessionListener {
+public class FFplaySessionListener extends FLVProcessSessionListener {
 
-    public FFPlaySessionListener() throws IOException {
+    public FFplaySessionListener() throws IOException {
         super(
             Redirect.DISCARD, Redirect.INHERIT,
             "ffplay",
