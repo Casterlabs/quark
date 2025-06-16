@@ -15,7 +15,7 @@ import co.casterlabs.quark.session.SessionListener;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
-public abstract class FLVMuxedSessionListener implements SessionListener {
+public abstract class FLVSessionListener implements SessionListener {
     private StreamFLVMuxer playbackMuxer;
 
     private boolean hasGottenSequence = false;

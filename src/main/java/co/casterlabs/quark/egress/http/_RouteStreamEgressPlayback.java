@@ -11,7 +11,7 @@ import co.casterlabs.commons.io.streams.StreamUtil;
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionListener;
-import co.casterlabs.quark.session.listeners.FLVMuxedSessionListener;
+import co.casterlabs.quark.session.listeners.FLVSessionListener;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.rhs.HttpMethod;
 import co.casterlabs.rhs.HttpStatus.StandardHttpStatus;
@@ -127,7 +127,7 @@ class FLVResponseContent implements ResponseContent {
     public void write(int recommendedBufferSize, OutputStream out) throws IOException {
         CompletableFuture<Void> waitFor = new CompletableFuture<>();
 
-        SessionListener listener = new FLVMuxedSessionListener() {
+        SessionListener listener = new FLVSessionListener() {
             {
                 this.init(out);
             }
