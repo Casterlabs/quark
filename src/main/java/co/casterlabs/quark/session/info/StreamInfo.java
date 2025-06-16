@@ -1,5 +1,6 @@
 package co.casterlabs.quark.session.info;
 
+import co.casterlabs.quark.util.BitrateEstimator;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
 import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.RequiredArgsConstructor;

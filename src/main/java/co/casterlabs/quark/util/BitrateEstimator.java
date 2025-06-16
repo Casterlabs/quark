@@ -1,4 +1,4 @@
-package co.casterlabs.quark.session.info;
+package co.casterlabs.quark.util;
 
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
