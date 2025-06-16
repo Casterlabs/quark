@@ -7,7 +7,7 @@ public class FFmpegRTMPSessionListener extends FLVProcessSessionListener {
 
     public FFmpegRTMPSessionListener(String address) throws IOException {
         super(
-            Redirect.INHERIT, Redirect.INHERIT,
+            Redirect.DISCARD, Redirect.INHERIT,
             "ffmpeg",
             "-hide_banner",
             "-loglevel", "warning",

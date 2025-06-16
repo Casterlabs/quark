@@ -7,7 +7,7 @@ public class FFPlaySessionListener extends FLVProcessSessionListener {
 
     public FFPlaySessionListener() throws IOException {
         super(
-            Redirect.INHERIT, Redirect.INHERIT,
+            Redirect.DISCARD, Redirect.INHERIT,
             "ffplay",
             "-hide_banner",
             "-loglevel", "warning",
