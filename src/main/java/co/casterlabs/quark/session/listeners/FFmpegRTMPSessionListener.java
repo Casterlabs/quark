@@ -3,6 +3,8 @@ package co.casterlabs.quark.session.listeners;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 
+import co.casterlabs.quark.Quark;
+
 public class FFmpegRTMPSessionListener extends FLVProcessSessionListener {
 
     public FFmpegRTMPSessionListener(String address) throws IOException {
@@ -10,7 +12,7 @@ public class FFmpegRTMPSessionListener extends FLVProcessSessionListener {
             Redirect.DISCARD, Redirect.INHERIT,
             "ffmpeg",
             "-hide_banner",
-            "-loglevel", "warning",
+            "-loglevel", Quark.FFLL,
             "-f", "flv",
             "-i", "-",
             "-c", "copy",

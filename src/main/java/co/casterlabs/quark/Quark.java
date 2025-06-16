@@ -18,6 +18,7 @@ import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
 public class Quark {
     public static final boolean DEBUG = "true".equalsIgnoreCase(System.getenv("QUARK_DEBUG"));
+    public static final String FFLL = DEBUG ? "level+warning" : "level+fatal";
 
     static {
         System.setProperty("fastloggingframework.wrapsystem", "true");
