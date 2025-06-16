@@ -62,10 +62,10 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             "-f", "mpegts",
             "-"
         ),
-        "webm", new MuxFormat(
+        "mkv", new MuxFormat(
             // NB: this doesn't trick Firefox nor Safari into playing non-standard codecs,
             // but it does trick Chrome into doing so, and it works surprisingly well!
-            /*mime*/"video/webm",
+            /*mime*/"video/x-matroska",
             "ffmpeg",
             "-hide_banner",
             "-loglevel", "quiet",
