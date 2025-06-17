@@ -20,7 +20,7 @@ public class FFmpegProvider implements SessionProvider {
 
     private final long dtsOffset;
 
-    public FFmpegProvider(Session session, String source) throws IOException {
+    public FFmpegProvider(Session session, String source, boolean loop) throws IOException {
         this.session = session;
         this.session.setProvider(this);
 
@@ -32,7 +32,7 @@ public class FFmpegProvider implements SessionProvider {
                 "-hide_banner",
                 "-loglevel", "warning",
                 "-re",
-                "-stream_loop", "-1",
+                "-stream_loop", loop ? "-1" : "0",
                 "-i", source,
                 "-c", "copy",
                 "-f", "flv",

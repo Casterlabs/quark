@@ -25,7 +25,7 @@ public class _RouteStreamIngress implements EndpointProvider {
             IngressFileBody body = Rson.DEFAULT.fromJson(session.body().string(), IngressFileBody.class);
 
             Session qSession = Quark.session(body.id, true);
-            new FFmpegProvider(qSession, body.source);
+            new FFmpegProvider(qSession, body.source, body.loop);
 
             return ApiResponse.success(StandardHttpStatus.CREATED);
         } catch (JsonParseException e) {
@@ -40,8 +40,9 @@ public class _RouteStreamIngress implements EndpointProvider {
 
     @JsonClass(exposeAll = true)
     public static class IngressFileBody {
-        public final String id = null;
-        public final String source = null;
+        public String id = null;
+        public String source = null;
+        public boolean loop = false;
     }
 
 }
