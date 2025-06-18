@@ -20,6 +20,8 @@ public class Quark {
     public static final boolean DEBUG = "true".equalsIgnoreCase(System.getenv("QUARK_DEBUG"));
     public static final String FFLL = DEBUG ? "level+warning" : "level+fatal";
 
+    public static final String AUTH_SECRET = System.getenv("QUARK_SECRET");
+
     static {
         System.setProperty("fastloggingframework.wrapsystem", "true");
 

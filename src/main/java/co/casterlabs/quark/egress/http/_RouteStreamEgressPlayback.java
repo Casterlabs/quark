@@ -9,6 +9,8 @@ import java.util.concurrent.ExecutionException;
 
 import co.casterlabs.commons.io.streams.StreamUtil;
 import co.casterlabs.quark.Quark;
+import co.casterlabs.quark.auth.AuthenticationException;
+import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionListener;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
@@ -92,21 +94,23 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
 
     @HttpEndpoint(path = "/session/:sessionId/egress/playback/flv", allowedMethods = {
             HttpMethod.GET
-    }, priority = 10)
-    public HttpResponse onFLVPlayback(HttpSession session, EndpointData<Void> data) {
+    }, priority = 10, postprocessor = _Processor.class, preprocessor = _Processor.class)
+    public HttpResponse onFLVPlayback(HttpSession session, EndpointData<User> data) {
         try {
+            data.attachment().checkPlayback(data.uriParameters().get("sessionId"));
+
             Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
 
             // This one's special!
-            return ApiResponse.cors(
-                new HttpResponse(
-                    new FLVResponseContent(qSession),
-                    StandardHttpStatus.OK
-                ).mime("video/x-flv")
-            );
+            return new HttpResponse(
+                new FLVResponseContent(qSession),
+                StandardHttpStatus.OK
+            ).mime("video/x-flv");
+        } catch (AuthenticationException e) {
+            return ApiResponse.UNAUTHORIZED.response();
         } catch (Throwable t) {
             if (Quark.DEBUG) {
                 t.printStackTrace();
@@ -117,9 +121,11 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
 
     @HttpEndpoint(path = "/session/:sessionId/egress/playback/:format", allowedMethods = {
             HttpMethod.GET
-    })
-    public HttpResponse onMuxedPlayback(HttpSession session, EndpointData<Void> data) {
+    }, postprocessor = _Processor.class, preprocessor = _Processor.class)
+    public HttpResponse onMuxedPlayback(HttpSession session, EndpointData<User> data) {
         try {
+            data.attachment().checkPlayback(data.uriParameters().get("sessionId"));
+
             Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
                 return ApiResponse.SESSION_NOT_FOUND.response();
@@ -130,12 +136,12 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
                 return ApiResponse.BAD_REQUEST.response();
             }
 
-            return ApiResponse.cors(
-                new HttpResponse(
-                    new RemuxedResponseContent(qSession, format.command),
-                    StandardHttpStatus.OK
-                ).mime(format.mime)
-            );
+            return new HttpResponse(
+                new RemuxedResponseContent(qSession, format.command),
+                StandardHttpStatus.OK
+            ).mime(format.mime);
+        } catch (AuthenticationException e) {
+            return ApiResponse.UNAUTHORIZED.response();
         } catch (Throwable t) {
             if (Quark.DEBUG) {
                 t.printStackTrace();

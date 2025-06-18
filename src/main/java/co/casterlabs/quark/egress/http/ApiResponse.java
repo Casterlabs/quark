@@ -9,6 +9,7 @@ import co.casterlabs.rhs.protocol.http.HttpResponse;
 public enum ApiResponse {
     SESSION_NOT_FOUND(StandardHttpStatus.NOT_FOUND),
 
+    UNAUTHORIZED(StandardHttpStatus.UNAUTHORIZED),
     BAD_REQUEST(StandardHttpStatus.BAD_REQUEST),
     INTERNAL_ERROR(StandardHttpStatus.INTERNAL_ERROR),
 
@@ -26,10 +27,8 @@ public enum ApiResponse {
     }
 
     public HttpResponse response() {
-        return cors(
-            HttpResponse.newFixedLengthResponse(this.status, this.json)
-                .mime("application/json; charset=utf-8")
-        );
+        return HttpResponse.newFixedLengthResponse(this.status, this.json)
+            .mime("application/json; charset=utf-8");
     }
 
     public static HttpResponse success(HttpStatus status, JsonElement data) {
@@ -38,21 +37,12 @@ public enum ApiResponse {
             .putNull("error")
             .toString(true);
 
-        return cors(
-            HttpResponse.newFixedLengthResponse(status, json)
-                .mime("application/json; charset=utf-8")
-        );
+        return HttpResponse.newFixedLengthResponse(status, json)
+            .mime("application/json; charset=utf-8");
     }
 
     public static HttpResponse success(HttpStatus status) {
         return success(status, JsonObject.EMPTY_OBJECT);
-    }
-
-    public static HttpResponse cors(HttpResponse response) {
-        return response
-            .header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-            .header("Access-Control-Allow-Origin", "*")
-            .header("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS");
     }
 
 }

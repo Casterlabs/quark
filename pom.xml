@@ -103,6 +103,14 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Auth -->
+		<dependency>
+			<groupId>com.auth0</groupId>
+			<artifactId>java-jwt</artifactId>
+			<version>4.4.0</version>
+			<scope>compile</scope>
+		</dependency>
+
 		<!-- Egress -->
 		<dependency>
 			<groupId>co.casterlabs.rakurai-http-server</groupId>

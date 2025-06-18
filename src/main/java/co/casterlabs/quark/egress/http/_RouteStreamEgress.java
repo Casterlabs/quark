@@ -1,6 +1,8 @@
 package co.casterlabs.quark.egress.http;
 
 import co.casterlabs.quark.Quark;
+import co.casterlabs.quark.auth.AuthenticationException;
+import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.listeners.FFmpegRTMPSessionListener;
 import co.casterlabs.rakurai.json.Rson;
@@ -18,9 +20,11 @@ public class _RouteStreamEgress implements EndpointProvider {
 
     @HttpEndpoint(path = "/session/:sessionId/egress/rtmp", allowedMethods = {
             HttpMethod.POST
-    })
-    public HttpResponse onEgressRTMP(HttpSession session, EndpointData<Void> data) {
+    }, postprocessor = _Processor.class, preprocessor = _Processor.class)
+    public HttpResponse onEgressRTMP(HttpSession session, EndpointData<User> data) {
         try {
+            data.attachment().checkAdmin();
+
             Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
                 return ApiResponse.SESSION_NOT_FOUND.response();
@@ -31,6 +35,8 @@ public class _RouteStreamEgress implements EndpointProvider {
             qSession.addAsyncListener(new FFmpegRTMPSessionListener(body.url));
 
             return ApiResponse.success(StandardHttpStatus.CREATED);
+        } catch (AuthenticationException e) {
+            return ApiResponse.UNAUTHORIZED.response();
         } catch (JsonParseException e) {
             return ApiResponse.BAD_REQUEST.response();
         } catch (Throwable t) {
