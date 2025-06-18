@@ -10,12 +10,16 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 
 import co.casterlabs.quark.Quark;
+import lombok.NonNull;
 
 public class Auth {
     private static final String[] EMPTY_ARR = {};
-    private static final User DUMMY_ADMIN = new User("admin", true, EMPTY_ARR);
+
+    private static final User ADMIN_USER = new User("admin", true, EMPTY_ARR);
+    private static @Nullable User ANON_USER;
 
     private static JWTVerifier verifier;
+
     static {
         if (Quark.AUTH_SECRET != null) {
             Algorithm signingAlg = Algorithm.HMAC256(Quark.AUTH_SECRET);
@@ -23,15 +27,28 @@ public class Auth {
             verifier = JWT.require(signingAlg)
                 .build();
         }
+
+        if (Quark.AUTH_ANON_PREGEX != null) {
+            ANON_USER = new User(
+                "anonymous",
+                false,
+                new String[] {
+                        Quark.AUTH_ANON_PREGEX
+                }
+            );
+        }
     }
 
-    public static User authenticate(@Nullable String token) throws AuthenticationException {
+    public static @NonNull User authenticate(@Nullable String token) throws AuthenticationException {
         if (verifier == null) {
-            return DUMMY_ADMIN;
+            return ADMIN_USER;
         }
 
         if (token == null) {
-            throw new AuthenticationException("No token provided.");
+            if (ANON_USER == null) {
+                throw new AuthenticationException("No token provided.");
+            }
+            return ANON_USER;
         }
 
         if (token.startsWith("Bearer ")) {
