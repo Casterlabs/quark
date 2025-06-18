@@ -13,6 +13,8 @@ public class RTMPServer {
     private static final FastLogger LOGGER = new FastLogger();
 
     public static void start() {
+        if (Quark.RTMP_PORT <= 0) return; // Disabled
+
         Thread.ofPlatform().name("RTMP Server").start(() -> {
             try (ServerSocket serverSocket = new ServerSocket()) {
                 serverSocket.bind(new InetSocketAddress(Quark.RTMP_PORT));
