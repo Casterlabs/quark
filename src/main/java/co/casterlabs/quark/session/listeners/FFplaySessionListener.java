@@ -21,4 +21,14 @@ public class FFplaySessionListener extends FLVProcessSessionListener {
         );
     }
 
+    @Override
+    public Type type() {
+        return null;
+    }
+
+    @Override
+    public String fid() {
+        return null;
+    }
+
 }

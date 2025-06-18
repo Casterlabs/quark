@@ -122,6 +122,16 @@ class _CodecsSessionListener implements SessionListener {
     @Override
     public void onClose(Session session) {} // NOOP
 
+    @Override
+    public Type type() {
+        return null;
+    }
+
+    @Override
+    public String fid() {
+        return null;
+    }
+
     /* https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h */
     private static String flvToFourCC(FLVVideoCodec codec) {
         // @formatter:off
@@ -167,7 +177,7 @@ class _CodecsSessionListener implements SessionListener {
         }
     }
 
-    private static class FFprobeSessionListener extends FLVProcessSessionListener {
+    private class FFprobeSessionListener extends FLVProcessSessionListener {
 
         public FFprobeSessionListener(String map, StreamInfo toUpdate) throws IOException {
             super(
@@ -199,8 +209,20 @@ class _CodecsSessionListener implements SessionListener {
                     if (Quark.DEBUG) {
                         e.printStackTrace();
                     }
+                } finally {
+                    session.removeListener(this);
                 }
             });
+        }
+
+        @Override
+        public Type type() {
+            return null;
+        }
+
+        @Override
+        public String fid() {
+            return null;
         }
 
     }

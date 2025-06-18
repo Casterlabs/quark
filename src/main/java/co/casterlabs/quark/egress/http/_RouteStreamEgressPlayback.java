@@ -106,7 +106,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
 
             // This one's special!
             return new HttpResponse(
-                new FLVResponseContent(qSession),
+                new FLVResponseContent(qSession, data.attachment().id()),
                 StandardHttpStatus.OK
             ).mime("video/x-flv");
         } catch (AuthenticationException e) {
@@ -140,7 +140,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             }
 
             return new HttpResponse(
-                new RemuxedResponseContent(qSession, format.command),
+                new RemuxedResponseContent(qSession, data.attachment().id(), format.command),
                 StandardHttpStatus.OK
             ).mime(format.mime);
         } catch (AuthenticationException e) {
@@ -161,6 +161,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
 @RequiredArgsConstructor
 class FLVResponseContent implements ResponseContent {
     private final Session qSession;
+    private final String fid;
 
     @Override
     public void write(int recommendedBufferSize, OutputStream out) throws IOException {
@@ -174,6 +175,16 @@ class FLVResponseContent implements ResponseContent {
             @Override
             public void onClose(Session session) {
                 waitFor.complete(null);
+            }
+
+            @Override
+            public Type type() {
+                return Type.HTTP_PLAYBACK;
+            }
+
+            @Override
+            public String fid() {
+                return fid;
             }
         };
 
@@ -200,10 +211,12 @@ class FLVResponseContent implements ResponseContent {
 
 class RemuxedResponseContent implements ResponseContent {
     private final Session qSession;
+    private final String fid;
     private final String[] command;
 
-    RemuxedResponseContent(Session qSession, String... command) {
+    RemuxedResponseContent(Session qSession, String fid, String... command) {
         this.qSession = qSession;
+        this.fid = fid;
         this.command = command;
     }
 
@@ -231,6 +244,16 @@ class RemuxedResponseContent implements ResponseContent {
             public void onClose(Session session) {
                 super.onClose(session);
                 waitFor.complete(null);
+            }
+
+            @Override
+            public Type type() {
+                return Type.HTTP_PLAYBACK;
+            }
+
+            @Override
+            public String fid() {
+                return fid;
             }
         };
 

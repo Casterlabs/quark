@@ -8,6 +8,7 @@ import co.casterlabs.quark.session.Session;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
 import co.casterlabs.rakurai.json.serialization.JsonParseException;
+import co.casterlabs.rakurai.json.validation.JsonValidate;
 import co.casterlabs.rhs.HttpMethod;
 import co.casterlabs.rhs.HttpStatus.StandardHttpStatus;
 import co.casterlabs.rhs.protocol.api.endpoints.EndpointData;
@@ -55,6 +56,12 @@ public class _RouteStreamIngress implements EndpointProvider {
         public String id = null;
         public String source = null;
         public boolean loop = false;
+
+        @JsonValidate
+        private void $validate() {
+            if (this.id == null) throw new IllegalArgumentException("id cannot be null.");
+            if (this.source == null) throw new IllegalArgumentException("source cannot be null.");
+        }
     }
 
 }

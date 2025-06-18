@@ -19,6 +19,7 @@ public class HTTPDaemon {
         framework.register(new _RouteMeta());
         framework.register(new _RouteStreamControl());
         framework.register(new _RouteStreamEgress());
+        framework.register(new _RouteStreamEgressExternal());
         framework.register(new _RouteStreamEgressPlayback());
         framework.register(new _RouteStreamIngress());
 

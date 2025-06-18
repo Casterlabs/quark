@@ -12,6 +12,8 @@ import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.info.SessionInfo;
 import co.casterlabs.quark.util.ModifiableArray;
+import co.casterlabs.rakurai.json.element.JsonArray;
+import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -96,6 +98,27 @@ public class Session implements Closeable {
                 if (Quark.DEBUG) {
                     t.printStackTrace();
                 }
+            }
+        }
+    }
+
+    public JsonArray listeners() {
+        JsonArray listeners = new JsonArray();
+        for (SessionListener listener : this.listeners.get()) {
+            if (listener.type() == null) continue;
+            listeners.add(
+                new JsonObject()
+                    .put("type", listener.type().name())
+                    .put("fid", listener.fid())
+            );
+        }
+        return listeners;
+    }
+
+    public void removeByFid(String fid) {
+        for (SessionListener listener : this.listeners.get()) {
+            if (fid.equals(listener.fid())) {
+                this.removeListener(listener);
             }
         }
     }

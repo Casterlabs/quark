@@ -4,6 +4,11 @@ import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.session.Session;
+import co.casterlabs.quark.session.listeners.FFmpegRTMPSessionListener;
+import co.casterlabs.rakurai.json.Rson;
+import co.casterlabs.rakurai.json.annotating.JsonClass;
+import co.casterlabs.rakurai.json.serialization.JsonParseException;
+import co.casterlabs.rakurai.json.validation.JsonValidate;
 import co.casterlabs.rhs.HttpMethod;
 import co.casterlabs.rhs.HttpStatus.StandardHttpStatus;
 import co.casterlabs.rhs.protocol.api.endpoints.EndpointData;
@@ -12,12 +17,12 @@ import co.casterlabs.rhs.protocol.api.endpoints.HttpEndpoint;
 import co.casterlabs.rhs.protocol.http.HttpResponse;
 import co.casterlabs.rhs.protocol.http.HttpSession;
 
-public class _RouteStreamEgress implements EndpointProvider {
+public class _RouteStreamEgressExternal implements EndpointProvider {
 
-    @HttpEndpoint(path = "/session/:sessionId/egress", allowedMethods = {
-            HttpMethod.GET
+    @HttpEndpoint(path = "/session/:sessionId/egress/external/rtmp", allowedMethods = {
+            HttpMethod.POST
     }, postprocessor = _Processor.class, preprocessor = _Processor.class)
-    public HttpResponse onEgressList(HttpSession session, EndpointData<User> data) {
+    public HttpResponse onEgressRTMP(HttpSession session, EndpointData<User> data) {
         try {
             data.attachment().checkAdmin();
 
@@ -26,12 +31,21 @@ public class _RouteStreamEgress implements EndpointProvider {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
 
-            return ApiResponse.success(StandardHttpStatus.OK, qSession.listeners());
+            EgressRTMPBody body = Rson.DEFAULT.fromJson(session.body().string(), EgressRTMPBody.class);
+
+            qSession.addAsyncListener(new FFmpegRTMPSessionListener(body.url, body.foreignId));
+
+            return ApiResponse.success(StandardHttpStatus.CREATED);
         } catch (AuthenticationException e) {
             if (Quark.DEBUG) {
                 e.printStackTrace();
             }
             return ApiResponse.UNAUTHORIZED.response();
+        } catch (JsonParseException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.BAD_REQUEST.response();
         } catch (Throwable t) {
             if (Quark.DEBUG) {
                 t.printStackTrace();
@@ -40,32 +54,15 @@ public class _RouteStreamEgress implements EndpointProvider {
         }
     }
 
-    @HttpEndpoint(path = "/session/:sessionId/egress/:fid", allowedMethods = {
-            HttpMethod.DELETE
-    }, postprocessor = _Processor.class, preprocessor = _Processor.class)
-    public HttpResponse onEgressDelete(HttpSession session, EndpointData<User> data) {
-        try {
-            data.attachment().checkAdmin();
+    @JsonClass(exposeAll = true)
+    public static class EgressRTMPBody {
+        public String foreignId = null;
+        public String url = null;
 
-            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
-            if (qSession == null) {
-                return ApiResponse.SESSION_NOT_FOUND.response();
-            }
-
-            String fid = data.uriParameters().get("fid");
-            qSession.removeByFid(fid);
-
-            return ApiResponse.success(StandardHttpStatus.OK);
-        } catch (AuthenticationException e) {
-            if (Quark.DEBUG) {
-                e.printStackTrace();
-            }
-            return ApiResponse.UNAUTHORIZED.response();
-        } catch (Throwable t) {
-            if (Quark.DEBUG) {
-                t.printStackTrace();
-            }
-            return ApiResponse.INTERNAL_ERROR.response();
+        @JsonValidate
+        private void $validate() {
+            if (this.foreignId == null) throw new IllegalArgumentException("foreignId cannot be null.");
+            if (this.url == null) throw new IllegalArgumentException("url cannot be null.");
         }
     }
 

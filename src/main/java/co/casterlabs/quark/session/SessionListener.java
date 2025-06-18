@@ -8,4 +8,16 @@ public interface SessionListener {
 
     public void onClose(Session session);
 
+    /**
+     * @return null, if internal.
+     */
+    public Type type();
+
+    public String fid();
+
+    public static enum Type {
+        HTTP_PLAYBACK,
+        RTMP
+    };
+
 }

@@ -95,6 +95,16 @@ public class Quark {
             }
         };
 
+        @Override
+        public Type type() {
+            return null;
+        }
+
+        @Override
+        public String fid() {
+            return null;
+        }
+
     }
 
 }

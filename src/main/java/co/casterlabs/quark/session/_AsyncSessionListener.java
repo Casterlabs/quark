@@ -43,4 +43,14 @@ class _AsyncSessionListener implements SessionListener {
         this.delegate.onClose(session);
     }
 
+    @Override
+    public Type type() {
+        return this.delegate.type();
+    }
+
+    @Override
+    public String fid() {
+        return this.delegate.fid();
+    }
+
 }

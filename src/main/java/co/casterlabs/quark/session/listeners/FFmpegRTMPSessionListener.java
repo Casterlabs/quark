@@ -6,8 +6,9 @@ import java.lang.ProcessBuilder.Redirect;
 import co.casterlabs.quark.Quark;
 
 public class FFmpegRTMPSessionListener extends FLVProcessSessionListener {
+    private final String fid;
 
-    public FFmpegRTMPSessionListener(String address) throws IOException {
+    public FFmpegRTMPSessionListener(String address, String fid) throws IOException {
         super(
             Redirect.DISCARD, Redirect.INHERIT,
             "ffmpeg",
@@ -25,6 +26,17 @@ public class FFmpegRTMPSessionListener extends FLVProcessSessionListener {
             "-map", "0",
             address
         );
+        this.fid = fid;
+    }
+
+    @Override
+    public Type type() {
+        return Type.RTMP;
+    }
+
+    @Override
+    public String fid() {
+        return this.fid;
     }
 
 }
