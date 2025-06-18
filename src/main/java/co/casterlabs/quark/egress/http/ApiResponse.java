@@ -15,6 +15,11 @@ public enum ApiResponse {
 
     ;
 
+    private static final String SUCCESS_EMPTY = new JsonObject()
+        .put("data", JsonObject.EMPTY_OBJECT)
+        .putNull("error")
+        .toString(true);
+
     private final HttpStatus status;
     private final String json;
 
@@ -42,7 +47,8 @@ public enum ApiResponse {
     }
 
     public static HttpResponse success(HttpStatus status) {
-        return success(status, JsonObject.EMPTY_OBJECT);
+        return HttpResponse.newFixedLengthResponse(status, SUCCESS_EMPTY)
+            .mime("application/json; charset=utf-8");
     }
 
 }
