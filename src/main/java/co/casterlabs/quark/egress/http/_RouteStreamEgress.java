@@ -19,7 +19,7 @@ public class _RouteStreamEgress implements EndpointProvider {
     @HttpEndpoint(path = "/session/:sessionId/egress/rtmp", allowedMethods = {
             HttpMethod.POST
     })
-    public HttpResponse onMuxedPlayback(HttpSession session, EndpointData<Void> data) {
+    public HttpResponse onEgressRTMP(HttpSession session, EndpointData<Void> data) {
         try {
             Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {

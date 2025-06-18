@@ -18,7 +18,7 @@ public class _RouteStreamControl implements EndpointProvider {
     @HttpEndpoint(path = "/sessions", allowedMethods = {
             HttpMethod.GET
     })
-    public HttpResponse onGetsessionIds(HttpSession session, EndpointData<Void> data) {
+    public HttpResponse onGetSessions(HttpSession session, EndpointData<Void> data) {
         try {
             JsonArray ids = new JsonArray();
             Quark.forEachSession((s) -> ids.add(s.id));
@@ -33,30 +33,9 @@ public class _RouteStreamControl implements EndpointProvider {
     }
 
     @HttpEndpoint(path = "/session/:sessionId", allowedMethods = {
-            HttpMethod.DELETE
-    })
-    public HttpResponse onEndStream(HttpSession session, EndpointData<Void> data) {
-        try {
-            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
-            if (qSession == null) {
-                return ApiResponse.SESSION_NOT_FOUND.response();
-            }
-
-            qSession.close();
-
-            return ApiResponse.success(StandardHttpStatus.OK);
-        } catch (Throwable t) {
-            if (Quark.DEBUG) {
-                t.printStackTrace();
-            }
-            return ApiResponse.INTERNAL_ERROR.response();
-        }
-    }
-
-    @HttpEndpoint(path = "/session/:sessionId", allowedMethods = {
             HttpMethod.GET
     })
-    public HttpResponse onGetStreamData(HttpSession session, EndpointData<Void> data) {
+    public HttpResponse onGetSessionInfo(HttpSession session, EndpointData<Void> data) {
         try {
             Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
@@ -68,6 +47,27 @@ public class _RouteStreamControl implements EndpointProvider {
                 .put("info", Rson.DEFAULT.toJson(qSession.info));
 
             return ApiResponse.success(StandardHttpStatus.OK, json);
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            return ApiResponse.INTERNAL_ERROR.response();
+        }
+    }
+
+    @HttpEndpoint(path = "/session/:sessionId", allowedMethods = {
+            HttpMethod.DELETE
+    })
+    public HttpResponse onEndSession(HttpSession session, EndpointData<Void> data) {
+        try {
+            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            if (qSession == null) {
+                return ApiResponse.SESSION_NOT_FOUND.response();
+            }
+
+            qSession.close();
+
+            return ApiResponse.success(StandardHttpStatus.OK);
         } catch (Throwable t) {
             if (Quark.DEBUG) {
                 t.printStackTrace();

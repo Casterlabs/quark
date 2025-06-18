@@ -52,7 +52,6 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
         ),
 
         // Passthrough remuxing:
-        // Also includes FLV, since we use that internally!
         // Can use https://github.com/xqq/mpegts.js for both ts and flv
         "ts", new MuxFormat(
             /*mime*/"video/mp2t",
@@ -91,6 +90,31 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
     private static record MuxFormat(String mime, String... command) {
     }
 
+    @HttpEndpoint(path = "/session/:sessionId/egress/playback/flv", allowedMethods = {
+            HttpMethod.GET
+    }, priority = 10)
+    public HttpResponse onFLVPlayback(HttpSession session, EndpointData<Void> data) {
+        try {
+            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            if (qSession == null) {
+                return ApiResponse.SESSION_NOT_FOUND.response();
+            }
+
+            // This one's special!
+            return ApiResponse.cors(
+                new HttpResponse(
+                    new FLVResponseContent(qSession),
+                    StandardHttpStatus.OK
+                ).mime("video/x-flv")
+            );
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            return ApiResponse.INTERNAL_ERROR.response();
+        }
+    }
+
     @HttpEndpoint(path = "/session/:sessionId/egress/playback/:format", allowedMethods = {
             HttpMethod.GET
     })
@@ -101,18 +125,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
 
-            String formatStr = data.uriParameters().get("format").toLowerCase();
-            if (formatStr.equals("flv")) {
-                // This one's special!
-                return ApiResponse.cors(
-                    new HttpResponse(
-                        new FLVResponseContent(qSession),
-                        StandardHttpStatus.OK
-                    ).mime("video/x-flv")
-                );
-            }
-
-            MuxFormat format = MUX_FORMATS.get(formatStr);
+            MuxFormat format = MUX_FORMATS.get(data.uriParameters().get("format"));
             if (format == null) {
                 return ApiResponse.BAD_REQUEST.response();
             }
