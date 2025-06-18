@@ -276,8 +276,11 @@ class _RTMPProvider implements SessionProvider {
                 this.close();
                 return;
 
-            case "releaseStream":
             case "createStream":
+                this.rpcInvoke(read, "_result", Null0.INSTANCE, new Number0(1));
+                return;
+
+            case "releaseStream":
                 // Dummy.
                 this.rpcInvoke(read, "_result", Null0.INSTANCE);
                 return;
