@@ -1,5 +1,6 @@
 package co.casterlabs.quark.egress.http;
 
+import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.auth.Auth;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
@@ -29,6 +30,9 @@ public class _Processor implements Postprocessor.Http<User>, Preprocessor.Http<U
             User user = Auth.authenticate(token);
             context.attachment(user);
         } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
             context.respondEarly(ApiResponse.UNAUTHORIZED.response());
         }
     }

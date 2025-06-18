@@ -110,6 +110,9 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
                 StandardHttpStatus.OK
             ).mime("video/x-flv");
         } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
             return ApiResponse.UNAUTHORIZED.response();
         } catch (Throwable t) {
             if (Quark.DEBUG) {
@@ -141,6 +144,9 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
                 StandardHttpStatus.OK
             ).mime(format.mime);
         } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
             return ApiResponse.UNAUTHORIZED.response();
         } catch (Throwable t) {
             if (Quark.DEBUG) {

@@ -33,8 +33,14 @@ public class _RouteStreamIngress implements EndpointProvider {
 
             return ApiResponse.success(StandardHttpStatus.CREATED);
         } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
             return ApiResponse.UNAUTHORIZED.response();
         } catch (JsonParseException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
             return ApiResponse.BAD_REQUEST.response();
         } catch (Throwable t) {
             if (Quark.DEBUG) {

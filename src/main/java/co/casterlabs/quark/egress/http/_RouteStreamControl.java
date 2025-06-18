@@ -29,6 +29,9 @@ public class _RouteStreamControl implements EndpointProvider {
 
             return ApiResponse.success(StandardHttpStatus.OK, ids);
         } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
             return ApiResponse.UNAUTHORIZED.response();
         } catch (Throwable t) {
             if (Quark.DEBUG) {
@@ -58,6 +61,9 @@ public class _RouteStreamControl implements EndpointProvider {
 
             return ApiResponse.success(StandardHttpStatus.OK, json);
         } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
             return ApiResponse.UNAUTHORIZED.response();
         } catch (Throwable t) {
             if (Quark.DEBUG) {
@@ -83,6 +89,9 @@ public class _RouteStreamControl implements EndpointProvider {
 
             return ApiResponse.success(StandardHttpStatus.OK);
         } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
             return ApiResponse.UNAUTHORIZED.response();
         } catch (Throwable t) {
             if (Quark.DEBUG) {
