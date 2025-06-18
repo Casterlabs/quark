@@ -49,7 +49,7 @@ public class FFmpegProvider implements SessionProvider {
                 try {
                     this.demuxer.start(this.proc.getInputStream());
                 } catch (IOException ignored) {} finally {
-                    this.close();
+                    this.close(true);
                 }
             });
     }
@@ -57,15 +57,15 @@ public class FFmpegProvider implements SessionProvider {
     @Override
     public void jam() {
         this.jammed = true;
-        this.close();
+        this.close(true);
     }
 
     @Override
-    public void close() {
+    public void close(boolean graceful) {
         this.proc.destroy();
 
         if (!this.jammed) {
-            this.session.close();
+            this.session.close(graceful);
         }
     }
 

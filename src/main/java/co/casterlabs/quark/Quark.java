@@ -26,6 +26,8 @@ public class Quark {
     public static final int HTTP_PORT = Integer.parseInt(System.getenv().getOrDefault("HTTP_PORT", "8080"));
     public static final int RTMP_PORT = Integer.parseInt(System.getenv().getOrDefault("RTMP_PORT", "1935"));
 
+    public static final @Nullable String WEBHOOK_URL = System.getenv("QUARK_WEBHOOK_URL");
+
     static {
         System.setProperty("fastloggingframework.wrapsystem", "true");
 
@@ -76,9 +78,10 @@ public class Quark {
     public static Session authenticateSession(SessionProvider provider, String url, String key) throws IOException {
         if (url == null || key == null) return null;
 
-        // TODO
+        String sessionId = Webhooks.sessionStart(url, key);
+        if (sessionId == null) return null;
 
-        Session session = Quark.session(key, true);
+        Session session = Quark.session(sessionId, true);
         session.setProvider(provider);
         return session;
     }

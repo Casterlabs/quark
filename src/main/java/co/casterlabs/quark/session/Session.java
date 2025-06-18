@@ -1,6 +1,5 @@
 package co.casterlabs.quark.session;
 
-import java.io.Closeable;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -10,6 +9,7 @@ import co.casterlabs.commons.async.LockableResource;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.quark.Quark;
+import co.casterlabs.quark.Webhooks;
 import co.casterlabs.quark.session.info.SessionInfo;
 import co.casterlabs.quark.util.ModifiableArray;
 import co.casterlabs.rakurai.json.element.JsonArray;
@@ -17,7 +17,7 @@ import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class Session implements Closeable {
+public class Session {
     // Array for fast/efficient iteration, map for lookups
     private final LockableResource<Map<Integer, SessionListener>> listenerMap = new LockableResource<>(new HashMap<>());
     private final ModifiableArray<SessionListener> listeners = new ModifiableArray<>((count) -> new SessionListener[count]);
@@ -76,14 +76,18 @@ public class Session implements Closeable {
         }
     }
 
-    @Override
-    public void close() {
+    public void close(boolean graceful) {
         if (this.closed) return;
+
+        if (Webhooks.sessionEnding(this, graceful)) {
+            return; // We're getting jammed!
+        }
+
         this.closed = true;
 
         if (this.provider != null) {
             try {
-                this.provider.close();
+                this.provider.close(graceful);
             } catch (Throwable t) {
                 if (Quark.DEBUG) {
                     t.printStackTrace();
@@ -100,6 +104,8 @@ public class Session implements Closeable {
                 }
             }
         }
+
+        Webhooks.sessionEnded(this, graceful);
     }
 
     public JsonArray listeners() {

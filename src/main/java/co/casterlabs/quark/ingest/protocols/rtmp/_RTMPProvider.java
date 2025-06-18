@@ -9,6 +9,7 @@ import co.casterlabs.flv4j.actionscript.amf0.AMF0Type;
 import co.casterlabs.flv4j.actionscript.amf0.ECMAArray0;
 import co.casterlabs.flv4j.actionscript.amf0.LongString0;
 import co.casterlabs.flv4j.actionscript.amf0.Null0;
+import co.casterlabs.flv4j.actionscript.amf0.Number0;
 import co.casterlabs.flv4j.actionscript.amf0.Object0;
 import co.casterlabs.flv4j.actionscript.amf0.String0;
 import co.casterlabs.flv4j.actionscript.io.ASReader;
@@ -34,7 +35,7 @@ import co.casterlabs.quark.util.SocketConnection;
 import co.casterlabs.quark.util.WallclockTS;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 
-class _RTMPProvider implements SessionProvider {
+class _RTMPProvider implements SessionProvider, AutoCloseable {
     private static final int CHUNK_SIZE = 4096;
 
     private static final String0 NETCONNECTION_CONNECT_SUCCESS = new String0("NetConnection.Connect.Success");
@@ -102,7 +103,7 @@ class _RTMPProvider implements SessionProvider {
 
             if (!this.out.validateHandshake2(handshake2)) {
                 this.logger.debug("Closing, handshake failed.");
-                this.close();
+                this.close(true);
             }
 
             this.logger.trace("Handshake successful.");
@@ -185,7 +186,7 @@ class _RTMPProvider implements SessionProvider {
                 if (this.state != State.INITIALIZING) {
                     this.logger.debug("Closing, client sent connect() during state %s", this.state);
                     this.rpcInvoke(read, "_result", NETCONNECTION_CONNECT_FAILED);
-                    this.close();
+                    this.close(true);
                     return;
                 }
 
@@ -231,7 +232,7 @@ class _RTMPProvider implements SessionProvider {
                         read, "onStatus",
                         Null0.INSTANCE, NETSTREAM_PUBLISH_BADNAME
                     );
-                    this.close();
+                    this.close(true);
                     return;
                 }
 
@@ -257,7 +258,7 @@ class _RTMPProvider implements SessionProvider {
                         read, "onStatus",
                         Null0.INSTANCE, NETSTREAM_PUBLISH_FAILED
                     );
-                    this.close();
+                    this.close(true);
                 } else {
                     // Allow it!
 
@@ -272,8 +273,8 @@ class _RTMPProvider implements SessionProvider {
 
             case "deleteStream":
                 this.logger.debug("Stream closed by client.");
+                this.close(true);
                 this.rpcInvoke(read, "_result", Null0.INSTANCE);
-                this.close();
                 return;
 
             case "createStream":
@@ -299,7 +300,7 @@ class _RTMPProvider implements SessionProvider {
 
         if (this.session == null || this.state != State.RUNNING) {
             this.logger.debug("Closing, client sent tag during state %s", this.state);
-            this.close();
+            this.close(true);
             return;
         }
 
@@ -315,7 +316,7 @@ class _RTMPProvider implements SessionProvider {
 
         if (this.session == null || this.state != State.RUNNING) {
             this.logger.debug("Closing, client sent tag during state %s", this.state);
-            this.close();
+            this.close(true);
             return;
         }
 
@@ -325,7 +326,7 @@ class _RTMPProvider implements SessionProvider {
     }
 
     @Override
-    public void close() {
+    public void close(boolean graceful) {
         if (this.state == State.CLOSING) return;
 
         this.logger.debug("Closing...");
@@ -333,7 +334,7 @@ class _RTMPProvider implements SessionProvider {
 
         if (this.session != null && !this.jammed) {
             try {
-                this.session.close();
+                this.session.close(graceful);
             } catch (Throwable t) {
                 this.logger.warn("Exception whilst ending session, this could be bad!\n%s", t);
             }
@@ -347,6 +348,11 @@ class _RTMPProvider implements SessionProvider {
         this.logger.debug("Closed!");
     }
 
+    @Override
+    public void close() {
+        this.close(false);
+    }
+
     /* ---------------- */
     /*  Quark Session   */
     /* ---------------- */
@@ -355,7 +361,7 @@ class _RTMPProvider implements SessionProvider {
     public void jam() {
         this.jammed = true;
         this.logger.debug("Jammed!");
-        this.close();
+        this.close(true);
     }
 
     /* ---------------- */

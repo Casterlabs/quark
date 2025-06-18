@@ -1,9 +1,9 @@
 package co.casterlabs.quark.session;
 
-import java.io.Closeable;
-
-public interface SessionProvider extends Closeable {
+public interface SessionProvider {
 
     public void jam();
+
+    public void close(boolean wasGraceful);
 
 }

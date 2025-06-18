@@ -147,6 +147,12 @@
 
 		<!-- Util -->
 		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>okhttp</artifactId>
+			<version>4.12.0</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
 			<groupId>co.casterlabs</groupId>
 			<artifactId>Rson</artifactId>
 			<version>1.18.0</version>

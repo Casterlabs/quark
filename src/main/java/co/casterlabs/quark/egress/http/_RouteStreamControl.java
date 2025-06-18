@@ -85,7 +85,7 @@ public class _RouteStreamControl implements EndpointProvider {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
 
-            qSession.close();
+            qSession.close(true);
 
             return ApiResponse.success(StandardHttpStatus.OK);
         } catch (AuthenticationException e) {
