@@ -23,6 +23,9 @@ public class Quark {
     public static final @Nullable String AUTH_SECRET = System.getenv("QUARK_AUTH_SECRET");
     public static final @Nullable String AUTH_ANON_PREGEX = System.getenv("QUARK_ANON_PREGEX");
 
+    public static final int HTTP_PORT = Integer.parseInt(System.getenv().getOrDefault("HTTP_PORT", "8080"));
+    public static final int RTMP_PORT = Integer.parseInt(System.getenv().getOrDefault("RTMP_PORT", "1935"));
+
     static {
         System.setProperty("fastloggingframework.wrapsystem", "true");
 

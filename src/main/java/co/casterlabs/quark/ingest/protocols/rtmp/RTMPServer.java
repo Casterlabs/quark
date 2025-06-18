@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import co.casterlabs.flv4j.EndOfStreamException;
+import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.util.SocketConnection;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 
@@ -12,12 +13,10 @@ public class RTMPServer {
     private static final FastLogger LOGGER = new FastLogger();
 
     public static void start() {
-        final int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "1935"));
-
         Thread.ofPlatform().name("RTMP Server").start(() -> {
             try (ServerSocket serverSocket = new ServerSocket()) {
-                serverSocket.bind(new InetSocketAddress(port));
-                LOGGER.info("Listening on port %d...", port);
+                serverSocket.bind(new InetSocketAddress(Quark.RTMP_PORT));
+                LOGGER.info("Listening on port %d...", Quark.RTMP_PORT);
 
                 while (true) {
                     Socket sock = serverSocket.accept();

@@ -2,6 +2,7 @@ package co.casterlabs.quark.egress.http;
 
 import java.io.IOException;
 
+import co.casterlabs.quark.Quark;
 import co.casterlabs.rhs.HttpServer;
 import co.casterlabs.rhs.HttpServerBuilder;
 import co.casterlabs.rhs.protocol.api.ApiFramework;
@@ -14,8 +15,6 @@ public class HTTPDaemon {
 
     @SneakyThrows
     public static void start() throws IOException {
-        final int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));
-
         ApiFramework framework = new ApiFramework();
         framework.register(new _RouteMeta());
         framework.register(new _RouteStreamControl());
@@ -24,7 +23,7 @@ public class HTTPDaemon {
         framework.register(new _RouteStreamIngress());
 
         HttpServer server = new HttpServerBuilder()
-            .withPort(port)
+            .withPort(Quark.HTTP_PORT)
             .withBehindProxy(true)
             .withKeepAliveSeconds(-1)
             .withMinSoTimeoutSeconds(60)
@@ -35,7 +34,7 @@ public class HTTPDaemon {
             .build();
 
         server.start();
-        FastLogger.logStatic("Listening on port %d", port);
+        FastLogger.logStatic("Listening on port %d", Quark.HTTP_PORT);
     }
 
 }
