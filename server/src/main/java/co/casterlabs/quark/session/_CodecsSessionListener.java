@@ -26,7 +26,7 @@ import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-class _CodecsSessionListener implements SessionListener {
+class _CodecsSessionListener extends SessionListener {
     private final Session session;
     private final SessionInfo info;
 

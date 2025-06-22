@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
  * block.
  */
 @RequiredArgsConstructor
-class _AsyncSessionListener implements SessionListener {
+class _AsyncSessionListener extends SessionListener {
     private static final ThreadFactory THREAD_FACTORY = Thread.ofVirtual().name("Async Session Listener - Write Queue", 0).factory();
     private static final int MAX_OUTSTANDING_PACKETS = 1000;
 

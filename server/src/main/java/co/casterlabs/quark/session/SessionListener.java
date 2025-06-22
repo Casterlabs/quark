@@ -1,19 +1,23 @@
 package co.casterlabs.quark.session;
 
-public interface SessionListener {
+import java.util.UUID;
 
-    public default void onSequence(Session session, FLVSequence seq) {}
+public abstract class SessionListener {
+    public final String id = UUID.randomUUID().toString();
+    public final long createdAt = System.currentTimeMillis();
 
-    public default void onData(Session session, FLVData data) {}
+    public void onSequence(Session session, FLVSequence seq) {}
 
-    public void onClose(Session session);
+    public void onData(Session session, FLVData data) {}
+
+    public abstract void onClose(Session session);
 
     /**
      * @return null, if internal.
      */
-    public Type type();
+    public abstract Type type();
 
-    public String fid();
+    public abstract String fid();
 
     public static enum Type {
         HTTP_PLAYBACK,

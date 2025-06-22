@@ -86,7 +86,7 @@ public class Quark {
         return session;
     }
 
-    private static class CloseListener implements SessionListener {
+    private static class CloseListener extends SessionListener {
 
         @Override
         public void onClose(Session session) {

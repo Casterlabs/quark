@@ -40,10 +40,39 @@ public class _RouteStreamEgress implements EndpointProvider {
         }
     }
 
-    @HttpEndpoint(path = "/session/:sessionId/egress/:fid", allowedMethods = {
+    @HttpEndpoint(path = "/session/:sessionId/egress/:id", allowedMethods = {
             HttpMethod.DELETE
     }, postprocessor = _Processor.class, preprocessor = _Processor.class)
     public HttpResponse onEgressDelete(HttpSession session, EndpointData<User> data) {
+        try {
+            data.attachment().checkAdmin();
+
+            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            if (qSession == null) {
+                return ApiResponse.SESSION_NOT_FOUND.response();
+            }
+
+            String id = data.uriParameters().get("id");
+            qSession.removeById(id);
+
+            return ApiResponse.success(StandardHttpStatus.OK);
+        } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.UNAUTHORIZED.response();
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            return ApiResponse.INTERNAL_ERROR.response();
+        }
+    }
+
+    @HttpEndpoint(path = "/session/:sessionId/egress/:fid/fid", allowedMethods = {
+            HttpMethod.DELETE
+    }, postprocessor = _Processor.class, preprocessor = _Processor.class)
+    public HttpResponse onEgressDeleteByFid(HttpSession session, EndpointData<User> data) {
         try {
             data.attachment().checkAdmin();
 

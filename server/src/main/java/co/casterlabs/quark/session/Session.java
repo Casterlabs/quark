@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class Session {
     // Array for fast/efficient iteration, map for lookups
-    private final LockableResource<Map<Integer, SessionListener>> listenerMap = new LockableResource<>(new HashMap<>());
+    private final LockableResource<Map<String, SessionListener>> listenerMap = new LockableResource<>(new HashMap<>());
     private final ModifiableArray<SessionListener> listeners = new ModifiableArray<>((count) -> new SessionListener[count]);
 
     public final SessionInfo info = new SessionInfo();
@@ -115,11 +115,21 @@ public class Session {
             if (listener.type() == null) continue;
             listeners.add(
                 new JsonObject()
+                    .put("id", listener.id)
+                    .put("createdAt", listener.createdAt)
                     .put("type", listener.type().name())
                     .put("fid", listener.fid())
             );
         }
         return listeners;
+    }
+
+    public void removeById(String id) {
+        for (SessionListener listener : this.listeners.get()) {
+            if (id.equals(listener.id)) {
+                this.removeListener(listener);
+            }
+        }
     }
 
     public void removeByFid(String fid) {
@@ -133,24 +143,24 @@ public class Session {
     public void addAsyncListener(SessionListener listener) {
         SessionListener async = new _AsyncSessionListener(listener);
 
-        // NB: We don't want to use the async listener's hash code
+        // NB: We don't want to use the async listener's id
         // because that would make it unremovable!
-        this._addListener(listener.hashCode(), async);
+        this._addListener(listener.id, async);
     }
 
     public void addSyncListener(SessionListener listener) {
-        this._addListener(listener.hashCode(), listener);
+        this._addListener(listener.id, listener);
     }
 
-    private void _addListener(int hashCode, SessionListener listener) {
+    private void _addListener(String id, SessionListener listener) {
         if (this.provider != null) {
             FLVSequence seq = new FLVSequence(this.sequenceTags.toArray(new FLVTag[0]));
             listener.onSequence(this, seq);
         }
 
-        Map<Integer, SessionListener> map = this.listenerMap.acquire();
+        Map<String, SessionListener> map = this.listenerMap.acquire();
         try {
-            map.put(hashCode, listener);
+            map.put(id, listener);
             this.listeners.add(listener);
         } finally {
             this.listenerMap.release();
@@ -158,9 +168,9 @@ public class Session {
     }
 
     public void removeListener(SessionListener listener) {
-        Map<Integer, SessionListener> map = this.listenerMap.acquire();
+        Map<String, SessionListener> map = this.listenerMap.acquire();
         try {
-            SessionListener removed = map.remove(listener.hashCode());
+            SessionListener removed = map.remove(listener.id);
             this.listeners.remove(removed);
         } finally {
             this.listenerMap.release();
