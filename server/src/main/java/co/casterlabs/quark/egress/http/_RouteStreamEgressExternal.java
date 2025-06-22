@@ -61,7 +61,6 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
 
         @JsonValidate
         private void $validate() {
-            if (this.foreignId == null) throw new IllegalArgumentException("foreignId cannot be null.");
             if (this.url == null) throw new IllegalArgumentException("url cannot be null.");
         }
     }

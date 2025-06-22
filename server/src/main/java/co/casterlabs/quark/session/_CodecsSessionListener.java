@@ -127,11 +127,6 @@ class _CodecsSessionListener extends SessionListener {
         return null;
     }
 
-    @Override
-    public String fid() {
-        return null;
-    }
-
     /* https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h */
     private static String flvToFourCC(FLVVideoCodec codec) {
         // @formatter:off
@@ -217,11 +212,6 @@ class _CodecsSessionListener extends SessionListener {
 
         @Override
         public Type type() {
-            return null;
-        }
-
-        @Override
-        public String fid() {
             return null;
         }
 

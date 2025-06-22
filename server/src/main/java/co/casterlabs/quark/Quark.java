@@ -103,11 +103,6 @@ public class Quark {
             return null;
         }
 
-        @Override
-        public String fid() {
-            return null;
-        }
-
     }
 
 }

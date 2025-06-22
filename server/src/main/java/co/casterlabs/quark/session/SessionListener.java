@@ -2,6 +2,8 @@ package co.casterlabs.quark.session;
 
 import java.util.UUID;
 
+import org.jetbrains.annotations.Nullable;
+
 public abstract class SessionListener {
     public final String id = UUID.randomUUID().toString();
     public final long createdAt = System.currentTimeMillis();
@@ -17,7 +19,9 @@ public abstract class SessionListener {
      */
     public abstract Type type();
 
-    public abstract String fid();
+    public @Nullable String fid() {
+        return null;
+    }
 
     public static enum Type {
         HTTP_PLAYBACK,
