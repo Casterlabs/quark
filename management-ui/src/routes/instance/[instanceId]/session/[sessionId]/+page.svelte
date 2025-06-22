@@ -19,7 +19,7 @@
 	</div>
 {:then session}
 	{#if session}
-		<div class="space-y-2">
+		<div class="space-y-2 max-w-4xl mx-auto">
 			<SessionVideoPlayer instance={data.instance} sessionId={session.id} />
 
 			// TODO session end, egress management, external egress
