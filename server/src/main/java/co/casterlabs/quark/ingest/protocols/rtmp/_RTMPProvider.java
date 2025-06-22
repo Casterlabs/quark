@@ -166,7 +166,7 @@ class _RTMPProvider implements SessionProvider, AutoCloseable {
                     ECMAArray0 value = (ECMAArray0) data.arguments().get(2);
 
                     FLVScriptTagData payload = new FLVScriptTagData(method.value(), value);
-                    FLVTag tag = new FLVTag(FLVTagType.SCRIPT, 0, (int) read.messageStreamId(), payload);
+                    FLVTag tag = new FLVTag(FLVTagType.SCRIPT, 0, 0, payload);
                     this.logger.debug("Got script sequence: %s", tag);
                     this.session.data(new FLVData(read.timestamp(), tag));
                 }
@@ -304,7 +304,7 @@ class _RTMPProvider implements SessionProvider, AutoCloseable {
             return;
         }
 
-        FLVTag tag = new FLVTag(FLVTagType.AUDIO, this.dts.next(), (int) read.messageStreamId(), read.message().payload());
+        FLVTag tag = new FLVTag(FLVTagType.AUDIO, this.dts.next(), 0, read.message().payload());
 
         this.session.data(new FLVData(read.timestamp() + this.ptsOffset, tag));
     }
@@ -320,7 +320,7 @@ class _RTMPProvider implements SessionProvider, AutoCloseable {
             return;
         }
 
-        FLVTag tag = new FLVTag(FLVTagType.VIDEO, this.dts.next(), (int) read.messageStreamId(), read.message().payload());
+        FLVTag tag = new FLVTag(FLVTagType.VIDEO, this.dts.next(), 0, read.message().payload());
 
         this.session.data(new FLVData(read.timestamp() + this.ptsOffset, tag));
     }
