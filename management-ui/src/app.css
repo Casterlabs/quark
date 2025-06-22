@@ -1,0 +1,102 @@
+@import 'tailwindcss';
+
+:root {
+    --clui-radius: 4px;
+
+    /* https://www.radix-ui.com/colors/docs/palette-composition/scales */
+    --clui-color-base-1: #121113;
+    /* background-app */
+    --clui-color-base-2: #1a191b;
+    /* background-subtle */
+    --clui-color-base-3: #232225;
+    /* element-background */
+    --clui-color-base-4: #2b292d;
+    /* element-hovered */
+    --clui-color-base-5: #323035;
+    /* element-active  */
+    --clui-color-base-6: #3c393f;
+    /* border-subtle */
+    --clui-color-base-7: #49474e;
+    /* border-element */
+    --clui-color-base-8: #625f69;
+    /* border-hovered */
+    --clui-color-base-9: #6f6d78;
+    /* solid */
+    --clui-color-base-10: #7c7a85;
+    /* solid-hovered */
+    --clui-color-base-11: #b5b2bc;
+    /* text-low */
+    --clui-color-base-12: #eeeef0;
+    /* text-high */
+
+    --clui-color-accent-1: #191114;
+    /* background-app */
+    --clui-color-accent-2: #201318;
+    /* background-subtle */
+    --clui-color-accent-3: #381525;
+    /* element-background */
+    --clui-color-accent-4: #4d122f;
+    /* element-hovered */
+    --clui-color-accent-5: #5c1839;
+    /* element-active  */
+    --clui-color-accent-6: #6d2545;
+    /* border-subtle */
+    --clui-color-accent-7: #873356;
+    /* border-element */
+    --clui-color-accent-8: #b0436e;
+    /* border-hovered */
+    --clui-color-accent-9: #e93d82;
+    /* solid */
+    --clui-color-accent-10: #ee518a;
+    /* solid-hovered */
+    --clui-color-accent-11: #ff92ad;
+    /* text-low */
+    --clui-color-accent-12: #fdd3e8;
+    /* text-high */
+}
+
+html {
+    background: var(--clui-color-base-1);
+    color: var(--clui-color-base-12);
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        Oxygen,
+        Ubuntu,
+        Cantarell,
+        'Open Sans',
+        'Helvetica Neue',
+        sans-serif;
+}
+
+@theme inline {
+    /* https: //tailwindcss.com/docs/colors#customizing-your-colors */
+    --color-accent-1: var(--clui-color-accent-1);
+    --color-accent-2: var(--clui-color-accent-2);
+    --color-accent-3: var(--clui-color-accent-3);
+    --color-accent-4: var(--clui-color-accent-4);
+    --color-accent-5: var(--clui-color-accent-5);
+    --color-accent-6: var(--clui-color-accent-6);
+    --color-accent-7: var(--clui-color-accent-7);
+    --color-accent-8: var(--clui-color-accent-8);
+    --color-accent-9: var(--clui-color-accent-9);
+    --color-accent-10: var(--clui-color-accent-10);
+    --color-accent-11: var(--clui-color-accent-11);
+    --color-accent-12: var(--clui-color-accent-12);
+
+    --color-base-1: var(--clui-color-base-1);
+    --color-base-2: var(--clui-color-base-2);
+    --color-base-3: var(--clui-color-base-3);
+    --color-base-4: var(--clui-color-base-4);
+    --color-base-5: var(--clui-color-base-5);
+    --color-base-6: var(--clui-color-base-6);
+    --color-base-7: var(--clui-color-base-7);
+    --color-base-8: var(--clui-color-base-8);
+    --color-base-9: var(--clui-color-base-9);
+    --color-base-10: var(--clui-color-base-10);
+    --color-base-11: var(--clui-color-base-11);
+    --color-base-12: var(--clui-color-base-12);
+}
