@@ -1,0 +1,7 @@
+# Maven
+target/
+dependency-reduced-pom.xml
+
+# Misc
+Test.java
+test.flv
