@@ -23,6 +23,7 @@ public class Session {
     private final ModifiableArray<SessionListener> listeners = new ModifiableArray<>((count) -> new SessionListener[count]);
 
     public final SessionInfo info = new SessionInfo();
+    public final long createdAt = System.currentTimeMillis();
     public final String id;
 
     public volatile long prevDts = 0;

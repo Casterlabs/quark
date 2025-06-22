@@ -57,6 +57,7 @@ public class _RouteStreamControl implements EndpointProvider {
 
             JsonObject json = new JsonObject()
                 .put("id", qSession.id)
+                .put("createdAt", qSession.createdAt)
                 .put("info", Rson.DEFAULT.toJson(qSession.info));
 
             return ApiResponse.success(StandardHttpStatus.OK, json);
