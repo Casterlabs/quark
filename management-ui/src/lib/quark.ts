@@ -106,6 +106,10 @@ export default class QuarkInstance {
 		return `${this._address}/session/${encodeURI(sid)}/egress/playback/${format.toLowerCase()}?authorization=${this._token}`;
 	}
 
+	sessionThumbnailUrl(sid: SessionId): string {
+		return `${this._address}/session/${encodeURI(sid)}/egress/thumbnail?authorization=${this._token}`;
+	}
+
 	async startIngress(id: SessionId, source: string, loop: boolean) {
 		await this.apiCall(`/session/ingress`, {
 			method: 'POST',

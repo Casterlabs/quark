@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { SessionId } from '$lib/quark';
+
 	import Card from '$lib/layout/Card.svelte';
 	import LoadingSpinner from '$lib/layout/LoadingSpinner.svelte';
 	import Modal from '$lib/layout/Modal.svelte';
@@ -8,6 +10,8 @@
 
 	let { data }: PageProps = $props();
 
+	let validThumbnails: SessionId[] = $state([]);
+
 	let rerender = $state(0);
 
 	let showIngressStartModal = $state(false);
@@ -16,7 +20,7 @@
 	let ingressStartLoop = $state(false);
 </script>
 
-<div class="h-screen flex items-center justify-center">
+<div class="h-full flex items-center justify-center">
 	{#key rerender}
 		{#await data.instance.listSessions()}
 			<span class="text-3xl">
@@ -26,8 +30,19 @@
 			<ul class="max-w-2xl justify-center flex flex-wrap">
 				{#each ids as sid}
 					<li>
-						<Card href="/instance/{encodeURI(data.instance.id)}/session/{encodeURI(sid)}">
-							<div class="h-full flex items-center justify-center">
+						<Card href="/instance/{encodeURI(data.instance.id)}/session/{encodeURI(sid)}" class="overflow-hidden relative">
+							<img
+								class="absolute inset-0 w-full h-full object-cover border-0 border-transparent"
+								class:hidden={!validThumbnails.includes(sid)}
+								src={data.instance.sessionThumbnailUrl(sid)}
+								alt=""
+								onload={() => validThumbnails.push(sid)}
+							/>
+							<div
+								class="absolute inset-0 flex items-center justify-center z-20"
+								class:bg-[#000000aa]={validThumbnails.includes(sid)}
+								class:hover:bg-[#00000066]={validThumbnails.includes(sid)}
+							>
 								{sid}
 							</div>
 						</Card>
