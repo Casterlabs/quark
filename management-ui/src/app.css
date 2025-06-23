@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 :root {
-    --clui-radius: 4px;
+    --clui-radius: 0.25rem;
 
     /* https://www.radix-ui.com/colors/docs/palette-composition/scales */
     --clui-color-base-1: #121113;

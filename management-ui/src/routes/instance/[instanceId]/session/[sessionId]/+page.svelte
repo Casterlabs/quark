@@ -1,14 +1,23 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+
 	import LoadingSpinner from '$lib/layout/LoadingSpinner.svelte';
+	import Modal from '$lib/layout/Modal.svelte';
 	import SessionVideoPlayer from '$lib/layout/SessionVideoPlayer.svelte';
-	import { IconChevronDown, IconChevronRight } from '@casterlabs/heroicons-svelte';
-	import { Box } from '@casterlabs/ui';
+	import StatsForNerds from '$lib/layout/StatsForNerds.svelte';
+	import { IconTrash } from '@casterlabs/heroicons-svelte';
+	import { Button, Input, Select } from '@casterlabs/ui';
 
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 
-	let showStatsForNerds = $state(false);
+	let showEgressManagementModal = $state(false);
+	let egressManagementModalRerender = $state(0);
+
+	let showStartEgressModal = $state(false);
+	let startEgressProtocol: 'RTMP' = $state('RTMP');
+	let startEgressUrl = $state('');
 </script>
 
 {#await data.session}
@@ -19,39 +28,102 @@
 	</div>
 {:then session}
 	{#if session}
-		<div class="space-y-2 max-w-4xl mx-auto">
+		<div class="space-y-4 max-w-4xl mx-auto">
 			<SessionVideoPlayer instance={data.instance} sessionId={session.id} />
 
-			// TODO session end, egress management, external egress
+			<ul class="flex items-row h-16 space-x-2">
+				<li class="basis-1/3">
+					<Button
+						class="block w-full h-full"
+						onclick={async () => {
+							await data.instance.endSession(session.id);
+							goto(`/instance/${encodeURI(data.instance.id)}`);
+						}}
+					>
+						End Session
+					</Button>
+				</li>
+				<li class="basis-1/3">
+					<Button class="block w-full h-full" onclick={() => (showEgressManagementModal = true)}>Egress Management</Button>
+				</li>
+				<li class="basis-1/3">
+					<Button class="block w-full h-full" onclick={() => (showStartEgressModal = true)}>Start Egress</Button>
+				</li>
+			</ul>
 
-			<Box class="mt-8" sides={['top', 'bottom', 'left', 'right']}>
-				<button class="block w-full text-left cursor-pointer" onclick={() => (showStatsForNerds = !showStatsForNerds)}>
-					{#if showStatsForNerds}
-						<IconChevronDown class="inline-block align-bottom" theme="mini" />
-					{:else}
-						<IconChevronRight class="inline-block align-bottom" theme="mini" />
-					{/if}
-					Stats for nerds
-				</button>
-
-				{#if showStatsForNerds}
-					<br />
-					<ul class="space-y-2">
-						{#each session.info.video as feed}
-							<li>
-								<p>Video Feed #{feed.id}</p>
-								<pre>{JSON.stringify(feed, null, 2)}</pre>
-							</li>
-						{/each}
-						{#each session.info.audio as feed}
-							<li>
-								<p>Audio Feed #{feed.id}</p>
-								<pre>{JSON.stringify(feed, null, 2)}</pre>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</Box>
+			<StatsForNerds {session} />
 		</div>
+
+		<Modal bind:showModal={showEgressManagementModal}>
+			<h1 class="font-semibold text-lg">Active Egresses</h1>
+			{#key egressManagementModalRerender}
+				{#await data.instance.listSessionEgress(session.id)}
+					<div class="flex items-center justify-center">
+						<span class="text-3xl">
+							<LoadingSpinner />
+						</span>
+					</div>
+				{:then egresses}
+					{#if egresses.length == 0}
+						<div class="text-center">
+							<span class="text-base-11 text-sm">No active egresses</span>
+						</div>
+					{:else}
+						<ul class="space-y-1 max-h-96 overflow-y-auto">
+							{#each egresses as egress}
+								<li class="flex flex-row bg-base-3 rounded-sm border-base-7 border hover:border-base-8 p-2">
+									<div class="flex-1 truncate text-left">
+										<h2>Type: <span class="font-semibold">{egress.type}</span></h2>
+										<h3 class="text-sm">
+											Foreign ID: <pre class="inline">{egress.fid}</pre>
+										</h3>
+									</div>
+									<button
+										class="cursor-pointer p-2"
+										onclick={async () => {
+											await data.instance.endSessionEgress(session.id, egress.id);
+											egressManagementModalRerender++;
+										}}
+									>
+										<span class="sr-only">Delete</span>
+										<IconTrash theme="micro" />
+									</button>
+								</li>
+							{/each}
+						</ul>
+					{/if}
+				{/await}
+			{/key}
+		</Modal>
+
+		<Modal bind:showModal={showStartEgressModal}>
+			<h1 class="font-semibold text-lg">Start Egress</h1>
+			<div class="space-y-1 flex">
+				<Select
+					class="px-1 py-0.5 h-6"
+					style="border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; border-right-width: 0px;"
+					bind:value={startEgressProtocol}
+				>
+					<option>RTMP</option>
+				</Select>
+				<Input
+					type="password"
+					placeholder="URL"
+					bind:value={startEgressUrl}
+					class="flex-1 px-1 py-0.5 h-6"
+					style="border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important;"
+				/>
+			</div>
+			<Button
+				class="px-1 w-full"
+				onclick={() => {
+					const fid = `mui-${Math.random().toString(28).substring(2)}`;
+					data.instance.startSessionEgress(sessionStorage.id, startEgressProtocol, startEgressUrl, fid);
+					showStartEgressModal = false;
+				}}
+			>
+				Add
+			</Button>
+		</Modal>
 	{/if}
 {/await}

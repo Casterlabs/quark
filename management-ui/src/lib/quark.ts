@@ -2,7 +2,7 @@ export declare type SessionId = string;
 export declare type EgressId = string;
 export declare type ForeignId = string | null;
 
-export declare interface SessionInfo {
+export declare interface Session {
 	id: SessionId;
 	createdAt: number;
 	info: {
@@ -72,8 +72,14 @@ export default class QuarkInstance {
 		return await this.apiCall('/sessions');
 	}
 
-	async sessionInfo(sid: SessionId): Promise<SessionInfo> {
+	async sessionInfo(sid: SessionId): Promise<Session> {
 		return await this.apiCall(`/session/${encodeURI(sid)}`);
+	}
+
+	async endSession(sid: SessionId): Promise<void> {
+		await this.apiCall(`/session/${encodeURI(sid)}`, {
+			method: 'DELETE'
+		});
 	}
 
 	async listSessionEgress(sid: SessionId): Promise<SessionEgress[]> {
