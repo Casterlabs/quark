@@ -98,4 +98,31 @@ public class _RouteStreamEgress implements EndpointProvider {
         }
     }
 
+    @HttpEndpoint(path = "/session/:sessionId/egress/thumbnail", allowedMethods = {
+            HttpMethod.GET
+    }, postprocessor = _Processor.class, preprocessor = _Processor.class)
+    public HttpResponse onEgressThumbnail(HttpSession session, EndpointData<User> data) {
+        try {
+            data.attachment().checkPlayback(data.uriParameters().get("sessionId"));
+
+            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            if (qSession == null) {
+                return ApiResponse.SESSION_NOT_FOUND.response();
+            }
+
+            return HttpResponse.newFixedLengthResponse(StandardHttpStatus.OK, qSession.thumbnail())
+                .mime("image/jpeg");
+        } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.UNAUTHORIZED.response();
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            return ApiResponse.INTERNAL_ERROR.response();
+        }
+    }
+
 }

@@ -31,11 +31,13 @@ public class Session {
 
     private SessionProvider provider;
     private final List<FLVTag> sequenceTags = new LinkedList<>();
+    private final _ThumbnailSessionListener thumbnailGenerator = new _ThumbnailSessionListener();
 
     private boolean closed = false;
 
     {
         this.addAsyncListener(new _CodecsSessionListener(this, this.info));
+        this.addAsyncListener(this.thumbnailGenerator);
     }
 
     public void setProvider(SessionProvider provider) {
@@ -44,6 +46,10 @@ public class Session {
         }
         this.sequenceTags.clear();
         this.provider = provider;
+    }
+
+    public byte[] thumbnail() {
+        return this.thumbnailGenerator.thumbnail;
     }
 
     public void data(FLVData data) {

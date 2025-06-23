@@ -175,7 +175,6 @@ class _RTMPProvider implements SessionProvider, AutoCloseable {
         } else {
             this.logger.trace("Unhandled packet: %s", read);
         }
-
     }
 
     private void handleCommand(RTMPChunk<RTMPMessageCommand0> read) throws IOException {
