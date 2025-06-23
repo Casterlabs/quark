@@ -59,8 +59,9 @@ public abstract class FLVSessionListener extends SessionListener {
 
         if (!this.hasOffset) {
             boolean sessionHasVideo = session.info.video.length > 0;
+            boolean isVideoKeyFrame = tag.data() instanceof FLVVideoPayload video && video.frameType() == FLVVideoFrameType.KEY_FRAME;
 
-            if (!sessionHasVideo || (tag.data() instanceof FLVVideoPayload video && video.frameType() == FLVVideoFrameType.KEY_FRAME)) {
+            if (!sessionHasVideo || isVideoKeyFrame) {
                 this.hasOffset = true;
                 this.playbackMuxer.timestampOffset = -tag.timestamp();
                 FastLogger.logStatic(LogLevel.DEBUG, "Got offset: %d", this.playbackMuxer.timestampOffset);
