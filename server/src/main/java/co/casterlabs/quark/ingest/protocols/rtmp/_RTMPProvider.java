@@ -1,15 +1,12 @@
 package co.casterlabs.quark.ingest.protocols.rtmp;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Map;
 
-import co.casterlabs.flv4j.EndOfStreamException;
+import org.jetbrains.annotations.Nullable;
+
 import co.casterlabs.flv4j.actionscript.amf0.AMF0Type;
+import co.casterlabs.flv4j.actionscript.amf0.AMF0Type.ObjectLike;
 import co.casterlabs.flv4j.actionscript.amf0.ECMAArray0;
-import co.casterlabs.flv4j.actionscript.amf0.LongString0;
-import co.casterlabs.flv4j.actionscript.amf0.Null0;
-import co.casterlabs.flv4j.actionscript.amf0.Number0;
 import co.casterlabs.flv4j.actionscript.amf0.Object0;
 import co.casterlabs.flv4j.actionscript.amf0.String0;
 import co.casterlabs.flv4j.actionscript.io.ASReader;
@@ -19,14 +16,15 @@ import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.flv4j.flv.tags.script.FLVScriptTagData;
 import co.casterlabs.flv4j.rtmp.RTMPReader;
 import co.casterlabs.flv4j.rtmp.RTMPWriter;
-import co.casterlabs.flv4j.rtmp.chunks.RTMPChunk;
+import co.casterlabs.flv4j.rtmp.chunks.RTMPMessage;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageAudio;
-import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageChunkSize;
-import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageCommand0;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageData0;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageVideo;
-import co.casterlabs.flv4j.rtmp.handshake.RTMPHandshake1;
-import co.casterlabs.flv4j.rtmp.handshake.RTMPHandshake2;
+import co.casterlabs.flv4j.rtmp.net.ConnectArgs;
+import co.casterlabs.flv4j.rtmp.net.NetStatus;
+import co.casterlabs.flv4j.rtmp.net.rpc.CallError;
+import co.casterlabs.flv4j.rtmp.net.server.ServerNetConnection;
+import co.casterlabs.flv4j.rtmp.net.server.ServerNetStream;
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.FLVData;
 import co.casterlabs.quark.session.Session;
@@ -35,41 +33,15 @@ import co.casterlabs.quark.util.SocketConnection;
 import co.casterlabs.quark.util.WallclockTS;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 
-class _RTMPProvider implements SessionProvider, AutoCloseable {
-    private static final int CHUNK_SIZE = 4096;
-
-    private static final String0 NETCONNECTION_CONNECT_SUCCESS = new String0("NetConnection.Connect.Success");
-    private static final String0 NETCONNECTION_CONNECT_FAILED = new String0("NetConnection.Connect.Failed");
-
-    private static final Object0 NETSTREAM_PUBLISH_START = new Object0(
-        Map.of(
-            "code", new String0("NetStream.Publish.Start"),
-            "level", new String0("status")
-        )
-    );
-
-    private static final Object0 NETSTREAM_PUBLISH_BADNAME = new Object0(
-        Map.of(
-            "code", new String0("NetStream.Publish.BadName"),
-            "level", new String0("status")
-        )
-    );
-
-    private static final Object0 NETSTREAM_PUBLISH_FAILED = new Object0(
-        Map.of(
-            "code", new String0("NetStream.Publish.Failed"),
-            "level", new String0("status")
-        )
-    );
-
+class _RTMPProvider extends ServerNetConnection implements SessionProvider, AutoCloseable {
     private final SocketConnection conn;
-    private final RTMPReader in;
-    private final RTMPWriter out;
 
     private final FastLogger logger;
 
     private final WallclockTS dts = new WallclockTS();
     private long ptsOffset = 0;
+
+    private @Nullable ServerNetStream stream;
 
     private State state = State.INITIALIZING;
     private Session session;
@@ -77,9 +49,8 @@ class _RTMPProvider implements SessionProvider, AutoCloseable {
     private boolean jammed = false;
 
     _RTMPProvider(SocketConnection conn) throws IOException {
+        super(new RTMPReader(new ASReader(conn.in())), new RTMPWriter(new ASWriter(conn.out())));
         this.conn = conn;
-        this.in = new RTMPReader(new ASReader(conn.in()));
-        this.out = new RTMPWriter(new ASWriter(conn.out()));
         this.logger = new FastLogger(conn.socket().toString());
     }
 
@@ -87,75 +58,69 @@ class _RTMPProvider implements SessionProvider, AutoCloseable {
     /*       RTMP       */
     /* ---------------- */
 
-    void run() {
-        try {
-            this.logger.trace("Performing handshake 0");
-            this.in.handshake0(); // Consume. Should always be version 3.
-            this.out.handshake0();
+    @Override
+    public ObjectLike connect(ConnectArgs args) throws IOException, InterruptedException, CallError {
+        this.handshakeUrl = args.tcUrl();
 
-            this.logger.trace("Performing handshake 1");
-            RTMPHandshake1 handshake1 = this.in.handshake1();
-            this.out.handshake1();
+        // "Allow" the url as long as it's present, we'll validate it during publish().
+        this.state = State.AUTHENTICATING;
 
-            this.logger.trace("Performing handshake 2");
-            this.out.handshake2(handshake1);
-            RTMPHandshake2 handshake2 = this.in.handshake2();
+        return Object0.EMPTY;
+    }
 
-            if (!this.out.validateHandshake2(handshake2)) {
-                this.logger.debug("Closing, handshake failed.");
-                this.close(true);
-            }
-
-            this.logger.trace("Handshake successful.");
-
-            this.out.write(2, 0, 0, new RTMPMessageChunkSize(CHUNK_SIZE));
-
-            while (true) {
-                RTMPChunk<?> read = this.in.read();
-                if (read == null) continue;
-
-                this.handle(read);
-            }
-        } catch (EndOfStreamException e) {
-            throw e;
-        } catch (Throwable t) {
-            if ("Socket closed".equals(t.getMessage())) {
-                throw new EndOfStreamException(t);
-            }
-            if ("The pipe has been ended".equals(t.getMessage())) {
-                throw new EndOfStreamException(t);
-            }
-            if ("An established connection was aborted by the software in your host machine".equals(t.getMessage())) {
-                throw new EndOfStreamException(t);
-            }
-
-            this.logger.fatal("Unhandled exception, aborting...\n%s", t);
+    @Override
+    public ServerNetStream createStream(AMF0Type arg) throws IOException, InterruptedException, CallError {
+        if (this.streams().size() > 0) {
+            throw new CallError(NetStatus.NS_CONNECT_FAILED);
         }
+
+        return this.stream = new ServerNetStream() {
+            {
+                this.onMessage = _RTMPProvider.this::onMessage;
+            }
+
+            @Override
+            public void publish(String key, String type) throws IOException, InterruptedException {
+                if (state != State.AUTHENTICATING) {
+                    logger.debug("Closing, client sent publish() during state %s", state);
+                    this.setStatus(NetStatus.NS_PUBLISH_FAILED);
+                    close(true);
+                    return;
+                }
+
+                logger.debug("Authenticating with %s @ %s", key, handshakeUrl);
+                session = Quark.authenticateSession(_RTMPProvider.this, handshakeUrl, key);
+
+                if (session == null) {
+                    logger.debug("Closing, stream rejected.");
+                    this.setStatus(NetStatus.NS_PUBLISH_BADNAME);
+                    close(true);
+                } else {
+                    // Allow it!
+                    dts.offset(-session.prevDts);
+                    ptsOffset = session.prevPts;
+
+                    logger.debug("Stream allowed.");
+                    state = State.RUNNING;
+                    this.setStatus(NetStatus.NS_PUBLISH_START);
+                }
+            }
+
+            @Override
+            public void deleteStream() throws IOException, InterruptedException {
+                logger.debug("Stream closed by client.");
+                close(true);
+            }
+
+        };
     }
 
-    private synchronized void rpcInvoke(RTMPChunk<RTMPMessageCommand0> chunk, String commandName, AMF0Type... arguments) throws IOException {
-        this.logger.trace("Sending RPC: %s(%s)", commandName, arguments);
-        this.out.write(
-            chunk.chunkStreamId(),
-            chunk.messageStreamId(),
-            0,
-            new RTMPMessageCommand0(
-                new String0(commandName),
-                chunk.message().transactionId(),
-                Arrays.asList(arguments)
-            )
-        );
-    }
-
-    @SuppressWarnings("unchecked")
-    private void handle(RTMPChunk<?> read) throws IOException {
-        if (read.message() instanceof RTMPMessageCommand0) {
-            this.handleCommand((RTMPChunk<RTMPMessageCommand0>) read);
-        } else if (read.message() instanceof RTMPMessageAudio) {
-            this.handleAudio((RTMPChunk<RTMPMessageAudio>) read);
-        } else if (read.message() instanceof RTMPMessageVideo) {
-            this.handleVideo((RTMPChunk<RTMPMessageVideo>) read);
-        } else if (read.message() instanceof RTMPMessageData0 data) {
+    private void onMessage(int timestamp, RTMPMessage message) {
+        if (message instanceof RTMPMessageAudio audio) {
+            this.handleAudio(timestamp, audio);
+        } else if (message instanceof RTMPMessageVideo video) {
+            this.handleVideo(timestamp, video);
+        } else if (message instanceof RTMPMessageData0 data) {
             if (this.jammed) return; // Just in case.
             if (data.arguments().size() != 3) {
                 return;
@@ -168,131 +133,17 @@ class _RTMPProvider implements SessionProvider, AutoCloseable {
                     FLVScriptTagData payload = new FLVScriptTagData(method.value(), value);
                     FLVTag tag = new FLVTag(FLVTagType.SCRIPT, 0, 0, payload);
                     this.logger.debug("Got script sequence: %s", tag);
-                    this.session.data(new FLVData(read.timestamp(), tag));
+                    this.session.data(new FLVData(timestamp, tag));
                 }
             }
             return;
         } else {
-            this.logger.trace("Unhandled packet: %s", read);
+            this.logger.trace("Unhandled packet: %s", message);
         }
+
     }
 
-    private void handleCommand(RTMPChunk<RTMPMessageCommand0> read) throws IOException {
-        this.logger.trace("Command packet: %s", read);
-
-        switch (read.message().commandName().value()) {
-            case "connect": {
-                if (this.state != State.INITIALIZING) {
-                    this.logger.debug("Closing, client sent connect() during state %s", this.state);
-                    this.rpcInvoke(read, "_result", NETCONNECTION_CONNECT_FAILED);
-                    this.close(true);
-                    return;
-                }
-
-                if (!read.message().arguments().isEmpty()) {
-                    AMF0Type first = read.message().arguments().getFirst();
-
-                    Map<String, AMF0Type> map = null;
-                    if (first instanceof ECMAArray0 obj) {
-                        map = obj.map();
-                    } else if (first instanceof Object0 obj) {
-                        map = obj.map();
-                    }
-
-                    if (map != null) {
-                        AMF0Type tcUrl0 = map.get("tcUrl");
-                        if (tcUrl0 != null) {
-                            if (tcUrl0 instanceof String0 str) {
-                                this.handshakeUrl = str.value();
-                            }
-                            if (tcUrl0 instanceof LongString0 str) {
-                                this.handshakeUrl = str.value();
-                            }
-                        }
-                    }
-                }
-
-                if (this.handshakeUrl == null) {
-                    // No url, reject.
-                    this.logger.debug("Closing, no tcUrl.");
-                    this.rpcInvoke(read, "_result", NETCONNECTION_CONNECT_FAILED);
-                } else {
-                    // "Allow" the url as long as it's present, we'll validate it during publish().
-                    this.state = State.AUTHENTICATING;
-                    this.rpcInvoke(read, "_result", NETCONNECTION_CONNECT_SUCCESS);
-                }
-                return;
-            }
-
-            case "publish":
-                if (this.state != State.AUTHENTICATING) {
-                    this.logger.debug("Closing, client sent publish() during state %s", this.state);
-                    this.rpcInvoke(
-                        read, "onStatus",
-                        Null0.INSTANCE, NETSTREAM_PUBLISH_BADNAME
-                    );
-                    this.close(true);
-                    return;
-                }
-
-                String key = null;
-                if (read.message().arguments().size() > 1) {
-                    AMF0Type second = read.message().arguments().get(1);
-                    if (second instanceof String0 str) {
-                        key = str.value();
-                    }
-                    if (second instanceof LongString0 str) {
-                        key = str.value();
-                    }
-                }
-
-                this.logger.debug("Authenticating with %s @ %s", key, this.handshakeUrl);
-                this.session = Quark.authenticateSession(this, this.handshakeUrl, key);
-                this.dts.offset(-this.session.prevDts);
-                this.ptsOffset = this.session.prevPts;
-
-                if (this.session == null) {
-                    this.logger.debug("Closing, stream rejected.");
-                    this.rpcInvoke(
-                        read, "onStatus",
-                        Null0.INSTANCE, NETSTREAM_PUBLISH_FAILED
-                    );
-                    this.close(true);
-                } else {
-                    // Allow it!
-
-                    this.logger.debug("Stream allowed.");
-                    this.state = State.RUNNING;
-                    this.rpcInvoke(
-                        read, "onStatus",
-                        Null0.INSTANCE, NETSTREAM_PUBLISH_START
-                    );
-                }
-                return;
-
-            case "deleteStream":
-                this.logger.debug("Stream closed by client.");
-                this.close(true);
-                this.rpcInvoke(read, "_result", Null0.INSTANCE);
-                return;
-
-            case "createStream":
-                this.rpcInvoke(read, "_result", Null0.INSTANCE, new Number0(1));
-                return;
-
-            case "releaseStream":
-                // Dummy.
-                this.rpcInvoke(read, "_result", Null0.INSTANCE);
-                return;
-
-            case "FCPublish":
-            case "FCUnpublish":
-                return; // Unhandled but recognized.
-
-        }
-    }
-
-    private void handleAudio(RTMPChunk<RTMPMessageAudio> read) throws IOException {
+    private void handleAudio(int timestamp, RTMPMessageAudio message) {
         if (this.jammed) return; // Just in case.
 
 //        this.logger.trace("Audio packet: %s", read);
@@ -303,12 +154,12 @@ class _RTMPProvider implements SessionProvider, AutoCloseable {
             return;
         }
 
-        FLVTag tag = new FLVTag(FLVTagType.AUDIO, this.dts.next(), 0, read.message().payload());
+        FLVTag tag = new FLVTag(FLVTagType.AUDIO, this.dts.next(), 0, message.payload());
 
-        this.session.data(new FLVData(read.timestamp() + this.ptsOffset, tag));
+        this.session.data(new FLVData(timestamp + this.ptsOffset, tag));
     }
 
-    private void handleVideo(RTMPChunk<RTMPMessageVideo> read) throws IOException {
+    private void handleVideo(int timestamp, RTMPMessageVideo message) {
         if (this.jammed) return; // Just in case.
 
 //        this.logger.trace("Video packet: %s", read);
@@ -319,9 +170,9 @@ class _RTMPProvider implements SessionProvider, AutoCloseable {
             return;
         }
 
-        FLVTag tag = new FLVTag(FLVTagType.VIDEO, this.dts.next(), 0, read.message().payload());
+        FLVTag tag = new FLVTag(FLVTagType.VIDEO, this.dts.next(), 0, message.payload());
 
-        this.session.data(new FLVData(read.timestamp() + this.ptsOffset, tag));
+        this.session.data(new FLVData(timestamp + this.ptsOffset, tag));
     }
 
     @Override
@@ -330,6 +181,11 @@ class _RTMPProvider implements SessionProvider, AutoCloseable {
 
         this.logger.debug("Closing...");
         this.state = State.CLOSING;
+
+        if (this.stream != null) {
+            this.stream.setStatus(NetStatus.NS_UNPUBLISH_SUCCESS);
+        }
+        this.setStatus(NetStatus.NC_CONNECT_CLOSED);
 
         if (this.session != null && !this.jammed) {
             try {
