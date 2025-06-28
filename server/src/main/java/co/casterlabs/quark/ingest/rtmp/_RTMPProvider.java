@@ -60,6 +60,7 @@ class _RTMPProvider extends ServerNetConnection implements SessionProvider, Auto
 
     @Override
     public ObjectLike connect(ConnectArgs args) throws IOException, InterruptedException, CallError {
+        this.logger.debug(args);
         this.handshakeUrl = args.tcUrl();
 
         // "Allow" the url as long as it's present, we'll validate it during publish().
