@@ -1,19 +1,32 @@
 package co.casterlabs.quark.session.info;
 
+import java.util.concurrent.TimeUnit;
+
+import org.jetbrains.annotations.Nullable;
+
 import co.casterlabs.quark.util.BitrateEstimator;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
+import co.casterlabs.rakurai.json.annotating.JsonExclude;
 import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @JsonClass(exposeAll = true)
 public abstract class StreamInfo {
-    public final int id;
-    public final String codec;
+    private static final long UPDATE_INTERVAL = TimeUnit.MINUTES.toMillis(15);
 
+    public final int id;
     public final BitrateEstimator bitrate = new BitrateEstimator();
+    public String codec;
+
+    public @JsonExclude volatile long lastUpdated = 0;
+    public @JsonExclude volatile boolean updating = false;
 
     public abstract void apply(JsonObject ff);
+
+    public boolean needsUpdate() {
+        return !updating && System.currentTimeMillis() - this.lastUpdated > UPDATE_INTERVAL;
+    }
 
     @JsonClass(exposeAll = true)
     public static class AudioStreamInfo extends StreamInfo {
@@ -21,12 +34,20 @@ public abstract class StreamInfo {
         public int channels = -1;
         public String layout;
 
-        public AudioStreamInfo(int id, String codec) {
-            super(id, codec);
+        public AudioStreamInfo(int id, @Nullable String codec) {
+            super(id);
+            this.codec = codec;
         }
 
         @Override
         public void apply(JsonObject ff) {
+            this.lastUpdated = System.currentTimeMillis();
+            this.updating = false;
+
+            if (this.codec == null && ff.containsKey("codec_name")) {
+                this.codec = ff.getString("codec_name");
+            }
+
             this.sampleRate = Double.parseDouble(ff.getString("sample_rate"));
             this.channels = ff.getNumber("channels").intValue();
 
@@ -49,11 +70,19 @@ public abstract class StreamInfo {
         public int keyFrameInterval = -1; // seconds
 
         public VideoStreamInfo(int id, String codec) {
-            super(id, codec);
+            super(id);
+            this.codec = codec;
         }
 
         @Override
         public void apply(JsonObject ff) {
+            this.lastUpdated = System.currentTimeMillis();
+            this.updating = false;
+
+            if (this.codec == null && ff.containsKey("codec_name")) {
+                this.codec = ff.getString("codec_name");
+            }
+
             this.width = ff.getNumber("width").intValue();
             this.height = ff.getNumber("height").intValue();
 

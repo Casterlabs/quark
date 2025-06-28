@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
 
+import org.jetbrains.annotations.Nullable;
+
 import co.casterlabs.commons.io.streams.StreamUtil;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
@@ -83,7 +85,9 @@ class _CodecsSessionListener extends SessionListener {
 
             info.bitrate.sample(video.size(), tag.timestamp());
 
-            if (video.isSequenceHeader()) {
+            if (video.isSequenceHeader() || info.needsUpdate()) {
+                // Since we do not support the ex video payload, we rely on the update interval
+                // to keep us up-to-date. TODO :^)
                 update("v:0", info);
             }
         } else if (tag.data() instanceof FLVStandardAudioTagData astd) {
@@ -91,7 +95,7 @@ class _CodecsSessionListener extends SessionListener {
 
             info.bitrate.sample(astd.size(), tag.timestamp());
 
-            if (astd.isSequenceHeader()) {
+            if (astd.isSequenceHeader() || info.needsUpdate()) {
                 update("a:0", info);
             }
         } else if (tag.data() instanceof FLVExAudioTagData aex) {
@@ -100,7 +104,7 @@ class _CodecsSessionListener extends SessionListener {
 
                 info.bitrate.sample(track.data().size(), tag.timestamp());
 
-                if (aex.isSequenceHeader()) {
+                if (aex.isSequenceHeader() || info.needsUpdate()) {
                     update("a:" + track.id(), info);
                 }
             }
@@ -128,7 +132,7 @@ class _CodecsSessionListener extends SessionListener {
     }
 
     /* https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h */
-    private static String flvToFourCC(FLVVideoCodec codec) {
+    private static @Nullable String flvToFourCC(FLVVideoCodec codec) {
         // @formatter:off
         return switch (codec) {
             case H264 ->          "avc1";
@@ -137,14 +141,14 @@ class _CodecsSessionListener extends SessionListener {
             case SCREEN ->        "fsv1";
             case SCREEN_2 ->      "fsv2";
             case SORENSON_H263 -> "flv1";
-            case JPEG -> "unknown";
-            default -> "unknown";
+            case JPEG -> null;
+            default -> null;
         };
         // @formatter:on
     }
 
     /* https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h */
-    private static String flvToFourCC(FLVAudioFormat format) {
+    private static @Nullable String flvToFourCC(FLVAudioFormat format) {
         // @formatter:off
         return switch (format) {
             case AAC ->        "mp4a";
@@ -156,16 +160,20 @@ class _CodecsSessionListener extends SessionListener {
             case MP3, MP3_8 -> "mp3 ";
             case SPEEX ->      "spx ";
             case NELLYMOSER, NELLYMOSER_16_MONO, NELLYMOSER_8_MONO -> "nmos";
-            case DEVICE_SPECIFIC -> "unknown";
-            default -> "unknown";
+            case DEVICE_SPECIFIC -> null;
+            default -> null;
         };
         // @formatter:on
     }
 
     private void update(String map, StreamInfo toUpdate) {
+        toUpdate.updating = true;
+
         try {
             this.session.addAsyncListener(new FFprobeSessionListener(map, toUpdate));
         } catch (IOException e) {
+            // We intentionally break the state and leave updating set to true, otherwise
+            // we'd go in an infinite loop of updates :P
             if (Quark.DEBUG) {
                 e.printStackTrace();
             }
