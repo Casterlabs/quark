@@ -1,4 +1,4 @@
-package co.casterlabs.quark.ingest.protocols.rtmp;
+package co.casterlabs.quark.ingest.rtmp;
 
 import java.io.IOException;
 

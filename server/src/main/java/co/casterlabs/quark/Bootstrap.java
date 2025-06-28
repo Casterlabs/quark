@@ -2,8 +2,8 @@ package co.casterlabs.quark;
 
 import java.io.IOException;
 
-import co.casterlabs.quark.egress.http.HTTPDaemon;
-import co.casterlabs.quark.ingest.protocols.rtmp.RTMPServer;
+import co.casterlabs.quark.http.HTTPDaemon;
+import co.casterlabs.quark.ingest.rtmp.RTMPServer;
 
 public class Bootstrap {
 

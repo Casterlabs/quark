@@ -1,4 +1,4 @@
-package co.casterlabs.quark.egress.http;
+package co.casterlabs.quark.http;
 
 import co.casterlabs.rhs.HttpMethod;
 import co.casterlabs.rhs.HttpStatus.StandardHttpStatus;

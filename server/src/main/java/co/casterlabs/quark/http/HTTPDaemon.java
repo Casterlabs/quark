@@ -1,4 +1,4 @@
-package co.casterlabs.quark.egress.http;
+package co.casterlabs.quark.http;
 
 import java.io.IOException;
 

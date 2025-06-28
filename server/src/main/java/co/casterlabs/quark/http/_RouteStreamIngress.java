@@ -1,10 +1,10 @@
-package co.casterlabs.quark.egress.http;
+package co.casterlabs.quark.http;
 
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
+import co.casterlabs.quark.ingest.ffmpeg.FFmpegProvider;
 import co.casterlabs.quark.session.Session;
-import co.casterlabs.quark.session.listeners.FFmpegRTMPSessionListener;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
 import co.casterlabs.rakurai.json.serialization.JsonParseException;
@@ -17,23 +17,20 @@ import co.casterlabs.rhs.protocol.api.endpoints.HttpEndpoint;
 import co.casterlabs.rhs.protocol.http.HttpResponse;
 import co.casterlabs.rhs.protocol.http.HttpSession;
 
-public class _RouteStreamEgressExternal implements EndpointProvider {
+public class _RouteStreamIngress implements EndpointProvider {
 
-    @HttpEndpoint(path = "/session/:sessionId/egress/external/rtmp", allowedMethods = {
+    @SuppressWarnings("resource")
+    @HttpEndpoint(path = "/session/ingress", allowedMethods = {
             HttpMethod.POST
     }, postprocessor = _Processor.class, preprocessor = _Processor.class)
-    public HttpResponse onEgressRTMP(HttpSession session, EndpointData<User> data) {
+    public HttpResponse onIngressFile(HttpSession session, EndpointData<User> data) {
         try {
             data.attachment().checkAdmin();
 
-            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
-            if (qSession == null) {
-                return ApiResponse.SESSION_NOT_FOUND.response();
-            }
+            IngressFileBody body = Rson.DEFAULT.fromJson(session.body().string(), IngressFileBody.class);
 
-            EgressRTMPBody body = Rson.DEFAULT.fromJson(session.body().string(), EgressRTMPBody.class);
-
-            qSession.addAsyncListener(new FFmpegRTMPSessionListener(body.url, body.foreignId));
+            Session qSession = Quark.session(body.id, true);
+            new FFmpegProvider(qSession, body.source, body.loop);
 
             return ApiResponse.success(StandardHttpStatus.CREATED);
         } catch (AuthenticationException e) {
@@ -55,13 +52,15 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
     }
 
     @JsonClass(exposeAll = true)
-    public static class EgressRTMPBody {
-        public String foreignId = null;
-        public String url = null;
+    public static class IngressFileBody {
+        public String id = null;
+        public String source = null;
+        public boolean loop = false;
 
         @JsonValidate
         private void $validate() {
-            if (this.url == null) throw new IllegalArgumentException("url cannot be null.");
+            if (this.id == null) throw new IllegalArgumentException("id cannot be null.");
+            if (this.source == null) throw new IllegalArgumentException("source cannot be null.");
         }
     }
 

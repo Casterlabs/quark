@@ -1,4 +1,4 @@
-package co.casterlabs.quark.egress.http;
+package co.casterlabs.quark.http;
 
 import co.casterlabs.rakurai.json.element.JsonElement;
 import co.casterlabs.rakurai.json.element.JsonObject;

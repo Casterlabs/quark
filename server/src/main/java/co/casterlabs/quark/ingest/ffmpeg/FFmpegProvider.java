@@ -1,4 +1,4 @@
-package co.casterlabs.quark.ingest.protocols.ffmpeg;
+package co.casterlabs.quark.ingest.ffmpeg;
 
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;

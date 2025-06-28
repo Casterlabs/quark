@@ -2,7 +2,7 @@ package co.casterlabs.quark;
 
 import java.io.IOException;
 
-import co.casterlabs.quark.ingest.protocols.ffmpeg.FFmpegProvider;
+import co.casterlabs.quark.ingest.ffmpeg.FFmpegProvider;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
