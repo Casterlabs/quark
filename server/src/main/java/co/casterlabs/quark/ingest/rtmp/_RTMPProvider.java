@@ -103,7 +103,7 @@ class _RTMPProvider extends ServerNetConnection implements SessionProvider, Auto
                     close(true);
                 } else {
                     // Allow it!
-                    dts.offset(-session.prevDts);
+                    dts.offset(session.prevDts);
                     ptsOffset = session.prevPts;
 
                     logger.debug("Stream allowed.");

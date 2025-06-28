@@ -9,6 +9,7 @@ import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.quark.session.FLVData;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionProvider;
+import co.casterlabs.quark.util.WallclockTS;
 
 public class FFmpegProvider implements SessionProvider {
     private final Demuxer demuxer = new Demuxer();
@@ -16,15 +17,15 @@ public class FFmpegProvider implements SessionProvider {
     private final Session session;
     private final Process proc;
 
-    private boolean jammed = false;
+    private final WallclockTS dts = new WallclockTS();
 
-    private final long dtsOffset;
+    private boolean jammed = false;
 
     public FFmpegProvider(Session session, String source, boolean loop) throws IOException {
         this.session = session;
         this.session.setProvider(this);
 
-        this.dtsOffset = this.session.prevDts; // The file already has accurate DTS, so we'll just offset (for jamming).
+        this.dts.offset(session.prevDts);
 
         this.proc = new ProcessBuilder()
             .command(
@@ -80,7 +81,7 @@ public class FFmpegProvider implements SessionProvider {
 
             tag = new FLVTag(
                 tag.type(),
-                (tag.timestamp() + dtsOffset) & 0xFFFFFFFFL, // Rewrite the DTS
+                dts.next(), // Rewrite the DTS
                 tag.streamId(),
                 tag.data()
             );

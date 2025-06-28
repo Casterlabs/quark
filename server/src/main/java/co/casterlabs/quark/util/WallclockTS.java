@@ -1,15 +1,20 @@
 package co.casterlabs.quark.util;
 
 public class WallclockTS {
-    private volatile long base = System.currentTimeMillis();
-    private volatile long prevTimestamp = 0L;
+    private long base = -1;
+    private long offset = System.currentTimeMillis();
+    private long prevTimestamp = 0L;
 
     public void offset(long offset) {
-        this.base += offset;
+        this.offset = offset;
     }
 
     public long next() {
-        long now = System.currentTimeMillis() - this.base;
+        if (this.base == -1) {
+            this.base = System.currentTimeMillis();
+        }
+
+        long now = System.currentTimeMillis() - this.base + offset;
 
         if (now <= this.prevTimestamp) {
             now = this.prevTimestamp + 1; // force it to be monotonic.
