@@ -80,7 +80,7 @@ public class FFmpegProvider implements SessionProvider {
 
             tag = new FLVTag(
                 tag.type(),
-                (tag.timestamp() + dtsOffset) & 0xFFFFFFFF, // Rewrite the DTS
+                (tag.timestamp() + dtsOffset) & 0xFFFFFFFFL, // Rewrite the DTS
                 tag.streamId(),
                 tag.data()
             );

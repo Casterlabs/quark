@@ -15,7 +15,7 @@ public class WallclockTS {
             now = this.prevTimestamp + 1; // force it to be monotonic.
         }
 
-        now &= 0xFFFFFFFF; // as unsigned 32b integer
+        now &= 0xFFFFFFFFL; // as unsigned 32b integer
 
         this.prevTimestamp = now;
         return now;
