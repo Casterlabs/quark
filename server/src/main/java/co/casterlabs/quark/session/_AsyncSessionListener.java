@@ -25,7 +25,7 @@ class _AsyncSessionListener extends SessionListener {
         new ThreadPoolExecutor.DiscardPolicy()
     );
 
-    private final SessionListener delegate;
+    final SessionListener delegate;
 
     @Override
     public void onSequence(Session session, FLVSequence seq) {

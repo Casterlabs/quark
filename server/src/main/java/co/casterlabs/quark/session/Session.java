@@ -119,6 +119,11 @@ public class Session {
         JsonArray listeners = new JsonArray();
         for (SessionListener listener : this.listeners.get()) {
             if (listener.type() == null) continue;
+
+            if (listener instanceof _AsyncSessionListener async) {
+                listener = async.delegate;
+            }
+
             listeners.add(
                 new JsonObject()
                     .put("id", listener.id)
@@ -128,22 +133,6 @@ public class Session {
             );
         }
         return listeners;
-    }
-
-    public void removeById(String id) {
-        for (SessionListener listener : this.listeners.get()) {
-            if (id.equals(listener.id)) {
-                this.removeListener(listener);
-            }
-        }
-    }
-
-    public void removeByFid(String fid) {
-        for (SessionListener listener : this.listeners.get()) {
-            if (fid.equals(listener.fid())) {
-                this.removeListener(listener);
-            }
-        }
     }
 
     public void addAsyncListener(SessionListener listener) {
@@ -176,12 +165,40 @@ public class Session {
     public void removeListener(SessionListener listener) {
         Map<String, SessionListener> map = this.listenerMap.acquire();
         try {
-            SessionListener removed = map.remove(listener.id);
-            this.listeners.remove(removed);
+            if (listener instanceof _AsyncSessionListener async) {
+                map.remove(async.delegate.id);
+            } else {
+                map.remove(listener.id);
+            }
         } finally {
             this.listenerMap.release();
         }
+
+        this.listeners.remove(listener);
         listener.onClose(this);
+    }
+
+    public void removeById(String id) {
+        for (SessionListener listener : this.listeners.get()) {
+            if (listener instanceof _AsyncSessionListener async) {
+                if (id.equals(async.delegate.id)) {
+                    this.removeListener(async); // NB: We have to pass the async listener, NOT it's delegate.
+                }
+            } else {
+                if (id.equals(listener.id)) {
+                    this.removeListener(listener);
+                }
+            }
+        }
+    }
+
+    public void removeByFid(String fid) {
+        for (SessionListener listener : this.listeners.get()) {
+            // NB: FID is already proxied to the delegate by async listener.
+            if (fid.equals(listener.fid())) {
+                this.removeListener(listener);
+            }
+        }
     }
 
 }
