@@ -93,7 +93,7 @@ export default class QuarkInstance {
 	}
 
 	async startSessionEgress(sid: SessionId, format: 'RTMP', url: string, fid: ForeignId): Promise<void> {
-		await this.apiCall(`/session/${encodeURI(sid)}/egress/external/${encodeURI(format)}`, {
+		await this.apiCall(`/session/${encodeURI(sid)}/egress/external/${encodeURI(format.toLowerCase())}`, {
 			method: 'POST',
 			body: JSON.stringify({
 				foreignId: fid,
@@ -103,7 +103,7 @@ export default class QuarkInstance {
 	}
 
 	sessionPlaybackUrl(sid: SessionId, format: 'FLV' | 'TS' | 'MKV' | 'WEBM' | 'OPUS' | 'MP3'): string {
-		return `${this._address}/session/${encodeURI(sid)}/egress/playback/${format.toLowerCase()}?authorization=${this._token}`;
+		return `${this._address}/session/${encodeURI(sid)}/egress/playback/${encodeURI(format.toLowerCase())}?authorization=${this._token}`;
 	}
 
 	sessionThumbnailUrl(sid: SessionId): string {
