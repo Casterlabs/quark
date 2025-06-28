@@ -12,12 +12,19 @@ public class _RouteMeta implements EndpointProvider {
 
     @HttpEndpoint(path = "/_healthcheck", allowedMethods = {
             HttpMethod.GET
-    })
+    }, postprocessor = _Processor.class)
     public HttpResponse onHealthCheck(HttpSession session, EndpointData<Void> data) {
         return HttpResponse.newFixedLengthResponse(StandardHttpStatus.OK, "Healthy");
     }
 
-    @HttpEndpoint(path = ".*", priority = -1000)
+    @HttpEndpoint(path = ".*", allowedMethods = {
+            HttpMethod.OPTIONS
+    }, postprocessor = _Processor.class)
+    public HttpResponse onCors(HttpSession session, EndpointData<Void> data) {
+        return HttpResponse.newFixedLengthResponse(StandardHttpStatus.OK, "");
+    }
+
+    @HttpEndpoint(path = ".*", priority = -1000, postprocessor = _Processor.class)
     public HttpResponse onUnknownEndpoint(HttpSession session, EndpointData<Void> data) {
         return HttpResponse.newFixedLengthResponse(StandardHttpStatus.METHOD_NOT_ALLOWED, "Unknown endpoint.");
     }
