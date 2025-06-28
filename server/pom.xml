@@ -141,7 +141,7 @@
 		<dependency>
 			<groupId>co.casterlabs</groupId>
 			<artifactId>flv4j</artifactId>
-			<version>1ab3895</version>
+			<version>97397f1</version>
 			<scope>compile</scope>
 		</dependency>
 
