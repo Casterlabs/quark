@@ -53,13 +53,13 @@ public class Webhooks {
     /**
      * @return null, if the session was disallowed.
      */
-    public static String sessionStart(String url, String key) {
+    public static String sessionStart(String ip, String url, String key) {
         if (Quark.WEBHOOK_URL == null) return key; // dummy mode.
 
         try {
             SessionStartResponse res = post(
                 "SESSION_START",
-                new SessionStartRequest(url, key),
+                new SessionStartRequest(ip, url, key),
                 SessionStartResponse.class
             );
 
@@ -73,7 +73,7 @@ public class Webhooks {
     }
 
     @JsonClass(exposeAll = true)
-    private static record SessionStartRequest(String url, String key) {
+    private static record SessionStartRequest(String ip, String url, String key) {
     }
 
     @JsonClass(exposeAll = true)

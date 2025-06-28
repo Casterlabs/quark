@@ -90,7 +90,12 @@ class _RTMPProvider extends ServerNetConnection implements SessionProvider, Auto
                 }
 
                 logger.debug("Authenticating with %s @ %s", key, handshakeUrl);
-                session = Quark.authenticateSession(_RTMPProvider.this, handshakeUrl, key);
+                session = Quark.authenticateSession(
+                    _RTMPProvider.this,
+                    conn.socket().getInetAddress().getHostAddress(),
+                    handshakeUrl,
+                    key
+                );
 
                 if (session == null) {
                     logger.debug("Closing, stream rejected.");
