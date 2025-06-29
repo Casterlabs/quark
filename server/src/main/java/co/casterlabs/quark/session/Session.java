@@ -171,10 +171,11 @@ public class Session {
             } else {
                 removed = map.remove(listener.id);
             }
-
         } finally {
             this.listenerMap.release();
         }
+
+        if (removed == null) return;
 
         this.listeners.remove(removed);
         listener.onClose(this);
