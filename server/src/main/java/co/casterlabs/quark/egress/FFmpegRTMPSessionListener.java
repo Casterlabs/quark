@@ -1,9 +1,10 @@
-package co.casterlabs.quark.session.listeners;
+package co.casterlabs.quark.egress;
 
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 
 import co.casterlabs.quark.Quark;
+import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
 
 public class FFmpegRTMPSessionListener extends FLVProcessSessionListener {
     private final String fid;
