@@ -15,12 +15,11 @@ public class WallclockTS {
         }
 
         long now = System.currentTimeMillis() - this.base + offset;
-
-        if (now <= this.prevTimestamp) {
-            now = this.prevTimestamp + 1; // force it to be monotonic.
-        }
-
         now &= 0xFFFFFFFFL; // as unsigned 32b integer
+
+        if (now < this.prevTimestamp) {
+            now = this.prevTimestamp; // force it to be monotonic.
+        }
 
         this.prevTimestamp = now;
         return now;
