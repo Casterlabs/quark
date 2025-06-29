@@ -33,7 +33,7 @@ public class RTMPServer {
 
                             try (
                                 SocketConnection conn = new SocketConnection(sock);
-                                _RTMPProvider rtmp = new _RTMPProvider(conn)) {
+                                _RTMPConnection rtmp = new _RTMPConnection(conn)) {
 //                                rtmp.run();
                                 rtmp.handle(RTMP_MISC_TF);
                             } catch (Throwable t) {

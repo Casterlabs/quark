@@ -75,10 +75,10 @@ public class Quark {
         }
     }
 
-    public static Session authenticateSession(SessionProvider provider, String ip, String url, String key) throws IOException {
+    public static Session authenticateSession(SessionProvider provider, String ip, String url, String app, String key) throws IOException {
         if (url == null || key == null) return null;
 
-        String sessionId = Webhooks.sessionStart(ip, url, key);
+        String sessionId = Webhooks.sessionStart(ip, url, app, key);
         if (sessionId == null) return null;
 
         Session session = Quark.session(sessionId, true);
