@@ -120,15 +120,6 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
         this.session.data(new FLVData(timestamp + this.ptsOffset, tag));
     }
 
-    /* ---------------- */
-    /*  Quark Session   */
-    /* ---------------- */
-
-    @Override
-    public void close(boolean graceful) {
-        this.rtmp.close(graceful);
-    }
-
     void closeSession(boolean graceful) {
         if (this.session == null) return; // We haven't even started yet.
 
@@ -143,6 +134,15 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
                 this.rtmp.logger.warn("Exception whilst ending session, this could be bad!\n%s", t);
             }
         }
+    }
+
+    /* ---------------- */
+    /*  Quark Session   */
+    /* ---------------- */
+
+    @Override
+    public void close(boolean graceful) {
+        this.rtmp.close(graceful);
     }
 
     @Override
