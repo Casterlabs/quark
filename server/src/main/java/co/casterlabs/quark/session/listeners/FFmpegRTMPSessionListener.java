@@ -31,7 +31,7 @@ public class FFmpegRTMPSessionListener extends FLVProcessSessionListener {
 
     @Override
     public Type type() {
-        return Type.RTMP;
+        return Type.RTMP_EGRESS;
     }
 
     @Override

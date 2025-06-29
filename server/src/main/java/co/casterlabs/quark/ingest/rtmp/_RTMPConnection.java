@@ -20,7 +20,8 @@ import co.casterlabs.quark.util.SocketConnection;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 
 class _RTMPConnection extends ServerNetConnection implements AutoCloseable {
-    private final _RTMPSessionProvider provider = new _RTMPSessionProvider(_RTMPConnection.this);
+    private final _RTMPSessionProvider provider = new _RTMPSessionProvider(this);
+    private final _RTMPSessionListener listener = new _RTMPSessionListener(this);
 
     final SocketConnection conn;
     final FastLogger logger;
@@ -67,6 +68,11 @@ class _RTMPConnection extends ServerNetConnection implements AutoCloseable {
             }
 
             @Override
+            public void play(String name, double start, double duration, boolean reset) throws IOException, InterruptedException {
+                listener.play(name);
+            }
+
+            @Override
             public void deleteStream() throws IOException, InterruptedException {
                 logger.debug("Stream closed by client.");
                 close(true);
@@ -80,7 +86,8 @@ class _RTMPConnection extends ServerNetConnection implements AutoCloseable {
         this.logger.debug("Closing...");
         this.state = _RTMPState.CLOSING;
 
-        this.provider.closeSession(graceful);
+        this.provider.closeConnection(graceful);
+        this.listener.closeConnection();
 
         this.setStatus(NetStatus.NC_CONNECT_CLOSED);
 
@@ -94,7 +101,6 @@ class _RTMPConnection extends ServerNetConnection implements AutoCloseable {
 
     @Override
     public void close() {
-        this.logger.debug("Closing...");
         this.close(false);
     }
 

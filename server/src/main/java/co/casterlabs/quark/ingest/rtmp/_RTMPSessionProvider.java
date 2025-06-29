@@ -36,7 +36,7 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
         if (this.rtmp.state != _RTMPState.AUTHENTICATING) {
             this.rtmp.logger.debug("Closing, client sent publish() during state %s", this.rtmp.state);
             this.rtmp.stream.setStatus(NetStatus.NS_PUBLISH_FAILED);
-            close(true);
+            this.rtmp.close(true);
             return;
         }
 
@@ -52,7 +52,7 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
         if (this.session == null) {
             this.rtmp.logger.debug("Closing, stream rejected.");
             this.rtmp.stream.setStatus(NetStatus.NS_PUBLISH_BADNAME);
-            close(true);
+            this.rtmp.close(true);
         } else {
             this.rtmp.logger.debug("Stream allowed.");
             this.rtmp.state = _RTMPState.PROVIDING;
@@ -120,12 +120,10 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
         this.session.data(new FLVData(timestamp + this.ptsOffset, tag));
     }
 
-    void closeSession(boolean graceful) {
-        if (this.session == null) return; // We haven't even started yet.
+    void closeConnection(boolean graceful) {
+        if (this.session == null) return;
 
-        if (this.rtmp.stream != null) {
-            this.rtmp.stream.setStatus(NetStatus.NS_UNPUBLISH_SUCCESS);
-        }
+        this.rtmp.stream.setStatus(NetStatus.NS_UNPUBLISH_SUCCESS);
 
         if (this.session != null && !this.jammed) {
             try {
