@@ -136,21 +136,20 @@ public class Session {
     }
 
     public void addAsyncListener(SessionListener listener) {
-        SessionListener async = new _AsyncSessionListener(listener);
-
-        // NB: We don't want to use the async listener's id
-        // because that would make it unremovable!
-        this._addListener(listener.id, async);
+        this.addSyncListener(new _AsyncSessionListener(listener));
     }
 
     public void addSyncListener(SessionListener listener) {
-        this._addListener(listener.id, listener);
-    }
-
-    private void _addListener(String id, SessionListener listener) {
         if (this.provider != null) {
             FLVSequence seq = new FLVSequence(this.sequenceTags.toArray(new FLVTag[0]));
             listener.onSequence(this, seq);
+        }
+
+        String id;
+        if (listener instanceof _AsyncSessionListener async) {
+            id = async.delegate.id;
+        } else {
+            id = listener.id;
         }
 
         Map<String, SessionListener> map = this.listenerMap.acquire();
@@ -163,18 +162,21 @@ public class Session {
     }
 
     public void removeListener(SessionListener listener) {
+        SessionListener removed;
+
         Map<String, SessionListener> map = this.listenerMap.acquire();
         try {
             if (listener instanceof _AsyncSessionListener async) {
-                map.remove(async.delegate.id);
+                removed = map.remove(async.delegate.id);
             } else {
-                map.remove(listener.id);
+                removed = map.remove(listener.id);
             }
+
         } finally {
             this.listenerMap.release();
         }
 
-        this.listeners.remove(listener);
+        this.listeners.remove(removed);
         listener.onClose(this);
     }
 
