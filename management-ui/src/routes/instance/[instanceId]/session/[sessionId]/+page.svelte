@@ -3,8 +3,8 @@
 
 	import LoadingSpinner from '$lib/layout/LoadingSpinner.svelte';
 	import Modal from '$lib/layout/Modal.svelte';
-	import SessionVideoPlayer from '$lib/layout/SessionVideoPlayer.svelte';
 	import StatsForNerds from '$lib/layout/StatsForNerds.svelte';
+	import Player from '$lib/layout/player/Player.svelte';
 	import { IconTrash } from '@casterlabs/heroicons-svelte';
 	import { Button, Input, Select } from '@casterlabs/ui';
 
@@ -29,7 +29,7 @@
 {:then session}
 	{#if session}
 		<div class="space-y-4 max-w-4xl mx-auto">
-			<SessionVideoPlayer instance={data.instance} sessionId={session.id} />
+			<Player instance={data.instance} {session} />
 
 			<ul class="flex items-row h-16 space-x-2">
 				<li class="basis-1/3">

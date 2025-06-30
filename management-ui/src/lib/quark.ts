@@ -103,7 +103,8 @@ export default class QuarkInstance {
 	}
 
 	sessionPlaybackUrl(sid: SessionId, format: 'FLV' | 'TS' | 'MKV' | 'WEBM' | 'OPUS' | 'MP3'): string {
-		return `${this._address}/session/${encodeURI(sid)}/egress/playback/${encodeURI(format.toLowerCase())}?authorization=${this._token}`;
+		// We include the ?v=date to ensure that the browser doesn't cache the file.
+		return `${this._address}/session/${encodeURI(sid)}/egress/playback/${encodeURI(format.toLowerCase())}?v=${Date.now()}&authorization=${this._token}`;
 	}
 
 	sessionThumbnailUrl(sid: SessionId): string {
