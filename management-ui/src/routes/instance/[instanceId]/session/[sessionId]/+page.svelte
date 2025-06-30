@@ -117,7 +117,7 @@
 			<Button
 				class="px-1 w-full"
 				onclick={() => {
-					const fid = `mui-${Math.random().toString(28).substring(2)}`;
+					const fid = `${new URL(startEgressUrl).hostname}-${Math.random().toString(28).substring(2)}`;
 					data.instance.startSessionEgress(session.id, startEgressProtocol, startEgressUrl, fid);
 					showStartEgressModal = false;
 				}}
