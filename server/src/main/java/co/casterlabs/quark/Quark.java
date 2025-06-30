@@ -69,6 +69,8 @@ public class Quark {
                 }
             }
 
+            Webhooks.sessionStarted(id);
+
             return session;
         } finally {
             sessions.release();
@@ -83,8 +85,6 @@ public class Quark {
 
         Session session = Quark.session(sessionId, true);
         session.setProvider(provider);
-
-        Webhooks.sessionStarted(sessionId);
 
         return session;
     }
