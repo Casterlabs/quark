@@ -47,20 +47,20 @@ public class Webhooks {
     }
 
     /* ---------------- */
-    /*  Session Start   */
+    /* Session Starting */
     /* ---------------- */
 
     /**
      * @return null, if the session was disallowed.
      */
-    public static String sessionStart(String ip, String url, String app, String key) {
+    public static String sessionStarting(String ip, String url, String app, String key) {
         if (Quark.WEBHOOK_URL == null) return key; // dummy mode.
 
         try {
-            SessionStartResponse res = post(
-                "SESSION_START",
-                new SessionStartRequest(ip, url, app, key),
-                SessionStartResponse.class
+            SessionStartingResponse res = post(
+                "SESSION_STARTING",
+                new SessionStartingRequest(ip, url, app, key),
+                SessionStartingResponse.class
             );
 
             return res.id;
@@ -73,16 +73,40 @@ public class Webhooks {
     }
 
     @JsonClass(exposeAll = true)
-    private static record SessionStartRequest(String ip, String url, String app, String key) {
+    private static record SessionStartingRequest(String ip, String url, String app, String key) {
     }
 
     @JsonClass(exposeAll = true)
-    private static class SessionStartResponse {
+    private static class SessionStartingResponse {
         public String id = null;
     }
 
     /* ---------------- */
-    /*   Session End    */
+    /* Session Started  */
+    /* ---------------- */
+
+    public static void sessionStarted(String id) {
+        if (Quark.WEBHOOK_URL == null) return; // dummy mode.
+
+        try {
+            post(
+                "SESSION_STARTED",
+                new SessionStartedRequest(id),
+                null
+            );
+        } catch (IOException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @JsonClass(exposeAll = true)
+    private static record SessionStartedRequest(String id) {
+    }
+
+    /* ---------------- */
+    /*  Session Ending  */
     /* ---------------- */
 
     /**
@@ -120,13 +144,17 @@ public class Webhooks {
         public boolean loop = false;
     }
 
-    public static void sessionEnded(Session session, boolean wasGraceful) {
+    /* ---------------- */
+    /*  Session Ended   */
+    /* ---------------- */
+
+    public static void sessionEnded(String id) {
         if (Quark.WEBHOOK_URL == null) return; // dummy mode.
 
         try {
             post(
                 "SESSION_ENDED",
-                new SessionEndingRequest(session.id, wasGraceful),
+                new SessionEndedRequest(id),
                 null
             );
         } catch (IOException e) {
@@ -134,6 +162,10 @@ public class Webhooks {
                 e.printStackTrace();
             }
         }
+    }
+
+    @JsonClass(exposeAll = true)
+    private static record SessionEndedRequest(String id) {
     }
 
 }

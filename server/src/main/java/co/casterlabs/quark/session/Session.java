@@ -110,7 +110,7 @@ public class Session {
             }
         }
 
-        Webhooks.sessionEnded(this, graceful);
+        Webhooks.sessionEnded(this.id);
     }
 
     public JsonArray listeners() {
