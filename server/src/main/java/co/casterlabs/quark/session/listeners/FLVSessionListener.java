@@ -8,7 +8,6 @@ import co.casterlabs.flv4j.flv.muxing.StreamFLVMuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
-import co.casterlabs.quark.session.FLVData;
 import co.casterlabs.quark.session.FLVSequence;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionListener;
@@ -48,14 +47,12 @@ public abstract class FLVSessionListener extends SessionListener {
     }
 
     @Override
-    public void onData(Session session, FLVData data) {
+    public void onTag(Session session, FLVTag tag) {
         if (this.playbackMuxer == null) return; // Invalid state?
 
         if (!this.hasGottenSequence) {
             return;
         }
-
-        FLVTag tag = data.tag();
 
         if (!this.hasOffset) {
             boolean sessionHasVideo = session.info.video.length > 0;
@@ -63,7 +60,7 @@ public abstract class FLVSessionListener extends SessionListener {
 
             if (!sessionHasVideo || isVideoKeyFrame) {
                 this.hasOffset = true;
-                this.playbackMuxer.timestampOffset = -tag.timestamp();
+//                this.playbackMuxer.timestampOffset = -tag.timestamp();
                 FastLogger.logStatic(LogLevel.DEBUG, "Got offset: %d", this.playbackMuxer.timestampOffset);
                 // fall through and write it out.
             } else {

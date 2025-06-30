@@ -6,10 +6,8 @@ import java.lang.ProcessBuilder.Redirect;
 import co.casterlabs.flv4j.flv.FLVFileHeader;
 import co.casterlabs.flv4j.flv.muxing.NonSeekableFLVDemuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
-import co.casterlabs.quark.session.FLVData;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionProvider;
-import co.casterlabs.quark.util.WallclockTS;
 
 public class FFmpegProvider implements SessionProvider {
     private final Demuxer demuxer = new Demuxer();
@@ -17,7 +15,7 @@ public class FFmpegProvider implements SessionProvider {
     private final Session session;
     private final Process proc;
 
-    private final WallclockTS dts = new WallclockTS();
+    private final long dtsOffset;
 
     private boolean jammed = false;
 
@@ -25,7 +23,7 @@ public class FFmpegProvider implements SessionProvider {
         this.session = session;
         this.session.setProvider(this);
 
-        this.dts.offset(session.prevDts);
+        this.dtsOffset = session.prevDts;
 
         this.proc = new ProcessBuilder()
             .command(
@@ -81,12 +79,12 @@ public class FFmpegProvider implements SessionProvider {
 
             tag = new FLVTag(
                 tag.type(),
-                dts.next(), // Rewrite the DTS
+                (tag.timestamp() + dtsOffset) & 0xFFFFFFFFL, // rewrite with our offset
                 tag.streamId(),
                 tag.data()
             );
 
-            session.data(new FLVData(tag.timestamp(), tag));
+            session.tag(tag);
         }
 
     }

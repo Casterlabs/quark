@@ -19,12 +19,12 @@ class _ThumbnailSessionListener extends SessionListener {
     @Override
     public void onSequence(Session session, FLVSequence seq) {
         for (FLVTag tag : seq.tags()) {
-            this.onData(session, new FLVData(0, tag));
+            this.onTag(session, tag);
         }
     }
 
     @Override
-    public void onData(Session session, FLVData data) {
+    public void onTag(Session session, FLVTag tag) {
         if (session.info.video.length == 0) return; // No video, don't process at all.
 
         if (this.isGeneratingThumbnail) return;

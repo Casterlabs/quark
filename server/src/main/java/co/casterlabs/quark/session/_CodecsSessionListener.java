@@ -119,8 +119,8 @@ class _CodecsSessionListener extends SessionListener {
     }
 
     @Override
-    public void onData(Session session, FLVData data) {
-        this.process(data.tag());
+    public void onTag(Session session, FLVTag tag) {
+        this.process(tag);
     }
 
     @Override

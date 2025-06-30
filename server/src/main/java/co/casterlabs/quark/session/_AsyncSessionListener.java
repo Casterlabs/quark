@@ -6,6 +6,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import co.casterlabs.flv4j.flv.tags.FLVTag;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -33,8 +34,8 @@ class _AsyncSessionListener extends SessionListener {
     }
 
     @Override
-    public void onData(Session session, FLVData data) {
-        this.packetQueue.submit(() -> this.delegate.onData(session, data));
+    public void onTag(Session session, FLVTag tag) {
+        this.packetQueue.submit(() -> this.delegate.onTag(session, tag));
     }
 
     @Override

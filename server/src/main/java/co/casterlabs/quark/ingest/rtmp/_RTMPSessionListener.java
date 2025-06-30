@@ -19,7 +19,6 @@ import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.auth.Auth;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
-import co.casterlabs.quark.session.FLVData;
 import co.casterlabs.quark.session.FLVSequence;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionListener;
@@ -86,17 +85,17 @@ class _RTMPSessionListener extends SessionListener {
         }
     }
 
-    private void writeOut(Session session, long pts, FLVTag tag) {
+    private void writeOut(Session session, FLVTag tag) {
         try {
-            int pts32 = (int) (pts & 0xFFFFFFFFL);
+            int dts32 = (int) (tag.timestamp() & 0xFFFFFFFFL);
 
             if (tag.data() instanceof FLVAudioTagData audio) {
-                this.rtmp.stream.sendMessage(pts32, new RTMPMessageAudio(audio));
+                this.rtmp.stream.sendMessage(dts32, new RTMPMessageAudio(audio));
             } else if (tag.data() instanceof FLVVideoPayload video) {
-                this.rtmp.stream.sendMessage(pts32, new RTMPMessageVideo(video));
+                this.rtmp.stream.sendMessage(dts32, new RTMPMessageVideo(video));
             } else if (tag.data() instanceof FLVScriptTagData script) {
                 this.rtmp.stream.sendMessage(
-                    pts32,
+                    dts32,
                     new RTMPMessageData0(
                         Arrays.asList(
                             SET_DATA_FRAME,
@@ -136,17 +135,17 @@ class _RTMPSessionListener extends SessionListener {
     public void onSequence(Session session, FLVSequence seq) {
         this.hasGottenSequence = true;
         for (FLVTag tag : seq.tags()) {
-            this.writeOut(session, 0, tag);
+            this.writeOut(session, tag);
         }
     }
 
     @Override
-    public void onData(Session session, FLVData data) {
+    public void onTag(Session session, FLVTag tag) {
         if (!this.hasGottenSequence) {
             return;
         }
 
-        this.writeOut(session, data.pts(), data.tag());
+        this.writeOut(session, tag);
     }
 
     @Override

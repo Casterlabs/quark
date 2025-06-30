@@ -14,14 +14,11 @@ import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageVideo;
 import co.casterlabs.flv4j.rtmp.net.NetStatus;
 import co.casterlabs.flv4j.rtmp.net.rpc.RPCHandler.MessageHandler;
 import co.casterlabs.quark.Quark;
-import co.casterlabs.quark.session.FLVData;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionProvider;
-import co.casterlabs.quark.util.WallclockTS;
 
 class _RTMPSessionProvider implements SessionProvider, MessageHandler {
-    private final WallclockTS dts = new WallclockTS();
-    private long ptsOffset;
+    private long dtsOffset;
 
     private final _RTMPConnection rtmp;
     private Session session;
@@ -57,8 +54,7 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
             this.rtmp.logger.debug("Stream allowed.");
             this.rtmp.state = _RTMPState.PROVIDING;
 
-            this.dts.offset(session.prevDts);
-            this.ptsOffset = session.prevPts;
+            this.dtsOffset = session.prevDts;
 
             this.rtmp.stream.onMessage = this;
             this.rtmp.stream.setStatus(NetStatus.NS_PUBLISH_START);
@@ -83,9 +79,9 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
                     ECMAArray0 value = (ECMAArray0) data.arguments().get(2);
 
                     FLVScriptTagData payload = new FLVScriptTagData(method.value(), value);
-                    FLVTag tag = new FLVTag(FLVTagType.SCRIPT, 0, 0, payload);
+                    FLVTag tag = new FLVTag(FLVTagType.SCRIPT, timestamp, 0, payload);
                     this.rtmp.logger.debug("Got script sequence: %s", tag);
-                    this.session.data(new FLVData(timestamp, tag));
+                    this.session.tag(tag);
                 }
             }
             return;
@@ -101,10 +97,11 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
             return;
         }
 
-//         this.logger.trace("Audio packet: %s", read);
-        FLVTag tag = new FLVTag(FLVTagType.AUDIO, this.dts.next(), 0, message.payload());
+        long dts = timestamp + dtsOffset;
 
-        this.session.data(new FLVData(timestamp + this.ptsOffset, tag));
+//         this.logger.trace("Audio packet: %s", read);
+        FLVTag tag = new FLVTag(FLVTagType.AUDIO, dts, 0, message.payload());
+        this.session.tag(tag);
     }
 
     private void handleVideo(int timestamp, RTMPMessageVideo message) {
@@ -114,10 +111,11 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
             return;
         }
 
-//         this.logger.trace("Video packet: %s", read);
-        FLVTag tag = new FLVTag(FLVTagType.VIDEO, this.dts.next(), 0, message.payload());
+        long dts = timestamp + dtsOffset;
 
-        this.session.data(new FLVData(timestamp + this.ptsOffset, tag));
+        // this.logger.trace("Video packet: %s", read);
+        FLVTag tag = new FLVTag(FLVTagType.VIDEO, dts, 0, message.payload());
+        this.session.tag(tag);
     }
 
     void closeConnection(boolean graceful) {

@@ -27,7 +27,6 @@ public class Session {
     public final String id;
 
     public volatile long prevDts = 0;
-    public volatile long prevPts = 0;
 
     private SessionProvider provider;
     private final List<FLVTag> sequenceTags = new LinkedList<>();
@@ -52,11 +51,11 @@ public class Session {
         return this.thumbnailGenerator.thumbnail;
     }
 
-    public void data(FLVData data) {
-        if (data.tag().data().isSequenceHeader() || data.tag().type() == FLVTagType.SCRIPT) {
-            this.sequenceTags.add(data.tag());
+    public void tag(FLVTag tag) {
+        if (tag.data().isSequenceHeader() || tag.type() == FLVTagType.SCRIPT) {
+            this.sequenceTags.add(tag);
 
-            FLVSequence seq = new FLVSequence(data.tag()); // /shrug/
+            FLVSequence seq = new FLVSequence(tag); // /shrug/
             for (SessionListener listener : this.listeners.get()) {
                 try {
                     listener.onSequence(this, seq);
@@ -69,12 +68,11 @@ public class Session {
             return;
         }
 
-        this.prevDts = data.tag().timestamp();
-        this.prevPts = data.pts();
+        this.prevDts = tag.timestamp();
 
         for (SessionListener listener : this.listeners.get()) {
             try {
-                listener.onData(this, data);
+                listener.onTag(this, tag);
             } catch (Throwable t) {
                 if (Quark.DEBUG) {
                     t.printStackTrace();
