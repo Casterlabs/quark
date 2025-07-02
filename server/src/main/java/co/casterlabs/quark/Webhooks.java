@@ -54,7 +54,7 @@ public class Webhooks {
      * @return null, if the session was disallowed.
      */
     public static String sessionStarting(String ip, String url, String app, String key) {
-        if (Quark.WEBHOOK_URL == null) return key; // dummy mode.
+        if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return key; // dummy mode.
 
         try {
             SessionStartingResponse res = post(
@@ -86,7 +86,7 @@ public class Webhooks {
     /* ---------------- */
 
     public static void sessionStarted(String id) {
-        if (Quark.WEBHOOK_URL == null) return; // dummy mode.
+        if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return; // dummy mode.
 
         try {
             post(
@@ -113,7 +113,7 @@ public class Webhooks {
      * @return whether or not the session is being jammed.
      */
     public static boolean sessionEnding(Session session, boolean wasGraceful) {
-        if (Quark.WEBHOOK_URL == null) return false; // dummy mode.
+        if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return false; // dummy mode.
 
         try {
             SessionEndingResponse res = post(
@@ -149,7 +149,7 @@ public class Webhooks {
     /* ---------------- */
 
     public static void sessionEnded(String id) {
-        if (Quark.WEBHOOK_URL == null) return; // dummy mode.
+        if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return; // dummy mode.
 
         try {
             post(

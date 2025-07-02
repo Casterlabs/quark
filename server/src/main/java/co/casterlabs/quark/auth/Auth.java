@@ -21,14 +21,14 @@ public class Auth {
     private static JWTVerifier verifier;
 
     static {
-        if (Quark.AUTH_SECRET != null) {
+        if (Quark.AUTH_SECRET != null && !Quark.AUTH_SECRET.isEmpty()) {
             Algorithm signingAlg = Algorithm.HMAC256(Quark.AUTH_SECRET);
 
             verifier = JWT.require(signingAlg)
                 .build();
         }
 
-        if (Quark.AUTH_ANON_PREGEX != null) {
+        if (Quark.AUTH_ANON_PREGEX != null && !Quark.AUTH_ANON_PREGEX.isEmpty()) {
             ANON_USER = new User(
                 "anonymous",
                 false,
