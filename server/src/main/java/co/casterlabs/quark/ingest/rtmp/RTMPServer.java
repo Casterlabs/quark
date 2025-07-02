@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import co.casterlabs.flv4j.EndOfStreamException;
 import co.casterlabs.quark.Quark;
@@ -15,6 +16,8 @@ public class RTMPServer {
 
     private static final ThreadFactory RTMP_CONNECTION_TF = Thread.ofPlatform().name("RTMP Connection", 0).factory();
     private static final ThreadFactory RTMP_MISC_TF = Thread.ofVirtual().name("RTMP Misc", 0).factory();
+
+    private static final int SO_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(1);
 
     public static void start() {
         if (Quark.RTMP_PORT <= 0) return; // Disabled
@@ -30,6 +33,7 @@ public class RTMPServer {
                     RTMP_CONNECTION_TF.newThread(() -> {
                         try (sock) {
                             sock.setTcpNoDelay(true);
+                            sock.setSoTimeout(SO_TIMEOUT);
 
                             try (
                                 SocketConnection conn = new SocketConnection(sock);
