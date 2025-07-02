@@ -12,6 +12,7 @@ public enum ApiResponse {
     UNAUTHORIZED(StandardHttpStatus.UNAUTHORIZED),
     BAD_REQUEST(StandardHttpStatus.BAD_REQUEST),
     INTERNAL_ERROR(StandardHttpStatus.INTERNAL_ERROR),
+    NOT_ENABLED(StandardHttpStatus.BAD_REQUEST),
 
     ;
 

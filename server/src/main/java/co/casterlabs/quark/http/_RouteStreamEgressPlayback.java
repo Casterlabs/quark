@@ -15,6 +15,7 @@ import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionListener;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.quark.session.listeners.FLVSessionListener;
+import co.casterlabs.quark.util.FF;
 import co.casterlabs.rhs.HttpMethod;
 import co.casterlabs.rhs.HttpStatus.StandardHttpStatus;
 import co.casterlabs.rhs.protocol.api.endpoints.EndpointData;
@@ -137,6 +138,10 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             MuxFormat format = MUX_FORMATS.get(data.uriParameters().get("format"));
             if (format == null) {
                 return ApiResponse.BAD_REQUEST.response();
+            }
+
+            if (!FF.canUseMpeg) {
+                return ApiResponse.NOT_ENABLED.response();
             }
 
             return new HttpResponse(

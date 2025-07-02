@@ -5,6 +5,7 @@ import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.ingest.ffmpeg.FFmpegProvider;
 import co.casterlabs.quark.session.Session;
+import co.casterlabs.quark.util.FF;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
 import co.casterlabs.rakurai.json.serialization.JsonParseException;
@@ -28,6 +29,10 @@ public class _RouteStreamIngress implements EndpointProvider {
             data.attachment().checkAdmin();
 
             IngressFileBody body = Rson.DEFAULT.fromJson(session.body().string(), IngressFileBody.class);
+
+            if (!FF.canUseMpeg) {
+                return ApiResponse.NOT_ENABLED.response();
+            }
 
             Session qSession = Quark.session(body.id, true);
             new FFmpegProvider(qSession, body.source, body.loop);

@@ -8,6 +8,7 @@ import co.casterlabs.commons.io.streams.StreamUtil;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
+import co.casterlabs.quark.util.FF;
 
 class _ThumbnailSessionListener extends SessionListener {
     private static final long THUMB_INTERVAL = TimeUnit.SECONDS.toMillis(30);
@@ -26,6 +27,7 @@ class _ThumbnailSessionListener extends SessionListener {
     @Override
     public void onTag(Session session, FLVTag tag) {
         if (session.info.video.length == 0) return; // No video, don't process at all.
+        if (!FF.canUseMpeg) return; // We can't make a thumbnail, don't process at all.
 
         if (this.isGeneratingThumbnail) return;
 

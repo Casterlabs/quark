@@ -22,6 +22,7 @@ import co.casterlabs.quark.session.info.StreamInfo;
 import co.casterlabs.quark.session.info.StreamInfo.AudioStreamInfo;
 import co.casterlabs.quark.session.info.StreamInfo.VideoStreamInfo;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
+import co.casterlabs.quark.util.FF;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.element.JsonArray;
 import co.casterlabs.rakurai.json.element.JsonObject;
@@ -32,7 +33,6 @@ class _CodecsSessionListener extends SessionListener {
     private final Session session;
     private final SessionInfo info;
 
-    private long lastKeyFrame = -1L;
     private boolean hasStdAudio = false; // we have to offset the ex audio since this is always index 0.
 
     private void process(FLVTag tag) {
@@ -78,8 +78,8 @@ class _CodecsSessionListener extends SessionListener {
             VideoStreamInfo info = this.info.video[0];
 
             if (video.frameType() == FLVVideoFrameType.KEY_FRAME) {
-                long diff = tag.timestamp() - this.lastKeyFrame;
-                this.lastKeyFrame = tag.timestamp();
+                long diff = tag.timestamp() - info.lastKeyFrame;
+                info.lastKeyFrame = tag.timestamp();
                 info.keyFrameInterval = (int) (diff / 1000);
             }
 
@@ -168,16 +168,18 @@ class _CodecsSessionListener extends SessionListener {
 
     private void update(String map, StreamInfo toUpdate) {
         toUpdate.updating = true;
+        if (!FF.canUseProbe) return;
 
         try {
             this.session.addAsyncListener(new FFprobeSessionListener(map, toUpdate));
         } catch (IOException e) {
-            // We intentionally break the state and leave updating set to true, otherwise
-            // we'd go in an infinite loop of updates :P
             if (Quark.DEBUG) {
                 e.printStackTrace();
             }
         }
+
+        // We intentionally break the state and leave updating set to true, otherwise
+        // we'd go in an infinite loop of updates :P
     }
 
     private class FFprobeSessionListener extends FLVProcessSessionListener {

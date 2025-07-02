@@ -5,6 +5,7 @@ import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.egress.FFmpegRTMPSessionListener;
 import co.casterlabs.quark.session.Session;
+import co.casterlabs.quark.util.FF;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
 import co.casterlabs.rakurai.json.serialization.JsonParseException;
@@ -32,6 +33,10 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
             }
 
             EgressRTMPBody body = Rson.DEFAULT.fromJson(session.body().string(), EgressRTMPBody.class);
+
+            if (!FF.canUseMpeg) {
+                return ApiResponse.NOT_ENABLED.response();
+            }
 
             qSession.addAsyncListener(new FFmpegRTMPSessionListener(body.url, body.foreignId));
 

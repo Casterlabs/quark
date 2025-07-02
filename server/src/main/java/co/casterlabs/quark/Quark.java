@@ -12,6 +12,7 @@ import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionListener;
 import co.casterlabs.quark.session.SessionProvider;
 import co.casterlabs.quark.session.listeners.FFplaySessionListener;
+import co.casterlabs.quark.util.FF;
 import xyz.e3ndr.fastloggingframework.FastLoggingFramework;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 import xyz.e3ndr.fastloggingframework.logging.LogLevel;
@@ -61,7 +62,7 @@ public class Quark {
 
             session.addSyncListener(new CloseListener());
 
-            if (DEBUG) {
+            if (DEBUG && FF.canUsePlay) {
                 try {
                     session.addAsyncListener(new FFplaySessionListener());
                 } catch (IOException e) {

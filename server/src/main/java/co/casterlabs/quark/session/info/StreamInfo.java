@@ -68,6 +68,7 @@ public abstract class StreamInfo {
         public String aspectRatio;
 
         public int keyFrameInterval = -1; // seconds
+        public @JsonExclude long lastKeyFrame = -1L;
 
         public VideoStreamInfo(int id, String codec) {
             super(id);
