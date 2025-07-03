@@ -15,6 +15,8 @@ import co.casterlabs.quark.util.ModifiableArray;
 import co.casterlabs.rakurai.json.element.JsonArray;
 import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.RequiredArgsConstructor;
+import xyz.e3ndr.fastloggingframework.logging.FastLogger;
+import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
 @RequiredArgsConstructor
 public class Session {
@@ -91,6 +93,8 @@ public class Session {
         }
 
         this.state = State.CLOSED;
+
+        FastLogger.logStatic(LogLevel.DEBUG, "Closing session: %s (wasGraceful: %b)", this.id, graceful);
 
         if (this.provider != null) {
             try {
