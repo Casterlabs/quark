@@ -32,7 +32,7 @@ public class Session {
     private final List<FLVTag> sequenceTags = new LinkedList<>();
     private final _ThumbnailSessionListener thumbnailGenerator = new _ThumbnailSessionListener();
 
-    private boolean closed = false;
+    private volatile State state = State.RUNNING;
 
     {
         this.addAsyncListener(new _CodecsSessionListener(this, this.info));
@@ -82,13 +82,15 @@ public class Session {
     }
 
     public void close(boolean graceful) {
-        if (this.closed) return;
+        if (this.state != State.RUNNING) return;
+        this.state = State.CLOSING;
 
         if (Webhooks.sessionEnding(this, graceful)) {
+            this.state = State.RUNNING;
             return; // We're getting jammed!
         }
 
-        this.closed = true;
+        this.state = State.CLOSED;
 
         if (this.provider != null) {
             try {
@@ -134,6 +136,11 @@ public class Session {
     }
 
     public void addSyncListener(SessionListener listener) {
+        if (this.state == State.CLOSED) {
+            listener.onClose(this);
+            return;
+        }
+
         if (this.provider != null) {
             FLVSequence seq = new FLVSequence(this.sequenceTags.toArray(new FLVTag[0]));
             listener.onSequence(this, seq);
@@ -178,6 +185,12 @@ public class Session {
                 this.removeListener(listener);
             }
         }
+    }
+
+    private static enum State {
+        RUNNING,
+        CLOSING,
+        CLOSED;
     }
 
 }
