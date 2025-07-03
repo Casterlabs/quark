@@ -7,13 +7,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import co.casterlabs.flv4j.flv.tags.FLVTag;
-import lombok.RequiredArgsConstructor;
 
 /**
  * This class wraps the listener and ensures that all calls to it are do not
  * block.
  */
-@RequiredArgsConstructor
 class _AsyncSessionListener extends SessionListener {
     private static final ThreadFactory THREAD_FACTORY = Thread.ofVirtual().name("Async Session Listener - Write Queue", 0).factory();
     private static final int MAX_OUTSTANDING_PACKETS = 1000;
@@ -27,6 +25,11 @@ class _AsyncSessionListener extends SessionListener {
     );
 
     final SessionListener delegate;
+
+    _AsyncSessionListener(SessionListener delegate) {
+        super(delegate.id);
+        this.delegate = delegate;
+    }
 
     @Override
     public void onSequence(Session session, FLVSequence seq) {

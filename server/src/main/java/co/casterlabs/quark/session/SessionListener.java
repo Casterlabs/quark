@@ -7,8 +7,16 @@ import org.jetbrains.annotations.Nullable;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 
 public abstract class SessionListener {
-    public final String id = UUID.randomUUID().toString();
+    public final String id;
     public final long createdAt = System.currentTimeMillis();
+
+    public SessionListener() {
+        this(UUID.randomUUID().toString());
+    }
+
+    SessionListener(String id) {
+        this.id = id;
+    }
 
     public void onSequence(Session session, FLVSequence seq) {}
 
