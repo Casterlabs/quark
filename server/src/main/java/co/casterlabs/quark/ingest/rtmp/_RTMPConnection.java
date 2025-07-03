@@ -37,6 +37,14 @@ class _RTMPConnection extends ServerNetConnection implements AutoCloseable {
         super(new RTMPReader(new ASReader(conn.in())), new RTMPWriter(new ASWriter(conn.out())));
         this.conn = conn;
         this.logger = new FastLogger(conn.socket().toString());
+
+        this.onCall = (method, args) -> {
+            if (method.equals("FCUnpublish")) {
+                this.logger.debug("Stream closed by client.");
+                close(true);
+            }
+            return null;
+        };
     }
 
     /* ---------------- */
