@@ -13,6 +13,7 @@ import co.casterlabs.quark.Webhooks;
 import co.casterlabs.quark.session.info.SessionInfo;
 import co.casterlabs.quark.util.ModifiableArray;
 import co.casterlabs.rakurai.json.element.JsonArray;
+import co.casterlabs.rakurai.json.element.JsonElement;
 import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.RequiredArgsConstructor;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
@@ -47,6 +48,10 @@ public class Session {
         }
         this.sequenceTags.clear();
         this.provider = provider;
+    }
+
+    public JsonElement metadata() {
+        return this.provider.metadata();
     }
 
     public byte[] thumbnail() {

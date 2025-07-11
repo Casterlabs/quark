@@ -26,8 +26,7 @@ class _RTMPConnection extends ServerNetConnection implements AutoCloseable {
     final SocketConnection conn;
     final FastLogger logger;
 
-    String app = null;
-    String handshakeUrl = null;
+    ConnectArgs connectArgs;
     _RTMPState state = _RTMPState.INITIALIZING;
 
     @Nullable
@@ -54,8 +53,7 @@ class _RTMPConnection extends ServerNetConnection implements AutoCloseable {
     @Override
     public ObjectLike connect(ConnectArgs args) throws IOException, InterruptedException, CallError {
         this.logger.debug(args);
-        this.app = args.app();
-        this.handshakeUrl = args.tcUrl();
+        this.connectArgs = args;
 
         // "Allow" the url as long as it's present, we'll validate it during publish().
         this.state = _RTMPState.AUTHENTICATING;

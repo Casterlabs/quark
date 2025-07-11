@@ -58,7 +58,8 @@ public class _RouteStreamControl implements EndpointProvider {
             JsonObject json = new JsonObject()
                 .put("id", qSession.id)
                 .put("createdAt", qSession.createdAt)
-                .put("info", Rson.DEFAULT.toJson(qSession.info));
+                .put("info", Rson.DEFAULT.toJson(qSession.info))
+                .put("metadata", qSession.metadata());
 
             return ApiResponse.success(StandardHttpStatus.OK, json);
         } catch (AuthenticationException e) {

@@ -8,6 +8,7 @@ import co.casterlabs.flv4j.flv.muxing.NonSeekableFLVDemuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionProvider;
+import co.casterlabs.rakurai.json.element.JsonObject;
 
 public class FFmpegProvider implements SessionProvider {
     private final Demuxer demuxer = new Demuxer();
@@ -19,11 +20,19 @@ public class FFmpegProvider implements SessionProvider {
 
     private boolean jammed = false;
 
+    private JsonObject metadata;
+
     public FFmpegProvider(Session session, String source, boolean loop) throws IOException {
         this.session = session;
         this.session.setProvider(this);
 
         this.dtsOffset = session.prevDts;
+
+        this.metadata = new JsonObject()
+            .put("type", "FFMPEG")
+            .put("source", source)
+            .put("loop", loop)
+            .put("dtsOffset", this.dtsOffset);
 
         this.proc = new ProcessBuilder()
             .command(
@@ -51,6 +60,11 @@ public class FFmpegProvider implements SessionProvider {
                     this.close(true);
                 }
             });
+    }
+
+    @Override
+    public JsonObject metadata() {
+        return this.metadata;
     }
 
     @Override

@@ -1,9 +1,17 @@
 package co.casterlabs.quark.ingest.rtmp;
 
 import java.io.IOException;
+import java.util.Map;
 
+import co.casterlabs.flv4j.actionscript.amf0.AMF0Type;
 import co.casterlabs.flv4j.actionscript.amf0.AMF0Type.ObjectLike;
+import co.casterlabs.flv4j.actionscript.amf0.AMF0Type.StringLike;
+import co.casterlabs.flv4j.actionscript.amf0.Boolean0;
+import co.casterlabs.flv4j.actionscript.amf0.Date0;
 import co.casterlabs.flv4j.actionscript.amf0.ECMAArray0;
+import co.casterlabs.flv4j.actionscript.amf0.Number0;
+import co.casterlabs.flv4j.actionscript.amf0.Object0;
+import co.casterlabs.flv4j.actionscript.amf0.StrictArray0;
 import co.casterlabs.flv4j.actionscript.amf0.String0;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
@@ -17,6 +25,15 @@ import co.casterlabs.flv4j.rtmp.net.rpc.RPCHandler.MessageHandler;
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionProvider;
+import co.casterlabs.rakurai.json.element.JsonArray;
+import co.casterlabs.rakurai.json.element.JsonBoolean;
+import co.casterlabs.rakurai.json.element.JsonElement;
+import co.casterlabs.rakurai.json.element.JsonNull;
+import co.casterlabs.rakurai.json.element.JsonNumber;
+import co.casterlabs.rakurai.json.element.JsonObject;
+import co.casterlabs.rakurai.json.element.JsonString;
+import xyz.e3ndr.fastloggingframework.logging.FastLogger;
+import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
 class _RTMPSessionProvider implements SessionProvider, MessageHandler {
     private long dtsOffset;
@@ -25,6 +42,8 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
     private Session session;
 
     private boolean jammed = false;
+
+    private JsonObject metadata = JsonObject.EMPTY_OBJECT;
 
     _RTMPSessionProvider(_RTMPConnection rtmp) {
         this.rtmp = rtmp;
@@ -38,12 +57,15 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
             return;
         }
 
-        this.rtmp.logger.debug("Authenticating with %s @ %s", key, this.rtmp.handshakeUrl);
+        String app = this.rtmp.connectArgs.app();
+        String handshakeUrl = this.rtmp.connectArgs.tcUrl();
+
+        this.rtmp.logger.debug("Authenticating with %s @ %s", key, handshakeUrl);
         this.session = Quark.authenticateSession(
             this,
             this.rtmp.conn.socket().getInetAddress().getHostAddress(),
-            this.rtmp.handshakeUrl,
-            this.rtmp.app,
+            handshakeUrl,
+            app,
             key
         );
 
@@ -56,6 +78,22 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
             this.rtmp.state = _RTMPState.PROVIDING;
 
             this.dtsOffset = session.prevDts;
+
+            JsonElement connectAsJson = amfToJson(
+                new Object0(
+                    this.rtmp.connectArgs.additionalParams()
+                )
+            );
+
+            this.metadata = new JsonObject()
+                .put("type", "RTMP")
+                .put("key", key)
+                .put("app", app)
+                .put("type", type)
+                .put("handshakeUrl", handshakeUrl)
+                .put("connectArgs", connectAsJson)
+                .put("dtsOffset", this.dtsOffset);
+            this.rtmp.logger.debug("Metadata: %s", this.metadata);
 
             this.rtmp.stream.onMessage = this;
             this.rtmp.stream.setStatus(NetStatus.NS_PUBLISH_START);
@@ -137,6 +175,11 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
     /* ---------------- */
 
     @Override
+    public JsonObject metadata() {
+        return this.metadata;
+    }
+
+    @Override
     public void close(boolean graceful) {
         this.rtmp.close(graceful);
     }
@@ -146,6 +189,61 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
         this.jammed = true;
         this.rtmp.logger.debug("Jammed!");
         this.rtmp.close(true);
+    }
+
+    private static JsonElement amfToJson(AMF0Type type) {
+        try {
+            switch (type.type()) {
+                case BOOLEAN:
+                    return new JsonBoolean(((Boolean0) type).value());
+
+                case NUMBER:
+                    return new JsonNumber(((Number0) type).value());
+
+                case DATE:
+                    return new JsonNumber(((Date0) type).value());
+
+                case TYPED_OBJECT:
+                case ECMA_ARRAY:
+                case OBJECT: {
+                    ObjectLike obj = (ObjectLike) type;
+                    JsonObject json = new JsonObject();
+                    for (Map.Entry<String, AMF0Type> entry : obj.map().entrySet()) {
+                        json.put(entry.getKey(), amfToJson(entry.getValue()));
+                    }
+                    return json;
+                }
+
+                case STRICT_ARRAY: {
+                    StrictArray0 arr = (StrictArray0) type;
+                    JsonArray json = new JsonArray();
+                    for (AMF0Type e : arr.array()) {
+                        json.add(amfToJson(e));
+                    }
+                    return json;
+                }
+
+                case LONG_STRING:
+                case STRING:
+                case XML_DOCUMENT:
+                    return new JsonString(((StringLike) type).value());
+
+                case SWITCH_TO_AMF3:
+                case NULL:
+                case OBJECT_END:
+                case UNDEFINED:
+                case UNSUPPORTED:
+                case REFERENCE:
+                case RESERVED_14:
+                case RESERVED_4:
+                default:
+                    return JsonNull.INSTANCE;
+            }
+        } catch (Throwable t) {
+            // In case I messed something up...
+            FastLogger.logStatic(LogLevel.WARNING, "An error occurred while converting AMF0 (%s) to JSON:\n%s", type, t);
+            return JsonNull.INSTANCE;
+        }
     }
 
 }

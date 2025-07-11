@@ -47,7 +47,7 @@ class _RTMPSessionListener extends SessionListener {
 
         try {
             // Using the app field is a bit hacky, but it works :D
-            User user = Auth.authenticate(this.rtmp.app);
+            User user = Auth.authenticate(this.rtmp.connectArgs.app());
             user.checkPlayback(name);
             this.fid = user.id();
         } catch (AuthenticationException e) {
