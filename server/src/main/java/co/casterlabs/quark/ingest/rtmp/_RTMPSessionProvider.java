@@ -89,7 +89,7 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
                 .put("type", "RTMP")
                 .put("key", key)
                 .put("app", app)
-                .put("type", type)
+                .put("publishType", type)
                 .put("handshakeUrl", handshakeUrl)
                 .put("connectArgs", connectAsJson)
                 .put("dtsOffset", this.dtsOffset);
