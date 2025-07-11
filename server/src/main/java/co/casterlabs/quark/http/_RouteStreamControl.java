@@ -58,8 +58,15 @@ public class _RouteStreamControl implements EndpointProvider {
             JsonObject json = new JsonObject()
                 .put("id", qSession.id)
                 .put("createdAt", qSession.createdAt)
-                .put("info", Rson.DEFAULT.toJson(qSession.info))
-                .put("metadata", qSession.metadata());
+                .put("info", Rson.DEFAULT.toJson(qSession.info));
+
+            if (data.attachment().isAdmin()) {
+                // Only admins should see this data, otherwise we'd leak the stream key to
+                // _anyone_ who can do playback.
+                json.put("metadata", qSession.metadata());
+            } else {
+                json.putNull("metadata");
+            }
 
             return ApiResponse.success(StandardHttpStatus.OK, json);
         } catch (AuthenticationException e) {
