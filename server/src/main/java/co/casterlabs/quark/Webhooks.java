@@ -1,6 +1,8 @@
 package co.casterlabs.quark;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import co.casterlabs.quark.ingest.ffmpeg.FFmpegProvider;
 import co.casterlabs.quark.session.Session;
@@ -16,6 +18,8 @@ import okhttp3.Response;
 
 public class Webhooks {
     private static final OkHttpClient client = new OkHttpClient();
+
+    private static final ExecutorService ASYNC_WEBHOOKS = Executors.newCachedThreadPool();
 
     private static <T> T post(String type, Object data, Class<T> expected) throws IOException {
         JsonObject payload = new JsonObject()
@@ -88,17 +92,19 @@ public class Webhooks {
     public static void sessionStarted(String id) {
         if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return; // dummy mode.
 
-        try {
-            post(
-                "SESSION_STARTED",
-                new SessionStartedRequest(id),
-                null
-            );
-        } catch (IOException e) {
-            if (Quark.DEBUG) {
-                e.printStackTrace();
+        ASYNC_WEBHOOKS.submit(() -> {
+            try {
+                post(
+                    "SESSION_STARTED",
+                    new SessionStartedRequest(id),
+                    null
+                );
+            } catch (IOException e) {
+                if (Quark.DEBUG) {
+                    e.printStackTrace();
+                }
             }
-        }
+        });
     }
 
     @JsonClass(exposeAll = true)
@@ -151,17 +157,19 @@ public class Webhooks {
     public static void sessionEnded(String id) {
         if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return; // dummy mode.
 
-        try {
-            post(
-                "SESSION_ENDED",
-                new SessionEndedRequest(id),
-                null
-            );
-        } catch (IOException e) {
-            if (Quark.DEBUG) {
-                e.printStackTrace();
+        ASYNC_WEBHOOKS.submit(() -> {
+            try {
+                post(
+                    "SESSION_ENDED",
+                    new SessionEndedRequest(id),
+                    null
+                );
+            } catch (IOException e) {
+                if (Quark.DEBUG) {
+                    e.printStackTrace();
+                }
             }
-        }
+        });
     }
 
     @JsonClass(exposeAll = true)
