@@ -2,6 +2,7 @@ package co.casterlabs.quark.ingest.rtmp;
 
 import java.io.IOException;
 
+import co.casterlabs.flv4j.actionscript.amf0.AMF0Type.ObjectLike;
 import co.casterlabs.flv4j.actionscript.amf0.ECMAArray0;
 import co.casterlabs.flv4j.actionscript.amf0.String0;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
@@ -70,19 +71,18 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
         } else if (message instanceof RTMPMessageVideo video) {
             this.handleVideo(timestamp, video);
         } else if (message instanceof RTMPMessageData0 data) {
-            if (data.arguments().size() != 3) {
-                return;
-            }
-            if (data.arguments().get(0) instanceof String0 str) {
-                if (str.value().equals("@setDataFrame")) {
-                    String0 method = (String0) data.arguments().get(1);
-                    ECMAArray0 value = (ECMAArray0) data.arguments().get(2);
+            if (data.arguments().size() == 3 &&
+                data.arguments().get(0) instanceof String0 str &&
+                str.value().equals("@setDataFrame")) {
+                String0 method = (String0) data.arguments().get(1);
+                ObjectLike value = (ObjectLike) data.arguments().get(2);
 
-                    FLVScriptTagData payload = new FLVScriptTagData(method.value(), value);
-                    FLVTag tag = new FLVTag(FLVTagType.SCRIPT, timestamp, 0, payload);
-                    this.rtmp.logger.debug("Got script sequence: %s", tag);
-                    this.session.tag(tag);
-                }
+                FLVScriptTagData payload = new FLVScriptTagData(method.value(), new ECMAArray0(value.map()));
+                FLVTag tag = new FLVTag(FLVTagType.SCRIPT, timestamp, 0, payload);
+                this.rtmp.logger.debug("Got script sequence: %s", tag);
+                this.session.tag(tag);
+            } else {
+                this.rtmp.logger.debug("Unknown message: %s(%s)", data, data.arguments());
             }
             return;
         } else {
@@ -99,7 +99,7 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
 
         long dts = timestamp + dtsOffset;
 
-//         this.logger.trace("Audio packet: %s", read);
+//        this.rtmp.logger.trace("Audio packet: %s", message);
         FLVTag tag = new FLVTag(FLVTagType.AUDIO, dts, 0, message.payload());
         this.session.tag(tag);
     }
@@ -113,7 +113,7 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
 
         long dts = timestamp + dtsOffset;
 
-        // this.logger.trace("Video packet: %s", read);
+//        this.rtmp.logger.trace("Video packet: %s", message);
         FLVTag tag = new FLVTag(FLVTagType.VIDEO, dts, 0, message.payload());
         this.session.tag(tag);
     }
