@@ -14,6 +14,7 @@ import co.casterlabs.quark.session.info.SessionInfo;
 import co.casterlabs.quark.util.ModifiableArray;
 import co.casterlabs.rakurai.json.element.JsonArray;
 import co.casterlabs.rakurai.json.element.JsonElement;
+import co.casterlabs.rakurai.json.element.JsonNull;
 import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.RequiredArgsConstructor;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
@@ -51,6 +52,7 @@ public class Session {
     }
 
     public JsonElement metadata() {
+        if (this.provider == null) return JsonNull.INSTANCE;
         return this.provider.metadata();
     }
 
@@ -92,7 +94,7 @@ public class Session {
         if (this.state != State.RUNNING) return;
         this.state = State.CLOSING;
 
-        if (Webhooks.sessionEnding(this, graceful)) {
+        if (Webhooks.sessionEnding(this, graceful, this.metadata())) {
             this.state = State.RUNNING;
             return; // We're getting jammed!
         }

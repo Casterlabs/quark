@@ -8,6 +8,7 @@ import co.casterlabs.quark.ingest.ffmpeg.FFmpegProvider;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
+import co.casterlabs.rakurai.json.element.JsonElement;
 import co.casterlabs.rakurai.json.element.JsonObject;
 import okhttp3.Call;
 import okhttp3.MediaType;
@@ -118,13 +119,13 @@ public class Webhooks {
     /**
      * @return whether or not the session is being jammed.
      */
-    public static boolean sessionEnding(Session session, boolean wasGraceful) {
+    public static boolean sessionEnding(Session session, boolean wasGraceful, JsonElement metadata) {
         if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return false; // dummy mode.
 
         try {
             SessionEndingResponse res = post(
                 "SESSION_ENDING",
-                new SessionEndingRequest(session.id, wasGraceful),
+                new SessionEndingRequest(session.id, wasGraceful, metadata),
                 SessionEndingResponse.class
             );
 
@@ -141,7 +142,7 @@ public class Webhooks {
     }
 
     @JsonClass(exposeAll = true)
-    private static record SessionEndingRequest(String id, boolean wasGraceful) {
+    private static record SessionEndingRequest(String id, boolean wasGraceful, JsonElement metadata) {
     }
 
     @JsonClass(exposeAll = true)
