@@ -235,7 +235,7 @@ class RemuxedResponseContent implements ResponseContent {
         ) {
 
             {
-                Thread.ofVirtual().name("FFmpeg -> HTTP", 0)
+                Thread.ofPlatform().name("FFmpeg -> HTTP", 0)
                     .start(() -> {
                         try {
                             StreamUtil.streamTransfer(this.stdout(), out, recommendedBufferSize);

@@ -13,7 +13,7 @@ import co.casterlabs.flv4j.flv.tags.FLVTag;
  * block.
  */
 class _AsyncSessionListener extends SessionListener {
-    private static final ThreadFactory THREAD_FACTORY = Thread.ofVirtual().name("Async Session Listener - Write Queue", 0).factory();
+    private static final ThreadFactory THREAD_FACTORY = Thread.ofPlatform().name("Async Session Listener - Write Queue", 0).factory();
     private static final int MAX_OUTSTANDING_PACKETS = 1000;
 
     private final ExecutorService packetQueue = new ThreadPoolExecutor(

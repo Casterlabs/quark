@@ -68,7 +68,7 @@ class _ThumbnailSessionListener extends SessionListener {
                 "-"
             );
 
-            Thread.ofVirtual()
+            Thread.ofPlatform()
                 .name("Thumbnail Generator", 0)
                 .start(() -> {
                     try {

@@ -15,7 +15,7 @@ public class RTMPServer {
     private static final FastLogger LOGGER = new FastLogger();
 
     private static final ThreadFactory RTMP_CONNECTION_TF = Thread.ofPlatform().name("RTMP Connection", 0).factory();
-    private static final ThreadFactory RTMP_MISC_TF = Thread.ofVirtual().name("RTMP Misc", 0).factory();
+    private static final ThreadFactory RTMP_MISC_TF = Thread.ofPlatform().name("RTMP Misc", 0).factory();
 
     private static final int SO_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(1);
 

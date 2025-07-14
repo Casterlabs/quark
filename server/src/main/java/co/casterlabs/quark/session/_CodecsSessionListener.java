@@ -198,7 +198,7 @@ class _CodecsSessionListener extends SessionListener {
                 "-"
             );
 
-            Thread.ofVirtual().name("Stream Probe", 0).start(() -> {
+            Thread.ofPlatform().name("Stream Probe", 0).start(() -> {
                 try {
                     // Wait for the result, then copy it.
                     String str = StreamUtil.toString(this.stdout(), StandardCharsets.UTF_8).replace("\r", "").replace("\n", "").replace(" ", "");

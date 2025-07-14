@@ -5,7 +5,7 @@ import co.casterlabs.rhs.util.TaskExecutor;
 class _RakuraiTaskExecutor implements TaskExecutor {
     public static final _RakuraiTaskExecutor INSTANCE = new _RakuraiTaskExecutor();
 
-    private static final Thread.Builder THREAD_FACTORY = Thread.ofVirtual().name("Http Task Pool - #", 0);
+    private static final Thread.Builder THREAD_FACTORY = Thread.ofPlatform().name("Http Task Pool - #", 0);
 
     @Override
     public Task execute(Runnable toRun) {
