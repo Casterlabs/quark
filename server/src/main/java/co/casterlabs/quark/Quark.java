@@ -3,6 +3,7 @@ package co.casterlabs.quark;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import org.jetbrains.annotations.Nullable;
@@ -28,6 +29,8 @@ public class Quark {
     public static final int RTMP_PORT = Integer.parseInt(System.getenv().getOrDefault("RTMP_PORT", "1935"));
 
     public static final @Nullable String WEBHOOK_URL = System.getenv("QUARK_WEBHOOK_URL");
+
+    public static final long THUMBNAIL_INTERVAL = TimeUnit.SECONDS.toMillis(Integer.parseInt(System.getenv().getOrDefault("QUARK_THUMB_IT", "30")));
 
     static {
         System.setProperty("fastloggingframework.wrapsystem", "true");

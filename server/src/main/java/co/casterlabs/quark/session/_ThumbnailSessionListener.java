@@ -2,7 +2,6 @@ package co.casterlabs.quark.session;
 
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
-import java.util.concurrent.TimeUnit;
 
 import co.casterlabs.commons.io.streams.StreamUtil;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
@@ -11,8 +10,6 @@ import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.quark.util.FF;
 
 class _ThumbnailSessionListener extends SessionListener {
-    private static final long THUMB_INTERVAL = TimeUnit.SECONDS.toMillis(30);
-
     private volatile long lastThumbnail = 0;
     private volatile boolean isGeneratingThumbnail = false;
     volatile byte[] thumbnail = {};
@@ -31,7 +28,7 @@ class _ThumbnailSessionListener extends SessionListener {
 
         if (this.isGeneratingThumbnail) return;
 
-        boolean isTimeToGenerateThumbnail = System.currentTimeMillis() - this.lastThumbnail > THUMB_INTERVAL;
+        boolean isTimeToGenerateThumbnail = System.currentTimeMillis() - this.lastThumbnail > Quark.THUMBNAIL_INTERVAL;
         if (!isTimeToGenerateThumbnail) return;
 
         try {
