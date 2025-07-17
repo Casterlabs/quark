@@ -166,20 +166,20 @@ public class Session {
         }
     }
 
-    public void removeListener(SessionListener listener) {
-        SessionListener removed;
+    public void removeListener(SessionListener identifier) {
+        SessionListener removedFromMap;
 
         Map<String, SessionListener> map = this.listenerMap.acquire();
         try {
-            removed = map.remove(listener.id);
+            removedFromMap = map.remove(identifier.id);
         } finally {
             this.listenerMap.release();
         }
 
-        if (removed == null) return;
+        if (removedFromMap == null) return;
 
-        this.listeners.remove(removed);
-        listener.onClose(this);
+        this.listeners.remove(removedFromMap);
+        removedFromMap.onClose(this);
     }
 
     public void removeById(String id) {
