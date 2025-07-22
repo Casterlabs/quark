@@ -137,6 +137,7 @@ public class Session {
                     .put("createdAt", listener.createdAt)
                     .put("type", listener.type().name())
                     .put("fid", listener.fid())
+                    .put("metadata", listener.metadata())
             );
         }
         return listeners;

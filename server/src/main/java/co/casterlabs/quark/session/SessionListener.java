@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.jetbrains.annotations.Nullable;
 
 import co.casterlabs.flv4j.flv.tags.FLVTag;
+import co.casterlabs.rakurai.json.element.JsonObject;
 
 public abstract class SessionListener {
     public final String id;
@@ -27,9 +28,13 @@ public abstract class SessionListener {
     /**
      * @return null, if internal.
      */
-    public abstract Type type();
+    public abstract @Nullable Type type();
 
     public @Nullable String fid() {
+        return null;
+    }
+
+    public @Nullable JsonObject metadata() {
         return null;
     }
 

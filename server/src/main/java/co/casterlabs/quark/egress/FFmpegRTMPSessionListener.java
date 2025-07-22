@@ -5,9 +5,11 @@ import java.lang.ProcessBuilder.Redirect;
 
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
+import co.casterlabs.rakurai.json.element.JsonObject;
 
 public class FFmpegRTMPSessionListener extends FLVProcessSessionListener {
     private final String fid;
+    private final JsonObject metadata;
 
     public FFmpegRTMPSessionListener(String address, String fid) throws IOException {
         super(
@@ -28,6 +30,9 @@ public class FFmpegRTMPSessionListener extends FLVProcessSessionListener {
             address
         );
         this.fid = fid;
+
+        this.metadata = new JsonObject()
+            .put("address", address);
     }
 
     @Override
@@ -38,6 +43,11 @@ public class FFmpegRTMPSessionListener extends FLVProcessSessionListener {
     @Override
     public String fid() {
         return this.fid;
+    }
+
+    @Override
+    public JsonObject metadata() {
+        return this.metadata;
     }
 
 }

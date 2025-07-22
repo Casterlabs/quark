@@ -16,6 +16,7 @@ import co.casterlabs.quark.session.SessionListener;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.quark.session.listeners.FLVSessionListener;
 import co.casterlabs.quark.util.FF;
+import co.casterlabs.rakurai.json.element.JsonObject;
 import co.casterlabs.rhs.HttpMethod;
 import co.casterlabs.rhs.HttpStatus.StandardHttpStatus;
 import co.casterlabs.rhs.protocol.api.endpoints.EndpointData;
@@ -145,7 +146,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             }
 
             return new HttpResponse(
-                new RemuxedResponseContent(qSession, data.attachment().id(), format.command),
+                new RemuxedResponseContent(qSession, data.attachment().id(), format.mime, format.command),
                 StandardHttpStatus.OK
             ).mime(format.mime);
         } catch (AuthenticationException e) {
@@ -165,6 +166,9 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
 
 @RequiredArgsConstructor
 class FLVResponseContent implements ResponseContent {
+    private static final JsonObject METADATA = new JsonObject()
+        .put("mime", "video/x-flv");
+
     private final Session qSession;
     private final String fid;
 
@@ -190,6 +194,11 @@ class FLVResponseContent implements ResponseContent {
             @Override
             public String fid() {
                 return fid;
+            }
+
+            @Override
+            public JsonObject metadata() {
+                return METADATA;
             }
         };
 
@@ -218,11 +227,14 @@ class RemuxedResponseContent implements ResponseContent {
     private final Session qSession;
     private final String fid;
     private final String[] command;
+    private final JsonObject metadata;
 
-    RemuxedResponseContent(Session qSession, String fid, String... command) {
+    RemuxedResponseContent(Session qSession, String fid, String mime, String... command) {
         this.qSession = qSession;
         this.fid = fid;
         this.command = command;
+        this.metadata = new JsonObject()
+            .put("mime", mime);
     }
 
     @Override
@@ -259,6 +271,11 @@ class RemuxedResponseContent implements ResponseContent {
             @Override
             public String fid() {
                 return fid;
+            }
+
+            @Override
+            public JsonObject metadata() {
+                return metadata;
             }
         };
 
