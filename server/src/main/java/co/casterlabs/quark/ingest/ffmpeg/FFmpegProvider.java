@@ -2,15 +2,20 @@ package co.casterlabs.quark.ingest.ffmpeg;
 
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
+import java.util.concurrent.ThreadFactory;
 
 import co.casterlabs.flv4j.flv.FLVFileHeader;
 import co.casterlabs.flv4j.flv.muxing.NonSeekableFLVDemuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
+import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionProvider;
 import co.casterlabs.rakurai.json.element.JsonObject;
 
 public class FFmpegProvider implements SessionProvider {
+    private static final ThreadFactory TF = (Quark.EXPR_VIRTUAL_THREAD_HEAVY_IO ? Thread.ofVirtual() : Thread.ofPlatform()) //
+        .name("FFmpeg Provider", 0).factory();
+
     private final Demuxer demuxer = new Demuxer();
 
     private final Session session;
@@ -51,15 +56,13 @@ public class FFmpegProvider implements SessionProvider {
             .redirectInput(Redirect.PIPE)
             .start();
 
-        Thread.ofPlatform()
-            .name("FFMpeg Ingest - " + this.session.id)
-            .start(() -> {
-                try {
-                    this.demuxer.start(this.proc.getInputStream());
-                } catch (IOException ignored) {} finally {
-                    this.close(true);
-                }
-            });
+        TF.newThread(() -> {
+            try {
+                this.demuxer.start(this.proc.getInputStream());
+            } catch (IOException ignored) {} finally {
+                this.close(true);
+            }
+        }).start();
     }
 
     @Override

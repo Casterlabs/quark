@@ -14,7 +14,9 @@ import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 public class RTMPServer {
     private static final FastLogger LOGGER = new FastLogger();
 
-    private static final ThreadFactory RTMP_CONNECTION_TF = Thread.ofPlatform().name("RTMP Connection", 0).factory();
+    private static final ThreadFactory RTMP_CONNECTION_TF = (Quark.EXPR_VIRTUAL_THREAD_HEAVY_IO ? Thread.ofVirtual() : Thread.ofPlatform()) //
+        .name("RTMP Connection", 0).factory();
+
     private static final ThreadFactory RTMP_MISC_TF = Thread.ofVirtual().name("RTMP Misc", 0).factory();
 
     private static final int SO_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(1);
@@ -38,7 +40,6 @@ public class RTMPServer {
                             try (
                                 SocketConnection conn = new SocketConnection(sock);
                                 _RTMPConnection rtmp = new _RTMPConnection(conn)) {
-//                                rtmp.run();
                                 rtmp.handle(RTMP_MISC_TF);
                             } catch (Throwable t) {
                                 if ("Socket closed".equals(t.getMessage())) {

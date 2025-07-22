@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import org.jetbrains.annotations.ApiStatus.Experimental;
 import org.jetbrains.annotations.Nullable;
 
 import co.casterlabs.commons.async.LockableResource;
@@ -50,6 +51,11 @@ public class Quark {
      * The interval (in seconds) in which a thumbnail should be rendered.
      */
     public static final long THUMBNAIL_INTERVAL = TimeUnit.SECONDS.toMillis(Integer.parseInt(System.getenv().getOrDefault("QUARK_THUMB_IT", "30")));
+
+    /**
+     * Whether or not to use Virtual Threads for heavy-IO tasks.
+     */
+    public static final @Experimental boolean EXPR_VIRTUAL_THREAD_HEAVY_IO = "true".equalsIgnoreCase(System.getenv("QUARK_EXP_VIRTUAL_THREAD_HEAVY_IO"));
 
     static {
         System.setProperty("fastloggingframework.wrapsystem", "true");
