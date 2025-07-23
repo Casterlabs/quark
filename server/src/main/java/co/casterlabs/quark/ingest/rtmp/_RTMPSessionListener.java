@@ -15,7 +15,7 @@ import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageVideo;
 import co.casterlabs.flv4j.rtmp.chunks.control.RTMPSetBufferLengthControlMessage;
 import co.casterlabs.flv4j.rtmp.chunks.control.RTMPStreamEOFControlMessage;
 import co.casterlabs.flv4j.rtmp.net.NetStatus;
-import co.casterlabs.quark.Quark;
+import co.casterlabs.quark.Sessions;
 import co.casterlabs.quark.auth.Auth;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
@@ -57,7 +57,7 @@ class _RTMPSessionListener extends SessionListener {
             return;
         }
 
-        this.session = Quark.session(name, false);
+        this.session = Sessions.getSession(name, false);
 
         if (this.session == null) {
             this.rtmp.logger.debug("Closing, no session.");

@@ -1,6 +1,7 @@
 package co.casterlabs.quark.http;
 
 import co.casterlabs.quark.Quark;
+import co.casterlabs.quark.Sessions;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.egress.FFmpegRTMPSessionListener;
@@ -27,7 +28,7 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
         try {
             data.attachment().checkAdmin();
 
-            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            Session qSession = Sessions.getSession(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }

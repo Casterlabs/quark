@@ -1,6 +1,7 @@
 package co.casterlabs.quark.http;
 
 import co.casterlabs.quark.Quark;
+import co.casterlabs.quark.Sessions;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.session.Session;
@@ -21,7 +22,7 @@ public class _RouteStreamEgress implements EndpointProvider {
         try {
             data.attachment().checkAdmin();
 
-            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            Session qSession = Sessions.getSession(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
@@ -47,7 +48,7 @@ public class _RouteStreamEgress implements EndpointProvider {
         try {
             data.attachment().checkAdmin();
 
-            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            Session qSession = Sessions.getSession(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
@@ -76,7 +77,7 @@ public class _RouteStreamEgress implements EndpointProvider {
         try {
             data.attachment().checkAdmin();
 
-            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            Session qSession = Sessions.getSession(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
@@ -105,7 +106,7 @@ public class _RouteStreamEgress implements EndpointProvider {
         try {
             data.attachment().checkPlayback(data.uriParameters().get("sessionId"));
 
-            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            Session qSession = Sessions.getSession(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }

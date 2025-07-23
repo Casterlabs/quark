@@ -1,6 +1,7 @@
 package co.casterlabs.quark.http;
 
 import co.casterlabs.quark.Quark;
+import co.casterlabs.quark.Sessions;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.session.Session;
@@ -25,7 +26,7 @@ public class _RouteStreamControl implements EndpointProvider {
             data.attachment().checkAdmin();
 
             JsonArray ids = new JsonArray();
-            Quark.forEachSession((s) -> ids.add(s.id));
+            Sessions.forEachSession((s) -> ids.add(s.id));
 
             return ApiResponse.success(StandardHttpStatus.OK, ids);
         } catch (AuthenticationException e) {
@@ -50,7 +51,7 @@ public class _RouteStreamControl implements EndpointProvider {
             // so we check for that instead of admin :^)
             data.attachment().checkPlayback(data.uriParameters().get("sessionId"));
 
-            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            Session qSession = Sessions.getSession(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
@@ -89,7 +90,7 @@ public class _RouteStreamControl implements EndpointProvider {
         try {
             data.attachment().checkAdmin();
 
-            Session qSession = Quark.session(data.uriParameters().get("sessionId"), false);
+            Session qSession = Sessions.getSession(data.uriParameters().get("sessionId"), false);
             if (qSession == null) {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }

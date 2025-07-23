@@ -1,6 +1,7 @@
 package co.casterlabs.quark.http;
 
 import co.casterlabs.quark.Quark;
+import co.casterlabs.quark.Sessions;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.ingest.ffmpeg.FFmpegProvider;
@@ -34,7 +35,7 @@ public class _RouteStreamIngress implements EndpointProvider {
                 return ApiResponse.NOT_ENABLED.response();
             }
 
-            Session qSession = Quark.session(body.id, true);
+            Session qSession = Sessions.getSession(body.id, true);
             new FFmpegProvider(qSession, body.source, body.loop);
 
             return ApiResponse.success(StandardHttpStatus.CREATED);

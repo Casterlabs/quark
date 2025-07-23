@@ -22,7 +22,7 @@ import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageData0;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageVideo;
 import co.casterlabs.flv4j.rtmp.net.NetStatus;
 import co.casterlabs.flv4j.rtmp.net.rpc.RPCHandler.MessageHandler;
-import co.casterlabs.quark.Quark;
+import co.casterlabs.quark.Sessions;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionProvider;
 import co.casterlabs.rakurai.json.element.JsonArray;
@@ -61,7 +61,7 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
         String handshakeUrl = this.rtmp.connectArgs.tcUrl();
 
         this.rtmp.logger.debug("Authenticating with %s @ %s", key, handshakeUrl);
-        this.session = Quark.authenticateSession(
+        this.session = Sessions.authenticateSession(
             this,
             this.rtmp.conn.socket().getInetAddress().getHostAddress(),
             handshakeUrl,
