@@ -5,14 +5,16 @@ import java.lang.ProcessBuilder.Redirect;
 
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
+import co.casterlabs.quark.session.listeners.StreamFilter;
 import co.casterlabs.rakurai.json.element.JsonObject;
 
 public class FFmpegRTMPSessionListener extends FLVProcessSessionListener {
     private final String fid;
     private final JsonObject metadata;
 
-    public FFmpegRTMPSessionListener(String address, String fid) throws IOException {
+    public FFmpegRTMPSessionListener(StreamFilter filter, String address, String fid) throws IOException {
         super(
+            filter,
             Redirect.DISCARD, Redirect.INHERIT,
             "ffmpeg",
             "-hide_banner",

@@ -16,6 +16,7 @@ import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionListener;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.quark.session.listeners.FLVSessionListener;
+import co.casterlabs.quark.session.listeners.StreamFilter;
 import co.casterlabs.quark.util.FF;
 import co.casterlabs.rakurai.json.element.JsonObject;
 import co.casterlabs.rhs.HttpMethod;
@@ -107,9 +108,11 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
 
+            StreamFilter filter = StreamFilter.from(session.uri().query);
+
             // This one's special!
             return new HttpResponse(
-                new FLVResponseContent(qSession, data.attachment().id()),
+                new FLVResponseContent(filter, qSession, data.attachment().id()),
                 StandardHttpStatus.OK
             ).mime("video/x-flv");
         } catch (AuthenticationException e) {
@@ -146,8 +149,10 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
                 return ApiResponse.NOT_ENABLED.response();
             }
 
+            StreamFilter filter = StreamFilter.from(session.uri().query);
+
             return new HttpResponse(
-                new RemuxedResponseContent(qSession, data.attachment().id(), format.mime, format.command),
+                new RemuxedResponseContent(filter, qSession, data.attachment().id(), format.mime, format.command),
                 StandardHttpStatus.OK
             ).mime(format.mime);
         } catch (AuthenticationException e) {
@@ -170,6 +175,7 @@ class FLVResponseContent implements ResponseContent {
     private static final JsonObject METADATA = new JsonObject()
         .put("mime", "video/x-flv");
 
+    private final StreamFilter filter;
     private final Session qSession;
     private final String fid;
 
@@ -177,7 +183,7 @@ class FLVResponseContent implements ResponseContent {
     public void write(int recommendedBufferSize, OutputStream out) throws IOException {
         CompletableFuture<Void> waitFor = new CompletableFuture<>();
 
-        SessionListener listener = new FLVSessionListener() {
+        SessionListener listener = new FLVSessionListener(this.filter) {
             {
                 this.init(out);
             }
@@ -225,12 +231,14 @@ class FLVResponseContent implements ResponseContent {
 }
 
 class RemuxedResponseContent implements ResponseContent {
+    private final StreamFilter filter;
     private final Session qSession;
     private final String fid;
     private final String[] command;
     private final JsonObject metadata;
 
-    RemuxedResponseContent(Session qSession, String fid, String mime, String... command) {
+    RemuxedResponseContent(StreamFilter streamSelection, Session qSession, String fid, String mime, String... command) {
+        this.filter = streamSelection;
         this.qSession = qSession;
         this.fid = fid;
         this.command = command;
@@ -243,6 +251,7 @@ class RemuxedResponseContent implements ResponseContent {
         CompletableFuture<Void> waitFor = new CompletableFuture<>();
 
         SessionListener listener = new FLVProcessSessionListener(
+            this.filter,
             Redirect.PIPE, Redirect.INHERIT,
             this.command
         ) {

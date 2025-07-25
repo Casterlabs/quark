@@ -9,7 +9,9 @@ import co.casterlabs.quark.session.Session;
 public abstract class FLVProcessSessionListener extends FLVSessionListener {
     private final Process proc;
 
-    public FLVProcessSessionListener(Redirect out, Redirect err, String... command) throws IOException {
+    public FLVProcessSessionListener(StreamFilter filter, Redirect out, Redirect err, String... command) throws IOException {
+        super(filter);
+
         this.proc = new ProcessBuilder()
             .command(command)
             .redirectOutput(out)

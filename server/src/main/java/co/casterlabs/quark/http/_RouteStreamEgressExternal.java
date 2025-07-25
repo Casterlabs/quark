@@ -6,6 +6,7 @@ import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.egress.FFmpegRTMPSessionListener;
 import co.casterlabs.quark.session.Session;
+import co.casterlabs.quark.session.listeners.StreamFilter;
 import co.casterlabs.quark.util.FF;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
@@ -39,7 +40,8 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
                 return ApiResponse.NOT_ENABLED.response();
             }
 
-            qSession.addAsyncListener(new FFmpegRTMPSessionListener(body.url, body.foreignId));
+            StreamFilter filter = StreamFilter.from(session.uri().query);
+            qSession.addAsyncListener(new FFmpegRTMPSessionListener(filter, body.url, body.foreignId));
 
             return ApiResponse.success(StandardHttpStatus.CREATED);
         } catch (AuthenticationException e) {

@@ -22,6 +22,7 @@ import co.casterlabs.quark.session.info.StreamInfo;
 import co.casterlabs.quark.session.info.StreamInfo.AudioStreamInfo;
 import co.casterlabs.quark.session.info.StreamInfo.VideoStreamInfo;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
+import co.casterlabs.quark.session.listeners.StreamFilter;
 import co.casterlabs.quark.util.FF;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.element.JsonArray;
@@ -186,6 +187,7 @@ class _CodecsSessionListener extends SessionListener {
 
         public FFprobeSessionListener(String map, StreamInfo toUpdate) throws IOException {
             super(
+                StreamFilter.ALL, // Let FFmpeg handle the selection
                 Redirect.PIPE, Redirect.INHERIT,
                 "ffprobe",
                 "-hide_banner",

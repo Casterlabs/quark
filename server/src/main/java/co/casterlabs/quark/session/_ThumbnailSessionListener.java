@@ -7,6 +7,7 @@ import co.casterlabs.commons.io.streams.StreamUtil;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
+import co.casterlabs.quark.session.listeners.StreamFilter;
 import co.casterlabs.quark.util.FF;
 
 class _ThumbnailSessionListener extends SessionListener {
@@ -53,6 +54,7 @@ class _ThumbnailSessionListener extends SessionListener {
 
         public ThumbnailGenerator() throws IOException {
             super(
+                StreamFilter.ALL,
                 Redirect.PIPE, Redirect.INHERIT,
                 "ffmpeg",
                 "-hide_banner",

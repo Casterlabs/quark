@@ -11,14 +11,18 @@ import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
 import co.casterlabs.quark.session.FLVSequence;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionListener;
+import lombok.RequiredArgsConstructor;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
+@RequiredArgsConstructor
 public abstract class FLVSessionListener extends SessionListener {
     private StreamFLVMuxer playbackMuxer;
 
     private boolean hasGottenSequence = false;
     private boolean hasOffset = false;
+
+    private final StreamFilter filter;
 
     protected void init(OutputStream out) throws IOException {
         this.playbackMuxer = new StreamFLVMuxer(
@@ -27,7 +31,10 @@ public abstract class FLVSessionListener extends SessionListener {
         );
     }
 
-    private void writeOut(Session session, FLVTag tag) {
+    private void writeTag(Session session, FLVTag tag) {
+        tag = this.filter.transform(tag);
+        if (tag == null) return; // tag should be dropped!
+
         try {
             this.playbackMuxer.write(tag);
         } catch (IOException e) {
@@ -42,7 +49,7 @@ public abstract class FLVSessionListener extends SessionListener {
 
         this.hasGottenSequence = true;
         for (FLVTag tag : seq.tags()) {
-            this.writeOut(session, tag);
+            this.writeTag(session, tag);
         }
     }
 
@@ -69,7 +76,7 @@ public abstract class FLVSessionListener extends SessionListener {
             }
         }
 
-        this.writeOut(session, tag);
+        this.writeTag(session, tag);
     }
 
 }
