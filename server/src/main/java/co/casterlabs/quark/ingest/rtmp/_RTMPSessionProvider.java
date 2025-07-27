@@ -60,7 +60,25 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
         String app = this.rtmp.connectArgs.app();
         String handshakeUrl = this.rtmp.connectArgs.tcUrl();
 
+        this.metadata = new JsonObject()
+            .put("type", "RTMP")
+            .put("key", key)
+            .put("app", app)
+            .put("publishType", type)
+            .put("handshakeUrl", handshakeUrl)
+            .put(
+                "connectArgs",
+                amfToJson(
+                    new Object0(
+                        this.rtmp.connectArgs.additionalParams()
+                    )
+                )
+            )
+            .put("dtsOffset", 0);
+
         this.rtmp.logger.debug("Authenticating with %s @ %s", key, handshakeUrl);
+        this.rtmp.logger.debug("Metadata: %s", this.metadata);
+
         this.session = Sessions.authenticateSession(
             this,
             this.rtmp.conn.socket().getInetAddress().getHostAddress(),
@@ -78,22 +96,7 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
             this.rtmp.state = _RTMPState.PROVIDING;
 
             this.dtsOffset = session.prevDts;
-
-            JsonElement connectAsJson = amfToJson(
-                new Object0(
-                    this.rtmp.connectArgs.additionalParams()
-                )
-            );
-
-            this.metadata = new JsonObject()
-                .put("type", "RTMP")
-                .put("key", key)
-                .put("app", app)
-                .put("publishType", type)
-                .put("handshakeUrl", handshakeUrl)
-                .put("connectArgs", connectAsJson)
-                .put("dtsOffset", this.dtsOffset);
-            this.rtmp.logger.debug("Metadata: %s", this.metadata);
+            this.metadata.put("dtsOffset", this.dtsOffset);
 
             this.rtmp.stream.onMessage = this;
             this.rtmp.stream.setStatus(NetStatus.NS_PUBLISH_START);

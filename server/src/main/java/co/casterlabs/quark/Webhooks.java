@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.jetbrains.annotations.Nullable;
+
 import co.casterlabs.quark.ingest.ffmpeg.FFmpegProvider;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.rakurai.json.Rson;
@@ -58,13 +60,13 @@ public class Webhooks {
     /**
      * @return null, if the session was disallowed.
      */
-    public static String sessionStarting(String ip, String url, String app, String key) {
+    public static String sessionStarting(String ip, String url, String app, String key, @Nullable JsonObject metadata) {
         if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return key; // dummy mode.
 
         try {
             SessionStartingResponse res = post(
                 "SESSION_STARTING",
-                new SessionStartingRequest(ip, url, app, key),
+                new SessionStartingRequest(ip, url, app, key, metadata),
                 SessionStartingResponse.class
             );
 
@@ -78,7 +80,7 @@ public class Webhooks {
     }
 
     @JsonClass(exposeAll = true)
-    private static record SessionStartingRequest(String ip, String url, String app, String key) {
+    private static record SessionStartingRequest(String ip, String url, String app, String key, @Nullable JsonObject metadata) {
     }
 
     @JsonClass(exposeAll = true)

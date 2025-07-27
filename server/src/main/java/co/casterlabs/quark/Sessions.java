@@ -59,7 +59,7 @@ public class Sessions {
     public static Session authenticateSession(SessionProvider provider, String ip, String url, String app, String key) throws IOException {
         if (url == null || key == null) return null;
 
-        String sessionId = Webhooks.sessionStarting(ip, url, app, key);
+        String sessionId = Webhooks.sessionStarting(ip, url, app, key, provider.metadata());
         if (sessionId == null) return null;
 
         Session session = getSession(sessionId, true);
