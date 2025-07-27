@@ -60,7 +60,7 @@ public class Webhooks {
     /**
      * @return null, if the session was disallowed.
      */
-    public static String sessionStarting(String ip, String url, String app, String key, @Nullable JsonObject metadata) {
+    public static String sessionStarting(String ip, @Nullable String url, @Nullable String app, String key, @Nullable JsonObject metadata) {
         if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return key; // dummy mode.
 
         try {
@@ -80,7 +80,7 @@ public class Webhooks {
     }
 
     @JsonClass(exposeAll = true)
-    private static record SessionStartingRequest(String ip, String url, String app, String key, @Nullable JsonObject metadata) {
+    private static record SessionStartingRequest(String ip, @Nullable String url, @Nullable String app, String key, @Nullable JsonObject metadata) {
     }
 
     @JsonClass(exposeAll = true)
