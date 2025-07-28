@@ -212,7 +212,7 @@ class _CodecsSessionListener extends SessionListener {
                         JsonObject first = streams.getObject(0);
                         toUpdate.apply(first);
                     }
-                } catch (IOException e) {
+                } catch (IOException | StringIndexOutOfBoundsException e) {
                     if (Quark.DEBUG) {
                         e.printStackTrace();
                     }
