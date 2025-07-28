@@ -29,15 +29,14 @@ public record StreamFilter(
     public @Nullable FLVTag transform(FLVTag tag) {
         switch (tag.type()) {
             case AUDIO: {
-                int audioStreamSelection = this.audioStreamSelection;
-                if (audioStreamSelection < 0) return tag; // Allow all audio tracks.
+                if (this.audioStreamSelection < 0) return tag; // Allow all audio tracks.
 
-                if (tag.data() instanceof FLVStandardAudioTagData && audioStreamSelection == 0) {
+                if (tag.data() instanceof FLVStandardAudioTagData && this.audioStreamSelection == 0) {
                     return tag; // Check for STD audio stream (implicit id of 0).
                 } else if (tag.data() instanceof FLVExAudioTagData aex) {
                     // find the corresponding track :)
                     for (FLVExAudioTrack track : aex.tracks()) {
-                        if (track.id() != audioStreamSelection) continue; // not our track!
+                        if (track.id() != this.audioStreamSelection) continue; // not our track!
 
                         // https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h
                         switch (track.codec().string()) {

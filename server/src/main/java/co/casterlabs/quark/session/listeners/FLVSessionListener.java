@@ -32,6 +32,8 @@ public abstract class FLVSessionListener extends SessionListener {
     }
 
     private void writeTag(Session session, FLVTag tag) {
+        if (this.playbackMuxer == null) return; // Invalid state?
+
         tag = this.filter.transform(tag);
         if (tag == null) return; // tag should be dropped!
 
@@ -45,9 +47,8 @@ public abstract class FLVSessionListener extends SessionListener {
 
     @Override
     public void onSequence(Session session, FLVSequence seq) {
-        if (this.playbackMuxer == null) return; // Invalid state?
-
         this.hasGottenSequence = true;
+
         for (FLVTag tag : seq.tags()) {
             this.writeTag(session, tag);
         }
@@ -55,11 +56,7 @@ public abstract class FLVSessionListener extends SessionListener {
 
     @Override
     public void onTag(Session session, FLVTag tag) {
-        if (this.playbackMuxer == null) return; // Invalid state?
-
-        if (!this.hasGottenSequence) {
-            return;
-        }
+        if (!this.hasGottenSequence) return;
 
         if (!this.hasOffset) {
             boolean sessionHasVideo = session.info.video.length > 0;
