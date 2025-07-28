@@ -18,9 +18,10 @@ import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTrack;
 import co.casterlabs.rhs.protocol.uri.Query;
 
 public record StreamFilter(
-    int audioStreamSelection // -1 for all
+    int audioStreamSelection // magic values: -1 for all, -2 for none
 ) {
-    public static final StreamFilter ALL = new StreamFilter(-1);
+    public static final StreamFilter ALL_AUDIO = new StreamFilter(-1);
+    public static final StreamFilter NO_AUDIO = new StreamFilter(-2);
 
     /**
      * @return null, if the filter dropped the tag. You should only use the returned
@@ -29,7 +30,8 @@ public record StreamFilter(
     public @Nullable FLVTag transform(FLVTag tag) {
         switch (tag.type()) {
             case AUDIO: {
-                if (this.audioStreamSelection < 0) return tag; // Allow all audio tracks.
+                if (this.audioStreamSelection == ALL_AUDIO.audioStreamSelection) return tag;
+                if (this.audioStreamSelection == NO_AUDIO.audioStreamSelection) return null;
 
                 if (tag.data() instanceof FLVStandardAudioTagData && this.audioStreamSelection == 0) {
                     return tag; // Check for STD audio stream (implicit id of 0).

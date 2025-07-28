@@ -9,7 +9,7 @@ public class FFplaySessionListener extends FLVProcessSessionListener {
 
     public FFplaySessionListener() throws IOException {
         super(
-            StreamFilter.ALL,
+            StreamFilter.ALL_AUDIO,
             Redirect.DISCARD, Redirect.INHERIT,
             "ffplay",
             "-hide_banner",

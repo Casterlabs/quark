@@ -187,7 +187,7 @@ class _CodecsSessionListener extends SessionListener {
 
         public FFprobeSessionListener(String map, StreamInfo toUpdate) throws IOException {
             super(
-                StreamFilter.ALL, // Let FFmpeg handle the selection
+                StreamFilter.ALL_AUDIO, // Let FFmpeg handle the selection
                 Redirect.PIPE, Redirect.INHERIT,
                 "ffprobe",
                 "-hide_banner",

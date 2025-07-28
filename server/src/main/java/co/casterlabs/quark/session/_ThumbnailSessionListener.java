@@ -54,7 +54,7 @@ class _ThumbnailSessionListener extends SessionListener {
 
         public ThumbnailGenerator() throws IOException {
             super(
-                StreamFilter.ALL,
+                StreamFilter.NO_AUDIO,
                 Redirect.PIPE, Redirect.INHERIT,
                 "ffmpeg",
                 "-hide_banner",
