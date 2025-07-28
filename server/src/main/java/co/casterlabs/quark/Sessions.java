@@ -11,10 +11,6 @@ import co.casterlabs.commons.async.LockableResource;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.SessionListener;
 import co.casterlabs.quark.session.SessionProvider;
-import co.casterlabs.quark.session.listeners.FFplaySessionListener;
-import co.casterlabs.quark.util.FF;
-import xyz.e3ndr.fastloggingframework.logging.FastLogger;
-import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
 public class Sessions {
 
@@ -40,13 +36,13 @@ public class Sessions {
 
             session.addSyncListener(new CloseListener());
 
-            if (Quark.DEBUG && FF.canUsePlay) {
-                try {
-                    session.addAsyncListener(new FFplaySessionListener());
-                } catch (IOException e) {
-                    FastLogger.logStatic(LogLevel.WARNING, "Unable to start FFplay:\n%s", e);
-                }
-            }
+//            if (Quark.DEBUG && FF.canUsePlay) {
+//                try {
+//                    session.addAsyncListener(new FFplaySessionListener());
+//                } catch (IOException e) {
+//                    FastLogger.logStatic(LogLevel.WARNING, "Unable to start FFplay:\n%s", e);
+//                }
+//            }
 
             Webhooks.sessionStarted(id);
 
