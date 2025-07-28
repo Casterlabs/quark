@@ -34,8 +34,6 @@ class _CodecsSessionListener extends SessionListener {
     private final Session session;
     private final SessionInfo info;
 
-    private boolean hasStdAudio = false; // we have to offset the ex audio since this is always index 0.
-
     private void process(FLVTag tag) {
         if (tag.type() == FLVTagType.SCRIPT) return; // ignore.
 
@@ -47,7 +45,7 @@ class _CodecsSessionListener extends SessionListener {
                 };
             }
         } else if (tag.data() instanceof FLVStandardAudioTagData astd) {
-            if (!this.hasStdAudio) {
+            if (this.info.audio.length == 0 || this.info.audio[0] == null) {
                 AudioStreamInfo std = new AudioStreamInfo(0, flvToFourCC(astd.format()));
 
                 if (this.info.audio.length == 0) {
@@ -61,16 +59,16 @@ class _CodecsSessionListener extends SessionListener {
                     this.info.audio = newAudio;
                 }
             }
-            this.hasStdAudio = true;
         } else if (tag.data() instanceof FLVExAudioTagData aex) {
             for (FLVExAudioTrack track : aex.tracks()) {
-                if (this.info.audio.length <= track.id()) {
+                int trackId = track.id();
+
+                if (this.info.audio.length <= trackId || this.info.audio[trackId] == null) {
                     AudioStreamInfo[] newAudio = new AudioStreamInfo[this.info.audio.length + 1];
                     System.arraycopy(this.info.audio, 0, newAudio, 0, this.info.audio.length);
+                    newAudio[trackId] = new AudioStreamInfo(trackId, track.codec().string());
                     this.info.audio = newAudio;
                 }
-
-                this.info.audio[track.id()] = new AudioStreamInfo(track.id(), track.codec().string());
             }
         }
 
