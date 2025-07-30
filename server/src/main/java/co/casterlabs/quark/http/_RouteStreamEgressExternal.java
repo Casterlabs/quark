@@ -5,6 +5,7 @@ import co.casterlabs.quark.Sessions;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.egress.FFmpegRTMPSessionListener;
+import co.casterlabs.quark.egress.RTMPSessionListener;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.listeners.StreamFilter;
 import co.casterlabs.quark.util.FF;
@@ -26,6 +27,13 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
             HttpMethod.POST
     }, postprocessor = _Processor.class, preprocessor = _Processor.class)
     public HttpResponse onEgressRTMP(HttpSession session, EndpointData<User> data) {
+        return this.onEgressRTMPNative(session, data);
+    }
+
+    @HttpEndpoint(path = "/session/:sessionId/egress/external/rtmp_ff", allowedMethods = {
+            HttpMethod.POST
+    }, postprocessor = _Processor.class, preprocessor = _Processor.class)
+    public HttpResponse onEgressRTMPFFmpeg(HttpSession session, EndpointData<User> data) {
         try {
             data.attachment().checkAdmin();
 
@@ -62,6 +70,50 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
         }
     }
 
+    @HttpEndpoint(path = "/session/:sessionId/egress/external/rtmp_ntv", allowedMethods = {
+            HttpMethod.POST
+    }, postprocessor = _Processor.class, preprocessor = _Processor.class)
+    public HttpResponse onEgressRTMPNative(HttpSession session, EndpointData<User> data) {
+        try {
+            data.attachment().checkAdmin();
+
+            Session qSession = Sessions.getSession(data.uriParameters().get("sessionId"), false);
+            if (qSession == null) {
+                return ApiResponse.SESSION_NOT_FOUND.response();
+            }
+
+            EgressRTMPBody body = Rson.DEFAULT.fromJson(session.body().string(), EgressRTMPBody.class);
+
+            if (!FF.canUseMpeg) {
+                return ApiResponse.NOT_ENABLED.response();
+            }
+
+            int lastSlash = body.url.lastIndexOf('/');
+            String urlStrippedOfKey = body.url.substring(0, lastSlash);
+            String key = body.url.substring(lastSlash + 1);
+
+            StreamFilter filter = StreamFilter.from(session.uri().query);
+            qSession.addAsyncListener(new RTMPSessionListener(qSession, filter, body.foreignId, urlStrippedOfKey, key));
+
+            return ApiResponse.success(StandardHttpStatus.CREATED);
+        } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.UNAUTHORIZED.response();
+        } catch (JsonParseException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.BAD_REQUEST.response();
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            return ApiResponse.INTERNAL_ERROR.response();
+        }
+    }
+
     @JsonClass(exposeAll = true)
     public static class EgressRTMPBody {
         public String foreignId = null;
@@ -71,6 +123,7 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
         private void $validate() {
             if (this.url == null) throw new IllegalArgumentException("url cannot be null.");
         }
+
     }
 
 }
