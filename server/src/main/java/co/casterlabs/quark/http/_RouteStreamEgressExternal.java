@@ -27,7 +27,7 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
             HttpMethod.POST
     }, postprocessor = _Processor.class, preprocessor = _Processor.class)
     public HttpResponse onEgressRTMP(HttpSession session, EndpointData<User> data) {
-        return this.onEgressRTMPNative(session, data);
+        return this.onEgressRTMPFFmpeg(session, data);
     }
 
     @HttpEndpoint(path = "/session/:sessionId/egress/external/rtmp_ff", allowedMethods = {
