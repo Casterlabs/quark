@@ -257,7 +257,7 @@ public class RTMPSessionListener extends SessionListener {
 
             Thread.ofVirtual().name("RTMP Egress Restart", 0).start(() -> {
                 try {
-                    Thread.sleep(1000); // Be gentle :)
+                    Thread.sleep(5000); // Be gentle :)
                     reconnect();
                 } catch (IOException | InterruptedException | CallError ignored) {}
             });
