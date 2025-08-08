@@ -52,7 +52,7 @@ public class RTMPSessionListener extends SessionListener {
     private Outbound outbound;
     private volatile boolean isClosed = false;
 
-    public RTMPSessionListener(Session session, StreamFilter filter, String fid, String address, String key) throws IOException, InterruptedException, CallError {
+    public RTMPSessionListener(Session session, StreamFilter filter, String fid, String address, String key) {
         this.session = session;
         this.fid = fid;
         this.metadata = new JsonObject()
@@ -66,8 +66,9 @@ public class RTMPSessionListener extends SessionListener {
         try {
             this.reconnect();
         } catch (IOException | InterruptedException | CallError e) {
-            this.onClose(session);
-            throw e;
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
         }
     }
 
