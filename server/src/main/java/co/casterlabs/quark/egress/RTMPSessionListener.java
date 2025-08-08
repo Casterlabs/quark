@@ -63,7 +63,12 @@ public class RTMPSessionListener extends SessionListener {
         this.tcURL = address;
         this.key = key;
 
-        this.reconnect();
+        try {
+            this.reconnect();
+        } catch (IOException | InterruptedException | CallError e) {
+            this.onClose(session);
+            throw e;
+        }
     }
 
     private void reconnect() throws IOException, InterruptedException, CallError {
