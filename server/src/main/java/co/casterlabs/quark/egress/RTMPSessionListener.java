@@ -65,9 +65,9 @@ public class RTMPSessionListener extends SessionListener {
 
         try {
             this.reconnect();
-        } catch (IOException | InterruptedException | CallError e) {
+        } catch (Throwable t) {
             if (Quark.DEBUG) {
-                e.printStackTrace();
+                t.printStackTrace();
             }
         }
     }
