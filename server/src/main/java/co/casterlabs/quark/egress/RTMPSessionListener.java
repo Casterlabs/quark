@@ -124,14 +124,14 @@ public class RTMPSessionListener extends SessionListener {
             private static final String0 SET_DATA_FRAME = new String0("@setDataFrame");
 
             private boolean hasGottenSequence = false;
-            private boolean hasOffset = false;
+            private long offset = 0;
 
             private void writeTag(FLVTag tag) {
                 tag = filter.transform(tag);
                 if (tag == null) return; // tag should be dropped!
 
                 try {
-                    int ts24 = (int) tag.timestamp() & 0xFFFFFF;
+                    int ts24 = (int) (tag.timestamp() - this.offset) & 0xFFFFFF;
 
                     if (tag.data() instanceof FLVVideoPayload video) {
                         ns.sendMessage(
@@ -178,13 +178,13 @@ public class RTMPSessionListener extends SessionListener {
             public void onTag(Session session, FLVTag tag) {
                 if (!this.hasGottenSequence) return;
 
-                if (!this.hasOffset) {
+                if (this.offset == -1) {
                     boolean sessionHasVideo = session.info.video.length > 0;
                     boolean isVideoKeyFrame = tag.data() instanceof FLVVideoPayload video && video.frameType() == FLVVideoFrameType.KEY_FRAME;
 
                     if (!sessionHasVideo || isVideoKeyFrame) {
-                        this.hasOffset = true;
-//                        this.playbackMuxer.timestampOffset = -tag.timestamp();
+                        this.offset = tag.timestamp();
+                        // this.playbackMuxer.timestampOffset = -tag.timestamp();
                         FastLogger.logStatic(LogLevel.DEBUG, "Got offset: %d", 0);
                         // fall through and write it out.
                     } else {
