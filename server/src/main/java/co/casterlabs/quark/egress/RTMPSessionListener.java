@@ -63,13 +63,15 @@ public class RTMPSessionListener extends SessionListener {
         this.tcURL = address;
         this.key = key;
 
-        try {
-            this.reconnect();
-        } catch (Throwable t) {
-            if (Quark.DEBUG) {
-                t.printStackTrace();
+        Thread.ofVirtual().name("RTMP Egress Kickstar", 0).start(() -> {
+            try {
+                this.reconnect();
+            } catch (Throwable t) {
+                if (Quark.DEBUG) {
+                    t.printStackTrace();
+                }
             }
-        }
+        });
     }
 
     private void reconnect() throws IOException, InterruptedException, CallError {
