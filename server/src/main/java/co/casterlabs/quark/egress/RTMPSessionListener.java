@@ -113,9 +113,7 @@ public class RTMPSessionListener extends SessionListener {
     public void onClose(Session session) {
         this.isClosed = true;
         if (this.outbound != null) {
-            try {
-                this.outbound.socket.close();
-            } catch (Throwable ignored) {}
+            this.outbound.close();
         }
     }
 
@@ -245,6 +243,21 @@ public class RTMPSessionListener extends SessionListener {
             pubPromise.await();
 
             session.addAsyncListener(this.listener);
+        }
+
+        public void close() {
+            session.removeListener(this.listener); // don't send video after calling deleteStream/FCUnpublish.
+
+            try {
+                this.ns.call("FCUnpublish", Null0.INSTANCE, new String0(key));
+            } catch (Throwable ignored) {}
+            try {
+                this.ns.deleteStream();
+            } catch (Throwable ignored) {}
+
+            try {
+                this.socket.close();
+            } catch (Throwable ignored) {}
         }
 
         @Override
