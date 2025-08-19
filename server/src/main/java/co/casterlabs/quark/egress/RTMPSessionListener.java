@@ -80,7 +80,13 @@ public class RTMPSessionListener extends SessionListener {
         final String app = this.uri.getPath().isEmpty() ? "app" : this.uri.getPath().substring(1); // strip leading `/`
         final String protocol = this.uri.getScheme().toLowerCase();
         final String host = this.uri.getHost();
-        final int port = this.uri.getPort() == -1 ? 1935 : this.uri.getPort();
+        final int port = this.uri.getPort() == -1 ? //
+            switch (protocol) {
+                case "rtmp" -> 1935;
+                case "rtmps" -> 443;
+                default -> throw new IllegalArgumentException("Unsupported protocol: " + protocol);
+            } : //
+            this.uri.getPort();
 
         InetSocketAddress address = new InetSocketAddress(host, port);
 
