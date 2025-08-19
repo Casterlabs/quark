@@ -202,6 +202,7 @@ class _CodecsSessionListener extends SessionListener {
                 try {
                     // Wait for the result, then copy it.
                     String str = StreamUtil.toString(this.stdout(), StandardCharsets.UTF_8).replace("\r", "").replace("\n", "").replace(" ", "");
+                    if (str.isEmpty()) return;
 
                     JsonObject json = Rson.DEFAULT.fromJson(str, JsonObject.class);
 
