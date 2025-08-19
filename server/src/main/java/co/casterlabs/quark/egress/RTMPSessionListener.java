@@ -63,7 +63,7 @@ public class RTMPSessionListener extends SessionListener {
         this.tcURL = address;
         this.key = key;
 
-        Thread.ofPlatform().name("RTMP Egress Kickstart", 0).start(() -> {
+        Quark.HEAVY_IO_THREAD_BUILDER.name("RTMP Egress Kickstart", 0).start(() -> {
             try {
                 this.reconnect();
             } catch (Throwable t) {
@@ -275,7 +275,7 @@ public class RTMPSessionListener extends SessionListener {
 
             session.removeListener(this.listener);
 
-            Thread.ofPlatform().name("RTMP Egress Restart", 0).start(() -> {
+            Quark.HEAVY_IO_THREAD_BUILDER.name("RTMP Egress Restart", 0).start(() -> {
                 try {
                     Thread.sleep(5000); // Be gentle :)
                     reconnect();

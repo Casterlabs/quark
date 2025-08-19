@@ -13,8 +13,7 @@ import co.casterlabs.quark.session.SessionProvider;
 import co.casterlabs.rakurai.json.element.JsonObject;
 
 public class FFmpegProvider implements SessionProvider {
-    private static final ThreadFactory TF = (Quark.EXPR_VIRTUAL_THREAD_HEAVY_IO ? Thread.ofVirtual() : Thread.ofPlatform()) //
-        .name("FFmpeg Provider", 0).factory();
+    private static final ThreadFactory TF = Quark.HEAVY_IO_THREAD_BUILDER.name("FFmpeg Provider", 0).factory();
 
     private final Demuxer demuxer = new Demuxer();
 

@@ -14,8 +14,7 @@ import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 public class RTMPServer {
     private static final FastLogger LOGGER = new FastLogger();
 
-    private static final ThreadFactory RTMP_CONNECTION_TF = (Quark.EXPR_VIRTUAL_THREAD_HEAVY_IO ? Thread.ofVirtual() : Thread.ofPlatform()) //
-        .name("RTMP Connection", 0).factory();
+    private static final ThreadFactory RTMP_CONNECTION_TF = Quark.HEAVY_IO_THREAD_BUILDER.name("RTMP Connection", 0).factory();
 
     private static final ThreadFactory RTMP_MISC_TF = Thread.ofVirtual().name("RTMP Misc", 0).factory();
 

@@ -1,11 +1,14 @@
 package co.casterlabs.quark.http;
 
+import co.casterlabs.quark.Quark;
 import co.casterlabs.rhs.util.TaskExecutor;
 
 class _RakuraiTaskExecutor implements TaskExecutor {
     public static final _RakuraiTaskExecutor INSTANCE = new _RakuraiTaskExecutor();
 
-    private static final Thread.Builder THREAD_FACTORY = Thread.ofVirtual().name("Http Task Pool - #", 0);
+    // Temporary until we can fully resolve pinning issues.
+    // Should normally be ofVirtual.
+    private static final Thread.Builder THREAD_FACTORY = Quark.HEAVY_IO_THREAD_BUILDER.name("Http Task Pool - #", 0);
 
     @Override
     public Task execute(Runnable toRun) {
