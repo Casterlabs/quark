@@ -179,7 +179,8 @@ class _RTMPSessionProvider implements SessionProvider, MessageHandler {
 
     @Override
     public JsonObject metadata() {
-        return this.metadata;
+        return this.metadata
+            .put("latency", this.rtmp.latency());
     }
 
     @Override
