@@ -63,7 +63,7 @@ public class RTMPSessionListener extends SessionListener {
         this.tcURL = address;
         this.key = key;
 
-        Thread.ofVirtual().name("RTMP Egress Kickstar", 0).start(() -> {
+        Thread.ofVirtual().name("RTMP Egress Kickstart", 0).start(() -> {
             try {
                 this.reconnect();
             } catch (Throwable t) {
