@@ -187,8 +187,7 @@ public class RTMPSessionListener extends SessionListener {
 
                     if (!sessionHasVideo || isVideoKeyFrame) {
                         this.offset = tag.timestamp();
-                        // this.playbackMuxer.timestampOffset = -tag.timestamp();
-                        FastLogger.logStatic(LogLevel.DEBUG, "Got offset: %d", 0);
+                        FastLogger.logStatic(LogLevel.DEBUG, "Got offset: %d", -this.offset);
                         // fall through and write it out.
                     } else {
 //                        FastLogger.logStatic(LogLevel.DEBUG, "Discarding tag before offset: %s", tag);
