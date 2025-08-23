@@ -37,4 +37,6 @@ jobs:
         run: mvn clean package
 
       - name: ⚙️ Build & Push image
-        run: docker buildx build --platform=linux/amd64,linux/arm64/v8 --tag ghcr.io/${{github.repository}}:latest --push .
+        env:
+          GH_REPO: ${{github.repository}}
+        run: docker buildx build --platform=linux/amd64,linux/arm64/v8 --tag ghcr.io/${GH_REPO,,}:latest --push .
