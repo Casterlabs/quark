@@ -1,10 +1,13 @@
 package co.casterlabs.quark.http;
 
+import org.jetbrains.annotations.Nullable;
+
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.Sessions;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
 import co.casterlabs.quark.egress.FFmpegRTMPSessionListener;
+import co.casterlabs.quark.egress.PipelineSessionListener;
 import co.casterlabs.quark.egress.RTMPSessionListener;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.listeners.StreamFilter;
@@ -116,12 +119,62 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
 
     @JsonClass(exposeAll = true)
     public static class EgressRTMPBody {
-        public String foreignId = null;
+        public @Nullable String foreignId = null;
         public String url = null;
 
         @JsonValidate
         private void $validate() {
             if (this.url == null) throw new IllegalArgumentException("url cannot be null.");
+        }
+
+    }
+
+    @HttpEndpoint(path = "/session/:sessionId/egress/external/pipeline", allowedMethods = {
+            HttpMethod.POST
+    }, postprocessor = _Processor.class, preprocessor = _Processor.class)
+    public HttpResponse onEgressPipeline(HttpSession session, EndpointData<User> data) {
+        try {
+            data.attachment().checkAdmin();
+
+            Session qSession = Sessions.getSession(data.uriParameters().get("sessionId"), false);
+            if (qSession == null) {
+                return ApiResponse.SESSION_NOT_FOUND.response();
+            }
+
+            EgressPipelineBody body = Rson.DEFAULT.fromJson(session.body().string(), EgressPipelineBody.class);
+            StreamFilter filter = StreamFilter.from(session.uri().query);
+
+            qSession.addAsyncListener(new PipelineSessionListener(filter, body.foreignId, body.resultId, body.command));
+
+            return ApiResponse.success(StandardHttpStatus.CREATED);
+        } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.UNAUTHORIZED.response();
+        } catch (JsonParseException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.BAD_REQUEST.response();
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            return ApiResponse.INTERNAL_ERROR.response();
+        }
+    }
+
+    @JsonClass(exposeAll = true)
+    public static class EgressPipelineBody {
+        public @Nullable String foreignId = null;
+        public @Nullable String resultId = null;
+
+        public String[] command = null;
+
+        @JsonValidate
+        private void $validate() {
+            if (this.command == null) throw new IllegalArgumentException("command cannot be null.");
         }
 
     }

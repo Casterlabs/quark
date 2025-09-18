@@ -35,4 +35,8 @@ public abstract class FLVProcessSessionListener extends FLVSessionListener {
         this.proc.destroy();
     }
 
+    protected void destroyProc() {
+        this.proc.destroy();
+    }
+
 }

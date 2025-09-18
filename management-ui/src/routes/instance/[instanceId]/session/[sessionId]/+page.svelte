@@ -16,8 +16,11 @@
 	let egressManagementModalRerender = $state(0);
 
 	let showStartEgressModal = $state(false);
-	let startEgressProtocol: 'RTMP' = $state('RTMP');
-	let startEgressUrl = $state('');
+	let startEgressProtocol: 'RTMP' | 'PIPELINE' = $state('RTMP');
+
+	let startEgressRTMPUrl = $state('');
+	let startEgressPIPELINEResultId = $state('');
+	let startEgressPIPELINECommand = $state('');
 </script>
 
 {#await data.session}
@@ -105,20 +108,49 @@
 					bind:value={startEgressProtocol}
 				>
 					<option>RTMP</option>
+					<option>PIPELINE</option>
 				</Select>
-				<Input
-					type="password"
-					placeholder="URL"
-					bind:value={startEgressUrl}
-					class="flex-1 px-1 py-0.5 h-6"
-					style="border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important;"
-				/>
+				{#if startEgressProtocol == 'RTMP'}
+					<Input
+						type="password"
+						placeholder="URL"
+						bind:value={startEgressRTMPUrl}
+						class="flex-1 px-1 py-0.5 h-6"
+						style="border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important;"
+					/>
+				{:else if startEgressProtocol == 'PIPELINE'}
+					<Input
+						type="input"
+						placeholder="Result ID - Blank for none"
+						bind:value={startEgressPIPELINEResultId}
+						class="flex-1 px-1 py-0.5 h-6"
+						style="border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important;"
+					/>
+				{/if}
 			</div>
+
+			{#if startEgressProtocol == 'PIPELINE'}
+				<textarea placeholder="Command - Each argument on a new line" bind:value={startEgressPIPELINECommand} class="flex-1 px-1 py-0.5 w-full h-24"></textarea>
+			{/if}
+
 			<Button
 				class="px-1 w-full"
 				onclick={() => {
-					const fid = `${new URL(startEgressUrl).hostname}-${Math.random().toString(28).substring(2)}`;
-					data.instance.startSessionEgress(session.id, startEgressProtocol, startEgressUrl, fid);
+					switch (startEgressProtocol) {
+						case 'RTMP': {
+							const fid = `${new URL(startEgressRTMPUrl).hostname}-${Math.random().toString(28).substring(2)}`;
+							data.instance.startSessionEgressRTMP(session.id, startEgressRTMPUrl, fid);
+							break;
+						}
+
+						case 'PIPELINE': {
+							const command = startEgressPIPELINECommand.split('\n');
+							const fid = `pipeline-${command[0]}-${Math.random().toString(28).substring(2)}`;
+							data.instance.startSessionEgressPipeline(session.id, fid, startEgressPIPELINEResultId.length == 0 ? null : startEgressPIPELINEResultId, command);
+							break;
+						}
+					}
+
 					showStartEgressModal = false;
 				}}
 			>
@@ -127,3 +159,25 @@
 		</Modal>
 	{/if}
 {/await}
+
+<style>
+	textarea {
+		border-radius: var(--clui-radius, 0);
+		border-width: 0.0625rem;
+		border-style: solid;
+		border-color: transparent;
+		background-color: transparent;
+		color: currentColor;
+		font-size: 0.8rem;
+	}
+
+	textarea:not(.borderless) {
+		border-color: var(--clui-color-base-7);
+		background-color: var(--clui-color-base-3);
+		color: var(--clui-color-base-12);
+	}
+
+	textarea:not(.borderless)::placeholder {
+		color: var(--clui-color-base-11);
+	}
+</style>

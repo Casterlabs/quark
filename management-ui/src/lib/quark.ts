@@ -28,10 +28,12 @@ export declare interface Session {
 	};
 }
 
+export declare type SessionEgressType = 'HTTP_PLAYBACK' | 'RTMP_PLAYBACK' | 'RTMP_EGRESS' | 'PIPELINE';
+
 export declare interface SessionEgress {
 	id: EgressId;
 	createdAt: number;
-	type: 'HTTP_PLAYBACK' | 'RTMP';
+	type: SessionEgressType;
 	fid?: ForeignId;
 }
 
@@ -92,12 +94,23 @@ export default class QuarkInstance {
 		});
 	}
 
-	async startSessionEgress(sid: SessionId, format: 'RTMP', url: string, fid: ForeignId): Promise<void> {
-		await this.apiCall(`/session/${encodeURI(sid)}/egress/external/${encodeURI(format.toLowerCase())}`, {
+	async startSessionEgressRTMP(sid: SessionId, url: string, fid: ForeignId, subtype?: '_ff' | '_ntv'): Promise<void> {
+		await this.apiCall(`/session/${encodeURI(sid)}/egress/external/rtmp${subtype || ''}`, {
 			method: 'POST',
 			body: JSON.stringify({
 				foreignId: fid,
 				url: url
+			})
+		});
+	}
+
+	async startSessionEgressPipeline(sid: SessionId, fid: ForeignId, resultId: SessionId | null, command: string[]): Promise<void> {
+		await this.apiCall(`/session/${encodeURI(sid)}/egress/external/pipeline`, {
+			method: 'POST',
+			body: JSON.stringify({
+				foreignId: fid,
+				resultId: resultId,
+				command: command
 			})
 		});
 	}

@@ -43,6 +43,7 @@ public abstract class SessionListener {
         RTMP_PLAYBACK,
 
         RTMP_EGRESS,
+        PIPELINE,
     };
 
 }
