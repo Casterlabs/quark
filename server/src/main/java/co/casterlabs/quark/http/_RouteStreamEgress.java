@@ -112,7 +112,8 @@ public class _RouteStreamEgress implements EndpointProvider {
             }
 
             return HttpResponse.newFixedLengthResponse(StandardHttpStatus.OK, qSession.thumbnail())
-                .mime("image/jpeg");
+                .mime("image/jpeg")
+                .header("Cache-Control", "public, max-age=" + Quark.THUMBNAIL_INTERVAL);
         } catch (AuthenticationException e) {
             if (Quark.DEBUG) {
                 e.printStackTrace();
