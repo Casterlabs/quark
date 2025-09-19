@@ -36,7 +36,7 @@ public class Session {
     private final List<FLVTag> sequenceTags = new LinkedList<>();
     private final _ThumbnailSessionListener thumbnailGenerator = new _ThumbnailSessionListener();
 
-    private volatile State state = State.RUNNING;
+    private volatile State state = State.STARTING;
 
     {
         this.addAsyncListener(new _CodecsSessionListener(this, this.info));
@@ -77,6 +77,13 @@ public class Session {
             return;
         }
 
+        if (this.state == State.STARTING) {
+            // We made it past the sequence tags, so we should transition to RUNNING and
+            // send the STARTED webhook.
+            this.state = State.RUNNING;
+            Webhooks.sessionStarted(this.id);
+        }
+
         this.prevDts = tag.timestamp();
 
         for (SessionListener listener : this.listeners.get()) {
@@ -91,7 +98,7 @@ public class Session {
     }
 
     public void close(boolean graceful) {
-        if (this.state != State.RUNNING) return;
+        if (this.state != State.STARTING && this.state != State.RUNNING) return;
         this.state = State.CLOSING;
 
         if (Webhooks.sessionEnding(this, graceful, this.metadata())) {
@@ -200,6 +207,7 @@ public class Session {
     }
 
     private static enum State {
+        STARTING,
         RUNNING,
         CLOSING,
         CLOSED;

@@ -44,8 +44,6 @@ public class Sessions {
 //                }
 //            }
 
-            Webhooks.sessionStarted(id);
-
             return session;
         } finally {
             sessions.release();
