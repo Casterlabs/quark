@@ -47,9 +47,9 @@ public class Quark {
     /**
      * Whether or not to use Virtual Threads for heavy-IO tasks.
      */
-    private static final @Experimental boolean EXPR_VIRTUAL_THREAD_HEAVY_IO = "true".equalsIgnoreCase(System.getenv("QUARK_EXP_VIRTUAL_THREAD_HEAVY_IO"));
+    private static final @Experimental boolean EXP_VIRTUAL_THREAD_HEAVY_IO = "true".equalsIgnoreCase(System.getenv("QUARK_EXP_VIRTUAL_THREAD_HEAVY_IO"));
 
-    public static final Thread.Builder HEAVY_IO_THREAD_BUILDER = Quark.EXPR_VIRTUAL_THREAD_HEAVY_IO ? Thread.ofVirtual() : Thread.ofPlatform();
+    public static final Thread.Builder HEAVY_IO_THREAD_BUILDER = Quark.EXP_VIRTUAL_THREAD_HEAVY_IO ? Thread.ofVirtual() : Thread.ofPlatform();
 
     /**
      * Whether or not to generate a HLS playlist for each session.
