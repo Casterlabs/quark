@@ -28,6 +28,10 @@ public abstract class FLVProcessSessionListener extends FLVSessionListener {
         this.init(this.proc.getOutputStream());
     }
 
+    protected void onExit(Runnable run) {
+        this.proc.onExit().thenRun(run);
+    }
+
     protected InputStream stdout() {
         return this.proc.getInputStream();
     }

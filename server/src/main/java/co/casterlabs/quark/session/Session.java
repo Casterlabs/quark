@@ -18,7 +18,6 @@ import co.casterlabs.quark.egress.HLSSessionListener;
 import co.casterlabs.quark.session.info.SessionInfo;
 import co.casterlabs.quark.session.listeners.StreamFilter;
 import co.casterlabs.quark.util.FF;
-import co.casterlabs.quark.util.FileUtil;
 import co.casterlabs.quark.util.ModifiableArray;
 import co.casterlabs.rakurai.json.element.JsonArray;
 import co.casterlabs.rakurai.json.element.JsonElement;
@@ -156,10 +155,6 @@ public class Session {
         }
 
         Webhooks.sessionEnded(this.id);
-
-        if (this.hlsDirectory != null) {
-            FileUtil.deleteRecursively(this.hlsDirectory);
-        }
     }
 
     public JsonArray listeners() {

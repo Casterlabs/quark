@@ -7,6 +7,7 @@ import java.lang.ProcessBuilder.Redirect;
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.quark.session.listeners.StreamFilter;
+import co.casterlabs.quark.util.FileUtil;
 
 public class HLSSessionListener extends FLVProcessSessionListener {
 
@@ -32,6 +33,8 @@ public class HLSSessionListener extends FLVProcessSessionListener {
             "-f", "hls",
             "playlist.m3u8"
         );
+
+        this.onExit(() -> FileUtil.deleteRecursively(folder));
     }
 
     @Override
