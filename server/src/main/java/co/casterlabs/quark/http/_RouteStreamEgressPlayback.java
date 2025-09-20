@@ -114,7 +114,9 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             return new HttpResponse(
                 new FLVResponseContent(filter, qSession, data.attachment().id()),
                 StandardHttpStatus.OK
-            ).mime("video/x-flv");
+            )
+                .mime("video/x-flv")
+                .header("Cache-Control", "private, max-age=0, no-store");
         } catch (AuthenticationException e) {
             if (Quark.DEBUG) {
                 e.printStackTrace();
@@ -154,7 +156,9 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             return new HttpResponse(
                 new RemuxedResponseContent(filter, qSession, data.attachment().id(), format.mime, format.command),
                 StandardHttpStatus.OK
-            ).mime(format.mime);
+            )
+                .mime(format.mime)
+                .header("Cache-Control", "private, max-age=0, no-store");
         } catch (AuthenticationException e) {
             if (Quark.DEBUG) {
                 e.printStackTrace();

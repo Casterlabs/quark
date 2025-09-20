@@ -1,5 +1,6 @@
 package co.casterlabs.quark.session.listeners;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ProcessBuilder.Redirect;
@@ -10,10 +11,15 @@ public abstract class FLVProcessSessionListener extends FLVSessionListener {
     private final Process proc;
 
     public FLVProcessSessionListener(StreamFilter filter, Redirect out, Redirect err, String... command) throws IOException {
+        this(filter, out, err, null, command);
+    }
+
+    public FLVProcessSessionListener(StreamFilter filter, Redirect out, Redirect err, File dir, String... command) throws IOException {
         super(filter);
 
         this.proc = new ProcessBuilder()
             .command(command)
+            .directory(dir)
             .redirectOutput(out)
             .redirectError(err)
             .redirectInput(Redirect.PIPE)

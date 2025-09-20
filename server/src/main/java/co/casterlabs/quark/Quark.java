@@ -1,10 +1,12 @@
 package co.casterlabs.quark;
 
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 
 import org.jetbrains.annotations.ApiStatus.Experimental;
 import org.jetbrains.annotations.Nullable;
 
+import co.casterlabs.quark.util.FileUtil;
 import xyz.e3ndr.fastloggingframework.FastLoggingFramework;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 import xyz.e3ndr.fastloggingframework.logging.LogLevel;
@@ -49,6 +51,11 @@ public class Quark {
 
     public static final Thread.Builder HEAVY_IO_THREAD_BUILDER = Quark.EXPR_VIRTUAL_THREAD_HEAVY_IO ? Thread.ofVirtual() : Thread.ofPlatform();
 
+    /**
+     * Whether or not to generate a HLS playlist for each session.
+     */
+    public static final @Experimental boolean EXPR_HLS = "true".equalsIgnoreCase(System.getenv("EXPR_HLS"));
+
     static {
         System.setProperty("fastloggingframework.wrapsystem", "true");
 
@@ -56,6 +63,8 @@ public class Quark {
             FastLoggingFramework.setDefaultLevel(LogLevel.ALL);
             FastLogger.logStatic("Debug enabled");
         }
+
+        FileUtil.deleteRecursively(new File("hls"));
     }
 
     public static void init() {} // dummy

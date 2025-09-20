@@ -39,6 +39,8 @@ public abstract class SessionListener {
     }
 
     public static enum Type {
+        HLS,
+
         HTTP_PLAYBACK,
         RTMP_PLAYBACK,
 

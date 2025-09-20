@@ -1,26 +1,32 @@
 package co.casterlabs.quark.session;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import org.jetbrains.annotations.Nullable;
 
 import co.casterlabs.commons.async.LockableResource;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.Webhooks;
+import co.casterlabs.quark.egress.HLSSessionListener;
 import co.casterlabs.quark.session.info.SessionInfo;
+import co.casterlabs.quark.session.listeners.StreamFilter;
+import co.casterlabs.quark.util.FF;
+import co.casterlabs.quark.util.FileUtil;
 import co.casterlabs.quark.util.ModifiableArray;
 import co.casterlabs.rakurai.json.element.JsonArray;
 import co.casterlabs.rakurai.json.element.JsonElement;
 import co.casterlabs.rakurai.json.element.JsonNull;
 import co.casterlabs.rakurai.json.element.JsonObject;
-import lombok.RequiredArgsConstructor;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
-@RequiredArgsConstructor
 public class Session {
     // Array for fast/efficient iteration, map for lookups
     private final LockableResource<Map<String, SessionListener>> listenerMap = new LockableResource<>(new HashMap<>());
@@ -30,6 +36,8 @@ public class Session {
     public final long createdAt = System.currentTimeMillis();
     public final String id;
 
+    public final @Nullable File hlsDirectory;
+
     public volatile long prevDts = 0;
 
     private SessionProvider provider;
@@ -38,9 +46,26 @@ public class Session {
 
     private volatile State state = State.STARTING;
 
-    {
+    public Session(String id) {
+        this.id = id;
+
         this.addAsyncListener(new _CodecsSessionListener(this, this.info));
         this.addAsyncListener(this.thumbnailGenerator);
+
+        if (Quark.EXPR_HLS && FF.canUseMpeg) {
+            this.hlsDirectory = new File("hls", this.id);
+            this.hlsDirectory.mkdirs();
+
+            try {
+                this.addAsyncListener(new HLSSessionListener(StreamFilter.ALL_AUDIO, this.hlsDirectory));
+            } catch (IOException e) {
+                if (Quark.DEBUG) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            this.hlsDirectory = null;
+        }
     }
 
     public void setProvider(SessionProvider provider) {
@@ -131,6 +156,10 @@ public class Session {
         }
 
         Webhooks.sessionEnded(this.id);
+
+        if (this.hlsDirectory != null) {
+            FileUtil.deleteRecursively(this.hlsDirectory);
+        }
     }
 
     public JsonArray listeners() {

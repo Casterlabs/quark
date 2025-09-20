@@ -8,6 +8,7 @@ import co.casterlabs.rhs.protocol.http.HttpResponse;
 
 public enum ApiResponse {
     SESSION_NOT_FOUND(StandardHttpStatus.NOT_FOUND),
+    FILE_NOT_FOUND(StandardHttpStatus.NOT_FOUND),
 
     UNAUTHORIZED(StandardHttpStatus.UNAUTHORIZED),
     BAD_REQUEST(StandardHttpStatus.BAD_REQUEST),
@@ -34,7 +35,8 @@ public enum ApiResponse {
 
     public HttpResponse response() {
         return HttpResponse.newFixedLengthResponse(this.status, this.json)
-            .mime("application/json; charset=utf-8");
+            .mime("application/json; charset=utf-8")
+            .header("Cache-Control", "private, max-age=0, no-store");
     }
 
     public static HttpResponse success(HttpStatus status, JsonElement data) {
@@ -44,12 +46,14 @@ public enum ApiResponse {
             .toString(true);
 
         return HttpResponse.newFixedLengthResponse(status, json)
-            .mime("application/json; charset=utf-8");
+            .mime("application/json; charset=utf-8")
+            .header("Cache-Control", "private, max-age=0, no-store");
     }
 
     public static HttpResponse success(HttpStatus status) {
         return HttpResponse.newFixedLengthResponse(status, SUCCESS_EMPTY)
-            .mime("application/json; charset=utf-8");
+            .mime("application/json; charset=utf-8")
+            .header("Cache-Control", "private, max-age=0, no-store");
     }
 
 }
