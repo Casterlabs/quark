@@ -6,8 +6,11 @@ import java.util.concurrent.Executors;
 
 import org.jetbrains.annotations.Nullable;
 
+import co.casterlabs.quark.egress.config.PipelineEgressConfiguration;
+import co.casterlabs.quark.egress.config.RTMPEgressConfiguration;
 import co.casterlabs.quark.ingest.ffmpeg.FFmpegProvider;
 import co.casterlabs.quark.session.Session;
+import co.casterlabs.quark.util.DependencyException;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
 import co.casterlabs.rakurai.json.element.JsonElement;
@@ -92,16 +95,36 @@ public class Webhooks {
     /* Session Started  */
     /* ---------------- */
 
-    public static void sessionStarted(String id) {
+    public static void sessionStarted(Session session) {
         if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return; // dummy mode.
 
         ASYNC_WEBHOOKS.submit(() -> {
             try {
-                post(
+                SessionStartedResponse res = post(
                     "SESSION_STARTED",
-                    new SessionStartedRequest(id),
-                    null
+                    new SessionStartedRequest(session.id),
+                    SessionStartedResponse.class
                 );
+
+                for (PipelineEgressConfiguration eg : res.pipelineEgresses) {
+                    try {
+                        eg.create(session);
+                    } catch (DependencyException | IOException e) {
+                        if (Quark.DEBUG) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                for (RTMPEgressConfiguration eg : res.rtmpEgresses) {
+                    try {
+                        eg.create(session);
+                    } catch (DependencyException | IOException e) {
+                        if (Quark.DEBUG) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
             } catch (IOException e) {
                 if (Quark.DEBUG) {
                     e.printStackTrace();
@@ -112,6 +135,13 @@ public class Webhooks {
 
     @JsonClass(exposeAll = true)
     private static record SessionStartedRequest(String id) {
+    }
+
+    @JsonClass(exposeAll = true)
+    private static class SessionStartedResponse {
+        private RTMPEgressConfiguration[] rtmpEgresses = {};
+        private PipelineEgressConfiguration[] pipelineEgresses = {};
+
     }
 
     /* ---------------- */

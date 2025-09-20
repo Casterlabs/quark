@@ -1,21 +1,16 @@
 package co.casterlabs.quark.http;
 
-import org.jetbrains.annotations.Nullable;
-
 import co.casterlabs.quark.Quark;
 import co.casterlabs.quark.Sessions;
 import co.casterlabs.quark.auth.AuthenticationException;
 import co.casterlabs.quark.auth.User;
-import co.casterlabs.quark.egress.FFmpegRTMPSessionListener;
-import co.casterlabs.quark.egress.PipelineSessionListener;
-import co.casterlabs.quark.egress.RTMPSessionListener;
+import co.casterlabs.quark.egress.config.PipelineEgressConfiguration;
+import co.casterlabs.quark.egress.config.RTMPEgressConfiguration;
 import co.casterlabs.quark.session.Session;
 import co.casterlabs.quark.session.listeners.StreamFilter;
-import co.casterlabs.quark.util.FF;
+import co.casterlabs.quark.util.DependencyException;
 import co.casterlabs.rakurai.json.Rson;
-import co.casterlabs.rakurai.json.annotating.JsonClass;
 import co.casterlabs.rakurai.json.serialization.JsonParseException;
-import co.casterlabs.rakurai.json.validation.JsonValidate;
 import co.casterlabs.rhs.HttpMethod;
 import co.casterlabs.rhs.HttpStatus.StandardHttpStatus;
 import co.casterlabs.rhs.protocol.api.endpoints.EndpointData;
@@ -30,9 +25,47 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
             HttpMethod.POST
     }, postprocessor = _Processor.class, preprocessor = _Processor.class)
     public HttpResponse onEgressRTMP(HttpSession session, EndpointData<User> data) {
-        return this.onEgressRTMPFFmpeg(session, data);
+        try {
+            data.attachment().checkAdmin();
+
+            Session qSession = Sessions.getSession(data.uriParameters().get("sessionId"), false);
+            if (qSession == null) {
+                return ApiResponse.SESSION_NOT_FOUND.response();
+            }
+
+            RTMPEgressConfiguration body = Rson.DEFAULT.fromJson(session.body().string(), RTMPEgressConfiguration.class);
+            if (!session.uri().query.isEmpty()) {
+                // compat
+                body.filter = StreamFilter.from(session.uri().query);
+            }
+
+            body.create(qSession);
+
+            return ApiResponse.success(StandardHttpStatus.CREATED);
+        } catch (DependencyException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.NOT_ENABLED.response();
+        } catch (AuthenticationException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.UNAUTHORIZED.response();
+        } catch (JsonParseException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.BAD_REQUEST.response();
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            return ApiResponse.INTERNAL_ERROR.response();
+        }
     }
 
+    @Deprecated
     @HttpEndpoint(path = "/session/:sessionId/egress/external/rtmp_ff", allowedMethods = {
             HttpMethod.POST
     }, postprocessor = _Processor.class, preprocessor = _Processor.class)
@@ -45,16 +78,21 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
 
-            EgressRTMPBody body = Rson.DEFAULT.fromJson(session.body().string(), EgressRTMPBody.class);
-
-            if (!FF.canUseMpeg) {
-                return ApiResponse.NOT_ENABLED.response();
+            RTMPEgressConfiguration body = Rson.DEFAULT.fromJson(session.body().string(), RTMPEgressConfiguration.class);
+            if (!session.uri().query.isEmpty()) {
+                // compat
+                body.filter = StreamFilter.from(session.uri().query);
             }
 
-            StreamFilter filter = StreamFilter.from(session.uri().query);
-            qSession.addAsyncListener(new FFmpegRTMPSessionListener(filter, body.url, body.foreignId));
+            body.useNativeImpl = false; // compat.
+            body.create(qSession);
 
             return ApiResponse.success(StandardHttpStatus.CREATED);
+        } catch (DependencyException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.NOT_ENABLED.response();
         } catch (AuthenticationException e) {
             if (Quark.DEBUG) {
                 e.printStackTrace();
@@ -73,6 +111,7 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
         }
     }
 
+    @Deprecated
     @HttpEndpoint(path = "/session/:sessionId/egress/external/rtmp_ntv", allowedMethods = {
             HttpMethod.POST
     }, postprocessor = _Processor.class, preprocessor = _Processor.class)
@@ -85,20 +124,21 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
 
-            EgressRTMPBody body = Rson.DEFAULT.fromJson(session.body().string(), EgressRTMPBody.class);
-
-            if (!FF.canUseMpeg) {
-                return ApiResponse.NOT_ENABLED.response();
+            RTMPEgressConfiguration body = Rson.DEFAULT.fromJson(session.body().string(), RTMPEgressConfiguration.class);
+            if (!session.uri().query.isEmpty()) {
+                // compat
+                body.filter = StreamFilter.from(session.uri().query);
             }
 
-            int lastSlash = body.url.lastIndexOf('/');
-            String urlStrippedOfKey = body.url.substring(0, lastSlash);
-            String key = body.url.substring(lastSlash + 1);
-
-            StreamFilter filter = StreamFilter.from(session.uri().query);
-            qSession.addAsyncListener(new RTMPSessionListener(qSession, filter, body.foreignId, urlStrippedOfKey, key));
+            body.useNativeImpl = true; // compat.
+            body.create(qSession);
 
             return ApiResponse.success(StandardHttpStatus.CREATED);
+        } catch (DependencyException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.NOT_ENABLED.response();
         } catch (AuthenticationException e) {
             if (Quark.DEBUG) {
                 e.printStackTrace();
@@ -115,18 +155,6 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
             }
             return ApiResponse.INTERNAL_ERROR.response();
         }
-    }
-
-    @JsonClass(exposeAll = true)
-    public static class EgressRTMPBody {
-        public @Nullable String foreignId = null;
-        public String url = null;
-
-        @JsonValidate
-        private void $validate() {
-            if (this.url == null) throw new IllegalArgumentException("url cannot be null.");
-        }
-
     }
 
     @HttpEndpoint(path = "/session/:sessionId/egress/external/pipeline", allowedMethods = {
@@ -141,12 +169,20 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
                 return ApiResponse.SESSION_NOT_FOUND.response();
             }
 
-            EgressPipelineBody body = Rson.DEFAULT.fromJson(session.body().string(), EgressPipelineBody.class);
-            StreamFilter filter = StreamFilter.from(session.uri().query);
+            PipelineEgressConfiguration body = Rson.DEFAULT.fromJson(session.body().string(), PipelineEgressConfiguration.class);
+            if (!session.uri().query.isEmpty()) {
+                // compat
+                body.filter = StreamFilter.from(session.uri().query);
+            }
 
-            qSession.addAsyncListener(new PipelineSessionListener(filter, body.foreignId, body.resultId, body.command));
+            body.create(qSession);
 
             return ApiResponse.success(StandardHttpStatus.CREATED);
+        } catch (DependencyException e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+            return ApiResponse.NOT_ENABLED.response();
         } catch (AuthenticationException e) {
             if (Quark.DEBUG) {
                 e.printStackTrace();
@@ -163,20 +199,6 @@ public class _RouteStreamEgressExternal implements EndpointProvider {
             }
             return ApiResponse.INTERNAL_ERROR.response();
         }
-    }
-
-    @JsonClass(exposeAll = true)
-    public static class EgressPipelineBody {
-        public @Nullable String foreignId = null;
-        public @Nullable String resultId = null;
-
-        public String[] command = null;
-
-        @JsonValidate
-        private void $validate() {
-            if (this.command == null) throw new IllegalArgumentException("command cannot be null.");
-        }
-
     }
 
 }

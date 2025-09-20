@@ -15,8 +15,16 @@ import co.casterlabs.flv4j.flv.tags.audio.data.AudioData;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioMultitrackType;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTagData;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTrack;
+import co.casterlabs.rakurai.json.Rson;
+import co.casterlabs.rakurai.json.annotating.JsonClass;
+import co.casterlabs.rakurai.json.annotating.JsonSerializer;
+import co.casterlabs.rakurai.json.element.JsonElement;
+import co.casterlabs.rakurai.json.element.JsonObject;
+import co.casterlabs.rakurai.json.serialization.JsonParseException;
 import co.casterlabs.rhs.protocol.uri.Query;
+import lombok.NonNull;
 
+@JsonClass(serializer = StreamFilterSerializer.class)
 public record StreamFilter(
     int audioStreamSelection // magic values: -1 for all, -2 for none
 ) {
@@ -112,6 +120,19 @@ public record StreamFilter(
     public static StreamFilter from(Query query) {
         int streamA = Integer.parseInt(query.getSingleOrDefault("s:a", "-1"));
         return new StreamFilter(streamA);
+    }
+
+}
+
+class StreamFilterSerializer implements JsonSerializer<StreamFilter> {
+
+    @Override
+    public @Nullable StreamFilter deserialize(@NonNull JsonElement value, @NonNull Class<?> type, @NonNull Rson rson) throws JsonParseException {
+        JsonObject obj = value.getAsObject();
+
+        return new StreamFilter(
+            obj.getNumber("audioStreamSelection").intValue()
+        );
     }
 
 }
