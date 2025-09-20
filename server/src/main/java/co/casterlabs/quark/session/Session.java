@@ -51,7 +51,7 @@ public class Session {
         this.addAsyncListener(new _CodecsSessionListener(this, this.info));
         this.addAsyncListener(this.thumbnailGenerator);
 
-        if (Quark.EXPR_HLS && FF.canUseMpeg) {
+        if (Quark.EXP_HLS && FF.canUseMpeg) {
             this.hlsDirectory = new File("hls", this.id);
             this.hlsDirectory.mkdirs();
 

@@ -54,7 +54,7 @@ public class Quark {
     /**
      * Whether or not to generate a HLS playlist for each session.
      */
-    public static final @Experimental boolean EXPR_HLS = "true".equalsIgnoreCase(System.getenv("EXPR_HLS"));
+    public static final @Experimental boolean EXP_HLS = "true".equalsIgnoreCase(System.getenv("QUARK_EXP_HLS"));
 
     static {
         System.setProperty("fastloggingframework.wrapsystem", "true");
