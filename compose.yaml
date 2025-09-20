@@ -5,6 +5,7 @@ services:
     environment:
       QUARK_DEBUG: false
       QUARK_EXP_VIRTUAL_THREAD_HEAVY_IO: false # Unstable.
+      QUARK_EXP_HLS: false # Untested.
       # QUARK_AUTH_SECRET: "my-hmac256-secret" # Can omit for a "dummy mode" where all API calls are unauthenticated.
       # QUARK_ANON_PREGEX: "" # The default playback regex for anonymous users. Omit to disallow anonymous viewership.
       # QUARK_WEBHOOK_URL: "https://..."
