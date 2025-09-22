@@ -10,6 +10,7 @@ import co.casterlabs.quark.egress.config.PipelineEgressConfiguration;
 import co.casterlabs.quark.egress.config.RTMPEgressConfiguration;
 import co.casterlabs.quark.ingest.ffmpeg.FFmpegProvider;
 import co.casterlabs.quark.session.Session;
+import co.casterlabs.quark.session.info.SessionInfo;
 import co.casterlabs.quark.util.DependencyException;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
@@ -102,9 +103,14 @@ public class Webhooks {
             try {
                 SessionStartedResponse res = post(
                     "SESSION_STARTED",
-                    new SessionStartedRequest(session.id),
+                    new SessionStartedRequest(session.id, session.info),
                     SessionStartedResponse.class
                 );
+
+                if (res.shouldTerminate) {
+                    session.close(true);
+                    return;
+                }
 
                 for (PipelineEgressConfiguration eg : res.pipelineEgresses) {
                     try {
@@ -134,13 +140,14 @@ public class Webhooks {
     }
 
     @JsonClass(exposeAll = true)
-    private static record SessionStartedRequest(String id) {
+    private static record SessionStartedRequest(String id, SessionInfo info) {
     }
 
     @JsonClass(exposeAll = true)
     private static class SessionStartedResponse {
         private RTMPEgressConfiguration[] rtmpEgresses = {};
         private PipelineEgressConfiguration[] pipelineEgresses = {};
+        private boolean shouldTerminate = false;
 
     }
 
