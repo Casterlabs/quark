@@ -96,14 +96,14 @@ public class Webhooks {
     /* Session Started  */
     /* ---------------- */
 
-    public static void sessionStarted(Session session) {
+    public static void sessionStarted(Session session, @Nullable JsonObject metadata) {
         if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return; // dummy mode.
 
         ASYNC_WEBHOOKS.submit(() -> {
             try {
                 SessionStartedResponse res = post(
                     "SESSION_STARTED",
-                    new SessionStartedRequest(session.id, session.info),
+                    new SessionStartedRequest(session.id, session.info, metadata),
                     SessionStartedResponse.class
                 );
 
@@ -140,7 +140,7 @@ public class Webhooks {
     }
 
     @JsonClass(exposeAll = true)
-    private static record SessionStartedRequest(String id, SessionInfo info) {
+    private static record SessionStartedRequest(String id, SessionInfo info, @Nullable JsonObject metadata) {
     }
 
     @JsonClass(exposeAll = true)

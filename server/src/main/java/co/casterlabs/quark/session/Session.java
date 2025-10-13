@@ -105,7 +105,7 @@ public class Session {
             // We made it past the sequence tags, so we should transition to RUNNING and
             // send the STARTED webhook.
             this.state = State.RUNNING;
-            Webhooks.sessionStarted(this);
+            Webhooks.sessionStarted(this, provider.metadata());
         }
 
         this.prevDts = tag.timestamp();
