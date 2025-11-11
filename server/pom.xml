@@ -2,9 +2,17 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>co.casterlabs</groupId>
+	<groupId>co.casterlabs.quark</groupId>
 	<artifactId>quark</artifactId>
 	<version>PLACEHOLDER</version>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>core</module>
+		<module>http</module>
+		<module>protocol</module>
+		<module>bootstrap</module>
+	</modules>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -20,30 +28,6 @@
 		</resources>
 
 		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.6.0</version>
-				<executions>
-					<execution>
-						<id>shade</id>
-						<phase>package</phase>
-						<goals>
-							<goal>shade</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<shadedArtifactAttached>true</shadedArtifactAttached>
-					<finalName>${project.name}</finalName>
-					<transformers>
-						<transformer
-							implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-							<mainClass>co.casterlabs.quark.Bootstrap</mainClass>
-						</transformer>
-					</transformers>
-				</configuration>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -100,81 +84,6 @@
 			<artifactId>annotations</artifactId>
 			<version>19.0.0</version>
 			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-engine</artifactId>
-			<version>5.13.0-M3</version>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- Auth -->
-		<dependency>
-			<groupId>com.auth0</groupId>
-			<artifactId>java-jwt</artifactId>
-			<version>4.4.0</version>
-			<scope>compile</scope>
-		</dependency>
-
-		<!-- Egress -->
-		<dependency>
-			<groupId>co.casterlabs.rakurai-http-server</groupId>
-			<artifactId>core</artifactId>
-			<version>2459ff7</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>co.casterlabs.rakurai-http-server.proto</groupId>
-			<artifactId>http</artifactId>
-			<version>2459ff7</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>co.casterlabs.rakurai-http-server.proto</groupId>
-			<artifactId>websocket</artifactId>
-			<version>2459ff7</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>co.casterlabs.rakurai-http-server.proto</groupId>
-			<artifactId>api-framework</artifactId>
-			<version>2459ff7</version>
-			<scope>compile</scope>
-		</dependency>
-
-		<!-- Ingest -->
-		<dependency>
-			<groupId>co.casterlabs</groupId>
-			<artifactId>flv4j</artifactId>
-			<version>6039fb2</version>
-			<scope>compile</scope>
-		</dependency>
-
-		<!-- Util -->
-		<dependency>
-			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>okhttp</artifactId>
-			<version>4.12.0</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>co.casterlabs</groupId>
-			<artifactId>Rson</artifactId>
-			<version>1.18.0</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>co.casterlabs.commons</groupId>
-			<artifactId>async</artifactId>
-			<version>1.9.0</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.github.e3ndr</groupId>
-			<artifactId>FastLoggingFramework</artifactId>
-			<version>1.12.1</version>
-			<scope>compile</scope>
 		</dependency>
 	</dependencies>
 </project>

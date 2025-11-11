@@ -1,0 +1,81 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>core</artifactId>
+
+	<parent>
+		<groupId>co.casterlabs.quark</groupId>
+		<artifactId>quark</artifactId>
+		<version>PLACEHOLDER</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<dependencies>
+		<!-- Egress -->
+		<dependency>
+			<groupId>co.casterlabs.rakurai-http-server</groupId>
+			<artifactId>core</artifactId>
+			<version>2459ff7</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>co.casterlabs.rakurai-http-server.proto</groupId>
+			<artifactId>http</artifactId>
+			<version>2459ff7</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>co.casterlabs.rakurai-http-server.proto</groupId>
+			<artifactId>websocket</artifactId>
+			<version>2459ff7</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>co.casterlabs.rakurai-http-server.proto</groupId>
+			<artifactId>api-framework</artifactId>
+			<version>2459ff7</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<!-- Auth -->
+		<dependency>
+			<groupId>com.auth0</groupId>
+			<artifactId>java-jwt</artifactId>
+			<version>4.4.0</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<!-- Util -->
+		<dependency>
+			<groupId>co.casterlabs</groupId>
+			<artifactId>flv4j</artifactId>
+			<version>6039fb2</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.squareup.okhttp3</groupId>
+			<artifactId>okhttp</artifactId>
+			<version>4.12.0</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>co.casterlabs</groupId>
+			<artifactId>Rson</artifactId>
+			<version>1.18.0</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>co.casterlabs.commons</groupId>
+			<artifactId>async</artifactId>
+			<version>1.9.0</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.github.e3ndr</groupId>
+			<artifactId>FastLoggingFramework</artifactId>
+			<version>1.12.1</version>
+			<scope>compile</scope>
+		</dependency>
+	</dependencies>
+</project>
