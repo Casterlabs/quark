@@ -149,11 +149,10 @@ func (c *sessionContext) PushOpus(rtpPacket *rtp.Packet) {
 		if sample == nil {
 			return
 		}
-		if c.audioWriter != nil {
-			c.audioTimestamp += sample.Duration
-			if _, err := c.audioWriter.Write(true, int64(c.audioTimestamp/time.Millisecond), sample.Data); err != nil {
-				panic(err)
-			}
+
+		c.audioTimestamp += sample.Duration
+		if _, err := c.audioWriter.Write(true, int64(c.audioTimestamp/time.Millisecond), sample.Data); err != nil {
+			panic(err)
 		}
 	}
 }
@@ -185,12 +184,14 @@ func (c *sessionContext) PushH264(rtpPacket *rtp.Packet) { // nolint
 	data := []byte{}
 	for i := range pkts {
 		if _, err = c.h264JitterBuffer.PopAtSequence(pkts[i].SequenceNumber); err != nil {
-			panic(err)
+			// panic(err)
+			continue
 		}
 
 		out, err := h264Packet.Unmarshal(pkts[i].Payload)
 		if err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "Error unmarshaling H264 packet: %v\n", err)
+			continue
 		}
 		data = append(data, out...)
 	}
@@ -203,11 +204,9 @@ func (c *sessionContext) PushH264(rtpPacket *rtp.Packet) { // nolint
 	}
 	c.lastVideoTimestamp = pkts[0].Timestamp
 
-	if c.videoWriter != nil {
-		c.videoTimestamp += time.Duration(float64(samples) / float64(90000) * float64(time.Second))
-		if _, err := c.videoWriter.Write(videoKeyframe, int64(c.videoTimestamp/time.Millisecond), data); err != nil {
-			panic(err)
-		}
+	c.videoTimestamp += time.Duration(float64(samples) / float64(90000) * float64(time.Second))
+	if _, err := c.videoWriter.Write(videoKeyframe, int64(c.videoTimestamp/time.Millisecond), data); err != nil {
+		panic(err)
 	}
 }
 
