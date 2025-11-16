@@ -12,15 +12,24 @@ import java.util.concurrent.ThreadFactory;
 import co.casterlabs.flv4j.flv.FLVFileHeader;
 import co.casterlabs.flv4j.flv.muxing.NonSeekableFLVDemuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
+import co.casterlabs.flv4j.flv.tags.FLVTagType;
+import co.casterlabs.flv4j.flv.tags.video.FLVVideoCodec;
+import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
+import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
+import co.casterlabs.flv4j.flv.tags.video.data.AVCVideoData;
+import co.casterlabs.flv4j.flv.tags.video.data.AVCVideoData.AVCPacketType;
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionProvider;
+import co.casterlabs.quark.core.util.ArrayView;
 import co.casterlabs.quark.core.util.PortRange;
 import co.casterlabs.quark.core.util.RandomIdGenerator;
+import co.casterlabs.quark.protocol.webrtc.AVCDecoderConfigurationRecord;
 import co.casterlabs.quark.protocol.webrtc.WebRTCBinPrep;
 import co.casterlabs.quark.protocol.webrtc.WebRTCEnv;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.element.JsonObject;
+import lombok.SneakyThrows;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 
 public class WebRTCProvider implements SessionProvider {
@@ -41,6 +50,8 @@ public class WebRTCProvider implements SessionProvider {
     private JsonObject metadata;
 
     public final CompletableFuture<JsonObject> sdpAnswer = new CompletableFuture<>();
+
+    private final Demuxer demuxer = new Demuxer();
 
     public WebRTCProvider(String sdpOffer) throws IOException {
         providers.put(this.resourceId, this);
@@ -64,24 +75,7 @@ public class WebRTCProvider implements SessionProvider {
 
         TF.newThread(() -> {
             try {
-                new NonSeekableFLVDemuxer() {
-                    @Override
-                    protected void onHeader(FLVFileHeader header) {} // ignore.
-
-                    @Override
-                    protected void onTag(long previousTagSize, FLVTag tag) {
-                        if (jammed) return; // Just in case.
-
-                        tag = new FLVTag(
-                            tag.type(),
-                            (tag.timestamp() + dtsOffset) & 0xFFFFFFFFL, // rewrite with our offset
-                            tag.streamId(),
-                            tag.data()
-                        );
-
-                        session.tag(tag);
-                    }
-                }.start(this.proc.getInputStream());
+                this.demuxer.start(this.proc.getInputStream());
             } catch (IOException ignored) {} finally {
                 this.close(true);
             }
@@ -155,6 +149,99 @@ public class WebRTCProvider implements SessionProvider {
         if (!this.jammed && this.session != null) {
             this.session.close(graceful);
         }
+    }
+
+    private class Demuxer extends NonSeekableFLVDemuxer {
+        private ArrayView lastSPS = ArrayView.EMPTY;
+        private ArrayView lastPPS = ArrayView.EMPTY;
+
+        @Override
+        protected void onHeader(FLVFileHeader header) {} // ignore.
+
+        @SneakyThrows
+        @Override
+        protected void onTag(long previousTagSize, FLVTag tag) {
+            if (jammed) return; // Just in case.
+
+            long newTagTimestamp = (tag.timestamp() + dtsOffset) & 0xFFFFFFFFL; // rewrite with our offset
+
+            if (WebRTCEnv.EXP_WHIP_AVC_AUTO_RECONFIG && // We have a pretty Naive implementation for this feature.
+                tag.data() instanceof FLVVideoPayload video &&
+                video.codec() == FLVVideoCodec.H264 &&
+                video.frameType() == FLVVideoFrameType.KEY_FRAME &&
+                video.data() instanceof AVCVideoData avc &&
+                avc.type() == AVCPacketType.NALU &&
+                avc.data().length > 5) {
+                this.checkNALUs(newTagTimestamp, avc.data());
+            }
+
+            tag = new FLVTag(
+                tag.type(),
+                newTagTimestamp,
+                tag.streamId(),
+                tag.data()
+            );
+
+            session.tag(tag);
+        }
+
+        private void checkNALUs(long timestamp, byte[] nalus) {
+            // We need to sniff NALUs to see if it's an SPS/PPS packet. If so, we need to
+            // check our known SPS/PPS to see if it's different, and if so, send a new
+            // AVCDecoderConfigurationRecord.
+
+            ArrayView foundSPS = null;
+            ArrayView foundPPS = null;
+
+            for (int idx = 0; idx < nalus.length;) {
+                int size = ((nalus[idx] & 0xFF) << 24) |
+                    ((nalus[idx + 1] & 0xFF) << 16) |
+                    ((nalus[idx + 2] & 0xFF) << 8) |
+                    (nalus[idx + 3] & 0xFF);
+
+                int naluType = nalus[idx + 4] & 0x1F;
+
+                if (naluType == 7) { // SPS
+                    foundSPS = new ArrayView(nalus, idx + 4, size);
+                } else if (naluType == 8) { // PPS
+                    foundPPS = new ArrayView(nalus, idx + 4, size);
+                }
+
+                idx += 4; // advance past size
+                idx += size; // advance past NALU
+            }
+
+            if (foundSPS == null || foundPPS == null) {
+                return; // No SPS/PPS found.
+            }
+            if (foundSPS.equals(this.lastSPS) && foundPPS.equals(this.lastPPS)) {
+                return; // No change.
+            }
+
+            logger.debug("sps==sps? %b", foundSPS.equals(this.lastSPS));
+            logger.debug("pps==pps? %b", foundPPS.equals(this.lastPPS));
+
+            this.lastSPS = foundSPS;
+            this.lastPPS = foundPPS;
+
+            byte[] config = AVCDecoderConfigurationRecord.from(foundSPS, foundPPS);
+
+            logger.debug("Found new SPS/PPS, sending a new sequence header...");
+            session.tag(
+                new FLVTag(
+                    FLVTagType.VIDEO, timestamp, 0, new FLVVideoPayload(
+                        FLVVideoFrameType.KEY_FRAME.id,
+                        FLVVideoCodec.H264.id,
+                        new AVCVideoData(
+                            AVCPacketType.SEQUENCE_HEADER.id,
+                            0,
+                            config
+                        )
+                    )
+                )
+            );
+        }
+
     }
 
 }
