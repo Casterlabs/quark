@@ -83,6 +83,7 @@ public class RTMPSessionProvider implements SessionProvider, MessageHandler {
 
         this.session = Sessions.authenticateSession(
             this,
+            "RTMP",
             this.rtmp.conn.socket().getInetAddress().getHostAddress(),
             handshakeUrl,
             app,

@@ -44,7 +44,7 @@ public class RouteStreamIngressWHIP implements EndpointProvider {
             String sdpOffer = session.body().string();
 
             WebRTCProvider provider = new WebRTCProvider(sdpOffer);
-            Session qSession = Sessions.authenticateSession(provider, session.remoteNetworkAddress(), url, app, auth);
+            Session qSession = Sessions.authenticateSession(provider, "WHIP", session.remoteNetworkAddress(), url, app, auth);
 
             provider.init(qSession);
 
