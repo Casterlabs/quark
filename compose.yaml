@@ -3,13 +3,21 @@ services:
     image: ghcr.io/casterlabs/quark:latest
     restart: always
     environment:
+      # Core
       QUARK_DEBUG: false
-      QUARK_EXP_VIRTUAL_THREAD_HEAVY_IO: false # Unstable.
-      QUARK_EXP_HLS: false # Untested.
-      # QUARK_AUTH_SECRET: "my-hmac256-secret" # Can omit for a "dummy mode" where all API calls are unauthenticated.
-      # QUARK_ANON_PREGEX: "" # The default playback regex for anonymous users. Omit to disallow anonymous viewership.
+      QUARK_THUMB_IT: 30 # Thumbnail regeneration interval (seconds). Defaults to 30 when unset.
+      # QUARK_AUTH_SECRET: "my-hmac256-secret" # Omitting keeps the API open/unauthenticated.
+      # QUARK_ANON_PREGEX: "" # Regex for anonymous playback access. Omit to block anon viewers.
       # QUARK_WEBHOOK_URL: "https://..."
-      # QUARK_THUMB_IT: 30 # How often Quark regenerates thumbnails, in seconds. Defaults to 30 if omitted.
+
+      # WHIP
+      QUARK_EXP_WHIP: false # Experimental WHIP ingress support.
+      QUARK_EXP_WHIP_AVC_AUTO_RECONFIG: false # Sends new AVC decoder config on PLI; useful for adaptive encoders.
+      # QUARK_WHIP_OVERRIDE_ADDRESS: "" # Optional address override advertised to WHIP clients.
+
+      # Experimental
+      QUARK_EXP_VIRTUAL_THREAD_HEAVY_IO: false # Unstable.
+      QUARK_EXP_HLS: false # Enable per-session HLS output.
     ports:
       - 1935:1935
       - 8080:8080 # BYO reverse proxy for SSL :)
