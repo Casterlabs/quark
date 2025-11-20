@@ -377,7 +377,6 @@ func readUntilNewline() (in string) {
 	return
 }
 
-// JSON encode + base64 a SessionDescription.
 func encode(obj *webrtc.SessionDescription) string {
 	b, err := json.Marshal(obj)
 	if err != nil {
@@ -388,7 +387,6 @@ func encode(obj *webrtc.SessionDescription) string {
 	return string(b)
 }
 
-// Decode a base64 and unmarshal JSON into a SessionDescription.
 func decode(in string, obj *webrtc.SessionDescription) {
 	if err := json.Unmarshal([]byte(in), obj); err != nil {
 		fmt.Fprintln(os.Stderr, err)

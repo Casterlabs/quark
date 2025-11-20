@@ -1,6 +1,6 @@
 package co.casterlabs.quark.core.util;
 
-public class PortRange {
+public class PublicPortRange {
     private static final int BASE_PORT = 20000; // Arbitrary choice, range seems mostly dead/unused.
     private static final int MAX_PORTS = 05000;
 

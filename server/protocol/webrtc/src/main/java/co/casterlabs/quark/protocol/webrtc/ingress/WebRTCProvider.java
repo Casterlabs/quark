@@ -22,7 +22,7 @@ import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionProvider;
 import co.casterlabs.quark.core.util.ArrayView;
-import co.casterlabs.quark.core.util.PortRange;
+import co.casterlabs.quark.core.util.PublicPortRange;
 import co.casterlabs.quark.core.util.RandomIdGenerator;
 import co.casterlabs.quark.protocol.webrtc.AVCDecoderConfigurationRecord;
 import co.casterlabs.quark.protocol.webrtc.WebRTCBinPrep;
@@ -37,7 +37,7 @@ public class WebRTCProvider implements SessionProvider {
 
     public static final Map<String, WebRTCProvider> providers = new ConcurrentHashMap<>();
 
-    private final int assignedPort = PortRange.acquirePort();
+    private final int assignedPort = PublicPortRange.acquirePort();
     public final String resourceId = RandomIdGenerator.generate(24);
 
     public final FastLogger logger;
@@ -65,7 +65,7 @@ public class WebRTCProvider implements SessionProvider {
         this.proc = new ProcessBuilder()
             .command(
                 WebRTCBinPrep.INGEST_BINARY.getAbsolutePath(),
-                WebRTCEnv.WHIP_OVERRIDE_ADDRESS,
+                WebRTCEnv.WEBRTC_OVERRIDE_ADDRESS,
                 String.valueOf(this.assignedPort)
             )
             .redirectOutput(Redirect.PIPE)
@@ -104,7 +104,7 @@ public class WebRTCProvider implements SessionProvider {
         }).start();
 
         this.proc.onExit().thenRun(() -> {
-            PortRange.releasePort(this.assignedPort);
+            PublicPortRange.releasePort(this.assignedPort);
         });
 
         this.proc.getOutputStream().write(

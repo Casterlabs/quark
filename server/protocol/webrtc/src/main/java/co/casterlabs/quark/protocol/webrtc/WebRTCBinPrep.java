@@ -17,7 +17,10 @@ import co.casterlabs.quark.core.util.FF;
 public class WebRTCBinPrep {
     private static final String FILE_EXTENSION = Platform.osFamily == OSFamily.WINDOWS ? ".exe" : "";
 
-    public static final File INGEST_BINARY = new File(System.getProperty("java.io.tmpdir"), "webrtc-ingest" + FILE_EXTENSION);
+    public static final File INGEST_BINARY = new File(System.getProperty("java.io.tmpdir"),
+            "webrtc-ingest" + FILE_EXTENSION);
+    public static final File EGRESS_BINARY = new File(System.getProperty("java.io.tmpdir"),
+            "webrtc-egress" + FILE_EXTENSION);
 
     public static void start() throws FileNotFoundException, IOException {
         if (!WebRTCEnv.EXP_WHIP || !FF.canUseMpeg) {
@@ -44,14 +47,28 @@ public class WebRTCBinPrep {
 
         INGEST_BINARY.delete();
         try (
-            InputStream in = WebRTCBinPrep.class.getResourceAsStream(binRoot + "webrtc-ingest" + FILE_EXTENSION);
-            OutputStream out = new FileOutputStream(INGEST_BINARY);) {
+                InputStream in = WebRTCBinPrep.class.getResourceAsStream(binRoot + "webrtc-ingest" + FILE_EXTENSION);
+                OutputStream out = new FileOutputStream(INGEST_BINARY);) {
             if (in == null) {
-                throw new FileNotFoundException("Could not find embedded webrtc-ingest binary for platform in: " + binRoot);
+                throw new FileNotFoundException(
+                        "Could not find embedded webrtc-ingest binary for platform in: " + binRoot);
             }
 
             StreamUtil.streamTransfer(in, out, 8192);
             INGEST_BINARY.setExecutable(true);
+        }
+
+        EGRESS_BINARY.delete();
+        try (
+                InputStream in = WebRTCBinPrep.class.getResourceAsStream(binRoot + "webrtc-egress" + FILE_EXTENSION);
+                OutputStream out = new FileOutputStream(EGRESS_BINARY);) {
+            if (in == null) {
+                throw new FileNotFoundException(
+                        "Could not find embedded webrtc-egress binary for platform in: " + binRoot);
+            }
+
+            StreamUtil.streamTransfer(in, out, 8192);
+            EGRESS_BINARY.setExecutable(true);
         }
     }
 

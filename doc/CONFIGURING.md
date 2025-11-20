@@ -30,8 +30,9 @@ This document lists the environment variables used to configure Quark.
 | Variable                           | Default | Description                                                                                                                                                                 |
 | :--------------------------------- | :------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `QUARK_EXP_WHIP`                   | `false` | **Experimental.** Enable WHIP support.                                                                                                                                      |
+| `QUARK_EXP_WHEP`                   | `false` | **Experimental.** Enable WHEP support.                                                                                                                                      |
 | `QUARK_EXP_WHIP_AVC_AUTO_RECONFIG` | `false` | **Experimental.** Enable WHIP AVC auto reconfiguration. This experimental option will send a new AVCDecoderConfiguration payload when it detects a SPS/PPS PLI from WebRTC. |
-| `QUARK_WHIP_OVERRIDE_ADDRESS`      | `""`    | Override address for WHIP. By default, it advertises all interfaces.                                                                                                        |
+| `QUARK_WEBRTC_OVERRIDE_ADDRESS`    | `""`    | Override address for WebRTC. By default, it advertises all interfaces.                                                                                                      |
 
 ## HLS
 

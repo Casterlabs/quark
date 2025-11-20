@@ -11,3 +11,4 @@
 # Common
 .DS_Store
 
+.vscode/settings.json

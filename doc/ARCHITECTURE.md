@@ -67,6 +67,7 @@ The HTTP module provides:
 ### WebRTC
 
 - **Ingress (WHIP)**: Accepts WebRTC streams via the WHIP protocol.
+- **Egress (WHEP)**: Playback via the WHEP protocol.
 
 ### HLS
 

@@ -1,14 +1,18 @@
 package co.casterlabs.quark.protocol.webrtc.routes;
 
 import co.casterlabs.quark.core.Quark;
-import co.casterlabs.quark.core.Sessions;
+import co.casterlabs.quark.core.auth.User;
 import co.casterlabs.quark.core.extensibility.QuarkHttpEndpoint;
 import co.casterlabs.quark.core.http.ApiResponse;
 import co.casterlabs.quark.core.http.QuarkHttpProcessor;
+import co.casterlabs.quark.core.http.QuarkHttpProcessor.EndpointContext;
 import co.casterlabs.quark.core.session.Session;
+import co.casterlabs.quark.core.session.listeners.StreamFilter;
 import co.casterlabs.quark.core.util.FF;
+import co.casterlabs.quark.core.util.PrivatePortRange;
+import co.casterlabs.quark.core.util.PublicPortRange;
 import co.casterlabs.quark.protocol.webrtc.WebRTCEnv;
-import co.casterlabs.quark.protocol.webrtc.ingress.WebRTCProvider;
+import co.casterlabs.quark.protocol.webrtc.egress.WebRTCSessionListener;
 import co.casterlabs.rakurai.json.element.JsonObject;
 import co.casterlabs.rhs.HttpMethod;
 import co.casterlabs.rhs.HttpStatus.StandardHttpStatus;
@@ -18,41 +22,43 @@ import co.casterlabs.rhs.protocol.api.endpoints.HttpEndpoint;
 import co.casterlabs.rhs.protocol.http.HttpResponse;
 import co.casterlabs.rhs.protocol.http.HttpSession;
 
-// https://www.ietf.org/archive/id/draft-ietf-wish-whip-01.html
+// https://www.ietf.org/archive/id/draft-murillo-whep-03.html
 @QuarkHttpEndpoint
-public class RouteStreamIngressWHIP implements EndpointProvider {
+public class RouteStreamEgressWHEP implements EndpointProvider {
 
-    @HttpEndpoint(path = "/session/ingress/whip", allowedMethods = {
+    @HttpEndpoint(path = "/session/:sessionId/egress/playback/whep", allowedMethods = {
             HttpMethod.POST
-    }, postprocessor = QuarkHttpProcessor.class)
-    public HttpResponse onIngressStartWHIPBlankApp(HttpSession session, EndpointData<Void> data) {
-        return this.onIngressStartWHIP(session, data);
-    }
-
-    @HttpEndpoint(path = "/session/ingress/whip/:app", allowedMethods = {
-            HttpMethod.POST
-    }, postprocessor = QuarkHttpProcessor.class)
-    public HttpResponse onIngressStartWHIP(HttpSession session, EndpointData<Void> data) {
+    }, postprocessor = QuarkHttpProcessor.class, preprocessor = QuarkHttpProcessor.class)
+    public HttpResponse onEgressStartWHEP(HttpSession session, EndpointData<EndpointContext> data) {
         if (!WebRTCEnv.EXP_WHIP || !FF.canUseMpeg) {
             return ApiResponse.NOT_ENABLED.response();
         }
 
+        User user = data.attachment().user();
+        Session qSession = data.attachment().session();
+
         try {
-            String url = session.headers().getSingle("Host").raw();
-            String auth = session.headers().getSingle("Authorization").raw().substring("Bearer ".length());
-            String app = data.uriParameters().getOrDefault("app", "");
+            user.checkPlayback(qSession.id);
+
+            StreamFilter filter = StreamFilter.from(session.uri().query);
+
             String sdpOffer = session.body().string();
+            WebRTCSessionListener listener = new WebRTCSessionListener(
+                qSession, sdpOffer,
+                new int[] {
+                        PublicPortRange.acquirePort(),
+                        PrivatePortRange.acquirePort(),
+                        PrivatePortRange.acquirePort()
+                },
+                filter
+            );
 
-            WebRTCProvider provider = new WebRTCProvider(sdpOffer);
-            Session qSession = Sessions.authenticateSession(provider, "WHIP", session.remoteNetworkAddress(), url, app, auth);
-
-            provider.init(qSession);
-
-            JsonObject answer = provider.sdpAnswer.get();
+            JsonObject answer = listener.sdpAnswer.get();
+            qSession.addAsyncListener(listener);
 
             return HttpResponse.newFixedLengthResponse(StandardHttpStatus.CREATED, answer.getString("sdp"))
                 .mime("application/sdp")
-                .header("Location", "/resource/whip/" + provider.resourceId);
+                .header("Location", "/resource/whep/" + listener.resourceId);
         } catch (Throwable t) {
             if (Quark.DEBUG) {
                 t.printStackTrace();
@@ -61,19 +67,19 @@ public class RouteStreamIngressWHIP implements EndpointProvider {
         }
     }
 
-    @HttpEndpoint(path = "/resource/whip/:resourceId", allowedMethods = {
+    @HttpEndpoint(path = "/resource/whep/:resourceId", allowedMethods = {
             HttpMethod.DELETE
     }, postprocessor = QuarkHttpProcessor.class)
-    public HttpResponse onTerminateWHIP(HttpSession session, EndpointData<Void> data) {
+    public HttpResponse onTerminateWHEP(HttpSession session, EndpointData<Void> data) {
         if (!WebRTCEnv.EXP_WHIP || !FF.canUseMpeg) {
             return ApiResponse.NOT_ENABLED.response();
         }
 
         try {
-            WebRTCProvider provider = WebRTCProvider.providers.get(data.uriParameters().get("resourceId"));
+            WebRTCSessionListener instance = WebRTCSessionListener.listeners.remove(data.uriParameters().get("resourceId"));
 
-            if (provider != null) {
-                provider.close(true);
+            if (instance != null) {
+                instance.close();
             }
 
             return ApiResponse.success(StandardHttpStatus.OK);
@@ -85,7 +91,7 @@ public class RouteStreamIngressWHIP implements EndpointProvider {
         }
     }
 
-    @HttpEndpoint(path = "/resource/whip/:resourceId", allowedMethods = {
+    @HttpEndpoint(path = "/resource/whep/:resourceId", allowedMethods = {
             HttpMethod.PATCH, // We don't support trickle ICE yet, so by spec we should 405.
 
             // The rest of these are reserved for future use.
