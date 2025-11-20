@@ -29,7 +29,7 @@ cd server
 mvn clean install -DskipTests
 
 # Build the Docker image
-docker build -t quark:latest -f server/Dockerfile .
+docker build -t quark:latest .
 ```
 
 The `Dockerfile` includes:

@@ -5,23 +5,23 @@ This document orients AI co-workers to the Quark codebase so you can make confid
 ## Quick facts
 
 - **Stack:** Java 21 (Maven multi-module backend) + SvelteKit/Vite management UI.
-- **Monorepo layout:** Backend lives under `server/` (with nested modules like `core`, `http`, `protocol/*`); the UI lives in `management-ui/`.
+- **Monorepo layout:** Backend has nested modules like `core`, `http`, `protocol/*`; the UI lives in `management-ui/`.
 - **Primary domain:** Real-time streaming orchestration (ingress, session control, multi-egress).
 - **Key docs:** `doc/ARCHITECTURE.md`, `doc/CONFIGURING.md`, `doc/WEBHOOKS.md`.
 
 ## Repository map (high level)
 
-| Path                       | Purpose                                                                    |
-| -------------------------- | -------------------------------------------------------------------------- |
-| `server/bootstrap`         | Entry point that discovers protocol daemons via custom annotations.        |
-| `server/core`              | Session lifecycle logic, webhook dispatch, extensibility contracts.        |
-| `server/http`              | REST/HTTP playback server.                                                 |
-| `server/protocol/rtmp`     | RTMP ingress + egress.                                                     |
-| `server/protocol/webrtc`   | WHIP/WebRTC ingress.                                                       |
-| `server/protocol/hls`      | HLS egress playlist/segment generation.                                    |
-| `server/protocol/pipeline` | Internal media pipeline helpers.                                           |
-| `management-ui`            | Svelte management console (Vite build, Tailwind-like styles in `app.css`). |
-| `doc`                      | Human/agent-facing docs (this file included).                              |
+| Path                | Purpose                                                                    |
+| ------------------- | -------------------------------------------------------------------------- |
+| `bootstrap`         | Entry point that discovers protocol daemons via custom annotations.        |
+| `core`              | Session lifecycle logic, webhook dispatch, extensibility contracts.        |
+| `http`              | REST/HTTP playback server.                                                 |
+| `protocol/rtmp`     | RTMP ingress + egress.                                                     |
+| `protocol/webrtc`   | WHIP/WebRTC ingress.                                                       |
+| `protocol/hls`      | HLS egress playlist/segment generation.                                    |
+| `protocol/pipeline` | Internal media pipeline helpers.                                           |
+| `management-ui`     | Svelte management console (Vite build, Tailwind-like styles in `app.css`). |
+| `doc`               | Human/agent-facing docs (this file included).                              |
 
 > Tip: Many submodules already have compiled `target/` artifacts—edit `src/main/java` and rely on Maven to rebuild.
 
@@ -64,18 +64,18 @@ If you introduce new configuration, document it in `doc/CONFIGURING.md` and prop
 
 ## Development workflow cheat sheet
 
-- **Backend:** Use Maven from `server/` (e.g., `mvn clean install`). Each module has its own `pom.xml`, but the parent handles dependency alignment.
-- **UI:** From `management-ui/`, run `npm install` once, then `npm run dev` or `npm run build` (SvelteKit 5 n Vite). TypeScript config lives in `tsconfig.json`.
+- **Backend:** Use Maven (e.g., `mvn clean install`). Each module has its own `pom.xml`, but the parent handles dependency alignment.
+- **UI:** From `management-ui/`, run `npm install` once, then `npm run dev` or `npm run build` (SvelteKit 5 & Vite). TypeScript config lives in `tsconfig.json`.
 - **Docker:** `compose.yaml` wires services; update any new ports or env vars there.
 
 Always run targeted tests (or at least the module build) after touching backend code, and run `npm run check`/`test` for UI changes.
 
 ## Guidance for LLM/agent contributors
 
-1. **Respect module boundaries:** Place protocol-specific code under `server/protocol/<name>/src/main/java` and keep shared abstractions in `server/core`.
+1. **Respect module boundaries:** Place protocol-specific code under `protocol/<name>/src/main/java` and keep shared abstractions in `core`.
 2. **Keep docs in sync:** Architecture/config/webhooks docs should evolve with code changes; update this `AGENTS.md` if behavior shifts.
 3. **Mind generated assets:** Ignore `target/` outputs and `languageServers-log/` when editing.
-4. **UI ↔ API alignment:** Any API shape changes in `server/http` must be reflected in Svelte stores/routes (`management-ui/src/lib` & `routes`).
+4. **UI ↔ API alignment:** Any API shape changes in `http` must be reflected in Svelte stores/routes (`management-ui/src/lib` & `routes`).
 5. **Testing priority:** For new session behaviors, add/adjust unit or integration tests in the relevant module and exercise webhook scenarios if applicable.
 6. **Security:** If touching auth (`QUARK_AUTH_SECRET`), ensure JWT/HMAC usage remains opt-in and defaults to open access only when explicitly desired.
 

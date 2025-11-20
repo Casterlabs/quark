@@ -4,24 +4,24 @@ Quark is a modular live-stream orchestration stack that accepts real-time ingres
 
 ## Highlights
 
-- **Plugin-style protocols:** Each ingress/egress lives in its own module under `server/protocol/*`, enabling you to add or ship protocol extensions without touching the core runtime.
+- **Plugin-style protocols:** Each ingress/egress lives in its own module under `protocol/*`, enabling you to add or ship protocol extensions without touching the core runtime.
 - **Webhook-driven control loop:** Authentication, configuration, and teardown are negotiated through four lifecycle webhooks (`SESSION_STARTING/STARTED/ENDING/ENDED`). External services can approve sessions, inject metadata, and define egress targets on the fly.
-- **Management UI:** A SvelteKit dashboard (in `management-ui/`) surfaces session state, stats, and controls. It talks to the HTTP API in `server/http`.
+- **Management UI:** A SvelteKit dashboard (in `management-ui/`) surfaces session state, stats, and controls. It talks to the HTTP API in `http`.
 - **Docker-first deploys:** A single compose service (`compose.yaml`) exposes common ports (RTMP 1935, HTTP 8080) and wires the documented environment variables.
 
 ## Repository tour
 
-| Path                       | Description                                                                   |
-| -------------------------- | ----------------------------------------------------------------------------- |
-| `server/bootstrap`         | Scans the classpath for Quark annotations and boots protocol daemons.         |
-| `server/core`              | Session lifecycle, webhook dispatch, extensibility contracts, shared models.  |
-| `server/http`              | REST + playback server that backs the UI.                                     |
-| `server/protocol/rtmp`     | RTMP ingress + egress implementation.                                         |
-| `server/protocol/webrtc`   | WHIP/WebRTC ingress daemon.                                                   |
-| `server/protocol/hls`      | HLS playlist and segment generation.                                          |
-| `server/protocol/pipeline` | Internal helpers for custom media pipelines.                                  |
-| `management-ui/`           | SvelteKit management console (Vite build, Tailwind-like styles in `app.css`). |
-| `doc/`                     | Architecture, configuration, webhook, and agent-focused documentation.        |
+| Path                | Description                                                                   |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `bootstrap`         | Scans the classpath for Quark annotations and boots protocol daemons.         |
+| `core`              | Session lifecycle, webhook dispatch, extensibility contracts, shared models.  |
+| `http`              | REST + playback server that backs the UI.                                     |
+| `protocol/rtmp`     | RTMP ingress + egress implementation.                                         |
+| `protocol/webrtc`   | WHIP/WebRTC ingress daemon.                                                   |
+| `protocol/hls`      | HLS playlist and segment generation.                                          |
+| `protocol/pipeline` | Internal helpers for custom media pipelines.                                  |
+| `management-ui/`    | SvelteKit management console (Vite build, Tailwind-like styles in `app.css`). |
+| `doc/`              | Architecture, configuration, webhook, and agent-focused documentation.        |
 
 ## Architecture in a nutshell
 

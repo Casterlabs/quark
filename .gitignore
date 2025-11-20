@@ -12,3 +12,15 @@
 .DS_Store
 
 .vscode/settings.json
+
+# Maven
+target/
+dependency-reduced-pom.xml
+
+# Misc
+Test.java
+test.flv
+test2.flv
+waiting.flv
+waiting2.flv
+/hls

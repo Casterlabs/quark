@@ -4,7 +4,7 @@ Quark is designed with a modular, plugin-based architecture. The system is compo
 
 ## High-Level Overview
 
-The application is structured as a Java-based backend (`server/`) and a Svelte-based management UI (`management-ui/`).
+The application is structured as a Java-based backend and a Svelte-based management UI (`management-ui/`).
 
 ### Backend Structure
 
