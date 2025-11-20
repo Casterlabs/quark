@@ -23,7 +23,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.6.0</version>
+				<version>3.6.1</version>
 				<executions>
 					<execution>
 						<id>shade</id>
@@ -41,6 +41,14 @@
 							implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 							<mainClass>co.casterlabs.quark.Bootstrap</mainClass>
 						</transformer>
+						
+                        <!-- Append all LICENSE and NOTICE files from dependencies -->
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                            <resource>META-INF/LICENSE</resource>
+                        </transformer>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                            <resource>META-INF/NOTICE</resource>
+                        </transformer>
 					</transformers>
 				</configuration>
 			</plugin>
