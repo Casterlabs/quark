@@ -2,10 +2,9 @@ module casterlabs.co/quark
 
 go 1.24.4
 
-require (
-	github.com/pion/rtp v1.8.25
-	github.com/pion/webrtc/v4 v4.1.6
-)
+require github.com/pion/webrtc/v4 v4.1.6
+
+require github.com/pion/rtp v1.8.25 // indirect
 
 require (
 	github.com/google/uuid v1.6.0 // indirect

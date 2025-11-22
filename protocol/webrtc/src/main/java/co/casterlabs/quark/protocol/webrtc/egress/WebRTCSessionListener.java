@@ -15,7 +15,6 @@ import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.quark.core.session.listeners.StreamFilter;
-import co.casterlabs.quark.core.util.PrivatePortRange;
 import co.casterlabs.quark.core.util.PublicPortRange;
 import co.casterlabs.quark.core.util.RandomIdGenerator;
 import co.casterlabs.quark.protocol.webrtc.WebRTCBinPrep;
@@ -31,7 +30,7 @@ public class WebRTCSessionListener extends FLVProcessSessionListener implements 
 
     public final String resourceId = RandomIdGenerator.generate(24);
 
-    private final int[] assignedPorts;
+    private final int assignedPort;
     private final Session session;
     public final FastLogger logger;
 
@@ -39,15 +38,13 @@ public class WebRTCSessionListener extends FLVProcessSessionListener implements 
 
     public final CompletableFuture<JsonObject> sdpAnswer = new CompletableFuture<>();
 
-    public WebRTCSessionListener(Session session, String sdpOffer, int[] assignedPorts, StreamFilter filter) throws IOException {
+    public WebRTCSessionListener(Session session, String sdpOffer, int assignedPort, StreamFilter filter) throws IOException {
         super(
             filter,
             Redirect.INHERIT, Redirect.PIPE,
             WebRTCBinPrep.EGRESS_BINARY.getAbsolutePath(),
             WebRTCEnv.WEBRTC_OVERRIDE_ADDRESS,
-            String.valueOf(assignedPorts[0]),
-            String.valueOf(assignedPorts[1]),
-            String.valueOf(assignedPorts[2]),
+            String.valueOf(assignedPort),
             Base64.getEncoder().encodeToString(
                 new JsonObject()
                     .put("type", "offer")
@@ -57,7 +54,7 @@ public class WebRTCSessionListener extends FLVProcessSessionListener implements 
             )
         );
         this.session = session;
-        this.assignedPorts = assignedPorts;
+        this.assignedPort = assignedPort;
         this.logger = new FastLogger(String.format("WebRTC Ingress [%s]", this.resourceId));
 
         listeners.put(this.resourceId, this);
@@ -85,9 +82,7 @@ public class WebRTCSessionListener extends FLVProcessSessionListener implements 
         }).start();
 
         this.onExit(() -> {
-            PublicPortRange.releasePort(this.assignedPorts[0]);
-            PrivatePortRange.releasePort(this.assignedPorts[1]);
-            PrivatePortRange.releasePort(this.assignedPorts[2]);
+            PublicPortRange.releasePort(this.assignedPort);
             this.close();
         });
     }

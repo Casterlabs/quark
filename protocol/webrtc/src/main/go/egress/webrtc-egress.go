@@ -4,23 +4,28 @@ package main
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/exec"
 	"os/signal"
 	"strconv"
+	"time"
 
-	"github.com/pion/rtp"
-	"github.com/pion/rtp/codecs"
 	"github.com/pion/webrtc/v4"
-	"github.com/pion/webrtc/v4/pkg/media/samplebuilder"
+	"github.com/pion/webrtc/v4/pkg/media"
+	"github.com/pion/webrtc/v4/pkg/media/h264reader"
+	"github.com/pion/webrtc/v4/pkg/media/oggreader"
 )
 
 func main() { // nolint
 	// Configure TCP ICE
 	settingEngine := webrtc.SettingEngine{}
 	settingEngine.SetNetworkTypes([]webrtc.NetworkType{
+		webrtc.NetworkTypeUDP4,
+		webrtc.NetworkTypeUDP6,
 		webrtc.NetworkTypeTCP4,
 		webrtc.NetworkTypeTCP6,
 	})
@@ -51,11 +56,11 @@ func main() { // nolint
 
 	// Prepare the configuration
 	config := webrtc.Configuration{
-		// ICEServers: []webrtc.ICEServer{
-		// 	{
-		// 		URLs: []string{"stun:stun.l.google.com:19302"},
-		// 	},
-		// },
+		ICEServers: []webrtc.ICEServer{
+			{
+				URLs: []string{"stun:stun.l.google.com:19302"},
+			},
+		},
 	}
 
 	// Create a new RTCPeerConnection
@@ -69,6 +74,19 @@ func main() { // nolint
 		}
 	}()
 
+	// Create a Video Track
+	videoTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264}, "video", "pion+quark") // nolint
+	if err != nil {
+		panic(err)
+	}
+
+	// Handle RTCP, see rtcpReader for why
+	rtpSender, err := peerConnection.AddTrack(videoTrack)
+	if err != nil {
+		panic(err)
+	}
+	rtcpReader(rtpSender)
+
 	// Create a Audio Track
 	audioTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeOpus}, "audio", "pion+quark") // nolint
 	if err != nil {
@@ -76,20 +94,7 @@ func main() { // nolint
 	}
 
 	// Handle RTCP, see rtcpReader for why
-	rtpSender, err := peerConnection.AddTrack(audioTrack)
-	if err != nil {
-		panic(err)
-	}
-	rtcpReader(rtpSender)
-
-	// Create a Video Track
-	videoTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeVP8}, "video", "pion+quark") // nolint
-	if err != nil {
-		panic(err)
-	}
-
-	// Handle RTCP, see rtcpReader for why
-	rtpSender, err = peerConnection.AddTrack(videoTrack)
+	rtpSender, err = peerConnection.AddTrack(audioTrack)
 	if err != nil {
 		panic(err)
 	}
@@ -103,7 +108,7 @@ func main() { // nolint
 
 	// Wait for the offer to be pasted
 	offer := webrtc.SessionDescription{}
-	decode(os.Args[5], &offer)
+	decode(os.Args[3], &offer)
 
 	// Set the remote SessionDescription
 	if err = peerConnection.SetRemoteDescription(offer); err != nil {
@@ -132,94 +137,139 @@ func main() { // nolint
 	// Output the answer in base64 so we can paste it in browser
 	fmt.Fprintf(os.Stderr, "answer:%s\n", encode(peerConnection.LocalDescription()))
 
-	udpVideoPort, err := strconv.Atoi(os.Args[3])
-	if err != nil {
-		panic(err)
-	}
-
-	udpAudioPort, err := strconv.Atoi(os.Args[4])
-	if err != nil {
-		panic(err)
-	}
-
-	go rtpToTrack(videoTrack, &codecs.VP8Packet{}, 90000, udpVideoPort)
-	go rtpToTrack(audioTrack, &codecs.OpusPacket{}, 48000, udpAudioPort)
+	closed := make(chan os.Signal, 1)
+	signal.Notify(closed, os.Interrupt)
 
 	// Start FFmpeg
 	cmd := exec.Command(
 		"ffmpeg",
 		"-hide_banner",
-		// "-loglevel", "level+fatal",
+		"-loglevel", "level+fatal",
 		"-fflags", "+nobuffer+flush_packets",
 		"-f", "flv",
-		"-i", "-",
-		"-an", "-c:v", "libvpx",
-		"-deadline", "1",
-		"-g", "10",
-		"-error-resilient", "1",
-		"-auto-alt-ref", "1",
-		"-f", "rtp",
-		"rtp://127.0.0.1:"+strconv.Itoa(udpVideoPort)+"?pkt_size=1200",
-		"-vn", "-c:a", "libopus",
-		"-f", "rtp",
-		"rtp://127.0.0.1:"+strconv.Itoa(udpAudioPort)+"?pkt_size=1200")
+		"-i", "pipe:0",
+
+		"-map", "0:v",
+		"-map", "0:a",
+		"-c:v", "copy",
+		"-c:a", "libopus",
+		"-b:a", "320k",
+		"-f", "tee",
+		"[select=v:f=h264:bsfs/v=h264_mp4toannexb]pipe:1|[select=a:f=ogg:page_duration=10000]pipe:2")
 	cmd.Stdin = os.Stdin
-	cmd.Stderr = os.Stderr
+
+	h264Pipe, err := cmd.StdoutPipe()
+	if err != nil {
+		panic(err)
+	}
+
+	oggPipe, err := cmd.StderrPipe()
+	if err != nil {
+		panic(err)
+	}
 
 	if err := cmd.Start(); err != nil {
 		panic(err)
 	}
 
-	closed := make(chan os.Signal, 1)
-	signal.Notify(closed, os.Interrupt)
+	go handleH264(videoTrack, h264Pipe)
+	go handleOpus(audioTrack, oggPipe)
+
 	<-closed
+
+	cmd.Process.Kill()
 
 	if err := peerConnection.Close(); err != nil {
 		panic(err)
 	}
-	cmd.Process.Kill()
+
 	os.Exit(0)
 }
 
-// Listen for incoming packets on a port and write them to a Track.
-func rtpToTrack(track *webrtc.TrackLocalStaticSample, depacketizer rtp.Depacketizer, sampleRate uint32, port int) {
-	// Open a UDP Listener for RTP Packets on port 5004
-	listener, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: port})
-	if err != nil {
-		panic(err)
+func handleH264(track *webrtc.TrackLocalStaticSample, pipe io.ReadCloser) {
+	// Open a H264 reader on the file.
+	h264, h264Err := h264reader.NewReader(pipe)
+	if h264Err != nil {
+		panic(h264Err)
 	}
-	defer func() {
-		if err = listener.Close(); err != nil {
-			panic(err)
-		}
-	}()
 
-	sampleBuffer := samplebuilder.New(10, depacketizer, sampleRate)
+	h264FrameDuration := time.Millisecond * 100 // junk value
+	// var lastFrameTime time.Time
 
-	// Read RTP packets forever and send them to the WebRTC Client
 	for {
-		inboundRTPPacket := make([]byte, 1500) // UDP MTU
-		packet := &rtp.Packet{}
-
-		n, _, err := listener.ReadFrom(inboundRTPPacket)
-		if err != nil {
-			panic(fmt.Sprintf("error during read: %s", err))
+		nal, h264Err := h264.NextNAL()
+		if errors.Is(h264Err, io.EOF) {
+			fmt.Printf("All video frames parsed and sent")
+			break
+		}
+		if h264Err != nil {
+			panic(h264Err)
 		}
 
-		if err = packet.Unmarshal(inboundRTPPacket[:n]); err != nil {
-			panic(err)
+		// if len(nal.Data) > 0 {
+		// 	payload := nal.Data
+
+		// 	nalType := payload[0] & 0x1F
+		// 	if nalType == 1 || nalType == 5 {
+		// 		now := time.Now()
+		// 		if !lastFrameTime.IsZero() {
+		// 			h264FrameDuration = now.Sub(lastFrameTime)
+
+		// 			// Latch to common FPS
+		// 			for _, fps := range []time.Duration{25, 30, 50, 60, 90, 100, 120} {
+		// 				target := time.Second / fps
+		// 				diff := h264FrameDuration - target
+		// 				if diff < 0 {
+		// 					diff = -diff
+		// 				}
+		// 				if diff < 2*time.Millisecond {
+		// 					h264FrameDuration = target
+		// 					break
+		// 				}
+		// 			}
+
+		// 			// if h264FrameDuration > 0 {
+		// 			// 	fmt.Fprintf(os.Stderr, "Predicted FPS: %.2f (Duration: %v)\n", 1.0/h264FrameDuration.Seconds(), h264FrameDuration)
+		// 			// }
+		// 		}
+		// 		lastFrameTime = now
+		// 	}
+		// }
+
+		if h264Err = track.WriteSample(media.Sample{Data: nal.Data, Duration: h264FrameDuration}); h264Err != nil {
+			panic(h264Err)
+		}
+	}
+}
+
+func handleOpus(track *webrtc.TrackLocalStaticSample, pipe io.ReadCloser) {
+	// Open on oggfile in non-checksum mode.
+	ogg, _, oggErr := oggreader.NewWith(pipe)
+	if oggErr != nil {
+		panic(oggErr)
+	}
+
+	// Keep track of last granule, the difference is the amount of samples in the buffer
+	var lastGranule uint64
+
+	for {
+		pageData, pageHeader, oggErr := ogg.ParseNextPage()
+		if errors.Is(oggErr, io.EOF) {
+			fmt.Printf("All audio pages parsed and sent")
+			break
 		}
 
-		sampleBuffer.Push(packet)
-		for {
-			sample := sampleBuffer.Pop()
-			if sample == nil {
-				break
-			}
+		if oggErr != nil {
+			panic(oggErr)
+		}
 
-			if writeErr := track.WriteSample(*sample); writeErr != nil {
-				panic(writeErr)
-			}
+		// The amount of samples is the difference between the last and current timestamp
+		sampleCount := float64(pageHeader.GranulePosition - lastGranule)
+		lastGranule = pageHeader.GranulePosition
+		sampleDuration := time.Duration((sampleCount/48000)*1000) * time.Millisecond
+
+		if oggErr = track.WriteSample(media.Sample{Data: pageData, Duration: sampleDuration}); oggErr != nil {
+			panic(oggErr)
 		}
 	}
 }

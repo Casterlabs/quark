@@ -9,7 +9,6 @@ import co.casterlabs.quark.core.http.QuarkHttpProcessor.EndpointContext;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.listeners.StreamFilter;
 import co.casterlabs.quark.core.util.FF;
-import co.casterlabs.quark.core.util.PrivatePortRange;
 import co.casterlabs.quark.core.util.PublicPortRange;
 import co.casterlabs.quark.protocol.webrtc.WebRTCEnv;
 import co.casterlabs.quark.protocol.webrtc.egress.WebRTCSessionListener;
@@ -44,12 +43,9 @@ public class RouteStreamEgressWHEP implements EndpointProvider {
 
             String sdpOffer = session.body().string();
             WebRTCSessionListener listener = new WebRTCSessionListener(
-                qSession, sdpOffer,
-                new int[] {
-                        PublicPortRange.acquirePort(),
-                        PrivatePortRange.acquirePort(),
-                        PrivatePortRange.acquirePort()
-                },
+                qSession,
+                sdpOffer,
+                PublicPortRange.acquirePort(),
                 filter
             );
 
