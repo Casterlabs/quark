@@ -35,7 +35,7 @@ public class RTMPConnection extends ServerNetConnection implements AutoCloseable
     public ServerNetStream stream;
 
     RTMPConnection(SocketConnection conn) throws IOException {
-        super(new RTMPReader(new ASReader(conn.in())), new RTMPWriter(new ASWriter(conn.out())));
+        super(new RTMPReader(ASReader.from(conn.in())), new RTMPWriter(new ASWriter(conn.out())));
         this.conn = conn;
         this.logger = new FastLogger(conn.socket().toString());
 

@@ -217,7 +217,7 @@ public class RTMPPushSessionListener extends SessionListener {
 
         private Outbound(Socket socket, @Nullable String app, String tcUrl, String key) throws IOException, InterruptedException, CallError {
             super(
-                new RTMPReader(new ASReader(socket.getInputStream())),
+                new RTMPReader(ASReader.from(socket.getInputStream())),
                 new RTMPWriter(new ASWriter(socket.getOutputStream()))
             );
 

@@ -1,7 +1,7 @@
 package co.casterlabs.quark.protocol.rtmp.ingress;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.Map.Entry;
 
 import co.casterlabs.flv4j.actionscript.amf0.AMF0Type;
 import co.casterlabs.flv4j.actionscript.amf0.AMF0Type.ObjectLike;
@@ -13,6 +13,7 @@ import co.casterlabs.flv4j.actionscript.amf0.Number0;
 import co.casterlabs.flv4j.actionscript.amf0.Object0;
 import co.casterlabs.flv4j.actionscript.amf0.StrictArray0;
 import co.casterlabs.flv4j.actionscript.amf0.String0;
+import co.casterlabs.flv4j.actionscript.io.ByteString;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.flv4j.flv.tags.script.FLVScriptTagData;
@@ -38,6 +39,8 @@ import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
 public class RTMPSessionProvider implements SessionProvider, MessageHandler {
+    private static final ByteString STR_SET_DATA_FRAME = new ByteString("@setDataFrame");
+
     private long dtsOffset;
 
     private final RTMPConnection rtmp;
@@ -71,7 +74,7 @@ public class RTMPSessionProvider implements SessionProvider, MessageHandler {
             .put(
                 "connectArgs",
                 amfToJson(
-                    new Object0(
+                    Object0.of(
                         this.rtmp.connectArgs.additionalParams()
                     )
                 )
@@ -117,11 +120,11 @@ public class RTMPSessionProvider implements SessionProvider, MessageHandler {
         } else if (message instanceof RTMPMessageData0 data) {
             if (data.arguments().size() == 3 &&
                 data.arguments().get(0) instanceof String0 str &&
-                str.value().equals("@setDataFrame")) {
+                str.value().equals(STR_SET_DATA_FRAME)) {
                 String0 method = (String0) data.arguments().get(1);
                 ObjectLike value = (ObjectLike) data.arguments().get(2);
 
-                FLVScriptTagData payload = new FLVScriptTagData(method.value(), new ECMAArray0(value.map()));
+                FLVScriptTagData payload = new FLVScriptTagData(method.value().string(), new ECMAArray0(value.map()));
                 FLVTag tag = new FLVTag(FLVTagType.SCRIPT, timestamp, 0, payload);
                 this.rtmp.logger.debug("Got script sequence: %s", tag);
                 this.session.tag(tag);
@@ -215,8 +218,8 @@ public class RTMPSessionProvider implements SessionProvider, MessageHandler {
                 case OBJECT: {
                     ObjectLike obj = (ObjectLike) type;
                     JsonObject json = new JsonObject();
-                    for (Map.Entry<String, AMF0Type> entry : obj.map().entrySet()) {
-                        json.put(entry.getKey(), amfToJson(entry.getValue()));
+                    for (Entry<ByteString, AMF0Type> entry : obj.map().entrySet()) {
+                        json.put(entry.getKey().string(), amfToJson(entry.getValue()));
                     }
                     return json;
                 }
@@ -233,7 +236,7 @@ public class RTMPSessionProvider implements SessionProvider, MessageHandler {
                 case LONG_STRING:
                 case STRING:
                 case XML_DOCUMENT:
-                    return new JsonString(((StringLike) type).value());
+                    return new JsonString(((StringLike) type).value().string());
 
                 case SWITCH_TO_AMF3:
                 case NULL:
