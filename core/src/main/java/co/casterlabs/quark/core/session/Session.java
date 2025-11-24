@@ -83,8 +83,8 @@ public class Session {
 
             long currentSeqTs = sequenceTags.isEmpty() ? 0 : sequenceTags.get(0).timestamp();
             if (tag.timestamp() > currentSeqTs) {
-                System.out.println("New sequence header detected at timestamp: " + tag.timestamp());
                 // We're getting a new list of sequence headers!
+//                System.out.println("New sequence header detected at timestamp: " + tag.timestamp());
                 sequenceTags.clear();
             }
 
