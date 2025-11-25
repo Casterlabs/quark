@@ -14,7 +14,7 @@ import co.casterlabs.flv4j.flv.tags.FLVTag;
  */
 class _AsyncSessionListener extends SessionListener {
     private static final ThreadFactory THREAD_FACTORY = Thread.ofVirtual().name("Async Session Listener - Write Queue", 0).factory();
-    private static final int MAX_OUTSTANDING_PACKETS = 1000;
+    private static final int MAX_OUTSTANDING_PACKETS = 500; // at 30fps, this is ~16 seconds of buffer.
 
     private final ExecutorService packetQueue = new ThreadPoolExecutor(
         1, 1,
