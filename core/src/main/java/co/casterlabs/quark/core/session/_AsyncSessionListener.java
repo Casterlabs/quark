@@ -1,12 +1,9 @@
 package co.casterlabs.quark.core.session;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import co.casterlabs.flv4j.flv.tags.FLVTag;
+import co.casterlabs.quark.core.util.CircularBuffer;
 
 /**
  * This class wraps the listener and ensures that all calls to it are do not
@@ -16,34 +13,35 @@ class _AsyncSessionListener extends SessionListener {
     private static final ThreadFactory THREAD_FACTORY = Thread.ofVirtual().name("Async Session Listener - Write Queue", 0).factory();
     private static final int MAX_OUTSTANDING_PACKETS = 500; // at 30fps, this is ~16 seconds of buffer.
 
-    private final ExecutorService packetQueue = new ThreadPoolExecutor(
-        1, 1,
-        0L, TimeUnit.MILLISECONDS,
-        new LinkedBlockingQueue<>(MAX_OUTSTANDING_PACKETS),
-        THREAD_FACTORY,
-        new ThreadPoolExecutor.DiscardPolicy()
-    );
-
+    private final CircularBuffer<Object> buffer = new CircularBuffer<>(MAX_OUTSTANDING_PACKETS);
     final SessionListener delegate;
 
-    _AsyncSessionListener(SessionListener delegate) {
+    _AsyncSessionListener(Session session, SessionListener delegate) {
         super(delegate.id);
         this.delegate = delegate;
+
+        this.buffer.readAsync(THREAD_FACTORY, (item) -> {
+            if (item instanceof FLVTag tag) {
+                this.delegate.onTag(session, tag);
+            } else if (item instanceof FLVSequence seq) {
+                this.delegate.onSequence(session, seq);
+            }
+        });
     }
 
     @Override
     public void onSequence(Session session, FLVSequence seq) {
-        this.packetQueue.submit(() -> this.delegate.onSequence(session, seq));
+        this.buffer.submit(seq);
     }
 
     @Override
     public void onTag(Session session, FLVTag tag) {
-        this.packetQueue.submit(() -> this.delegate.onTag(session, tag));
+        this.buffer.submit(tag);
     }
 
     @Override
     public void onClose(Session session) {
-        this.packetQueue.shutdownNow();
+        this.buffer.close();
         this.delegate.onClose(session);
     }
 

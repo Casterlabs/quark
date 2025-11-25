@@ -188,7 +188,7 @@ public class Session {
     }
 
     public void addAsyncListener(SessionListener listener) {
-        this.addSyncListener(new _AsyncSessionListener(listener));
+        this.addSyncListener(new _AsyncSessionListener(this, listener));
     }
 
     public void addSyncListener(SessionListener listener) {
