@@ -9,6 +9,7 @@ import java.util.function.Function;
 import co.casterlabs.commons.async.LockableResource;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
+import co.casterlabs.flv4j.flv.tags.script.FLVScriptTagData;
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Webhooks;
 import co.casterlabs.quark.core.extensibility._Extensibility;
@@ -35,6 +36,7 @@ public class Session {
 
     private final List<FLVTag> videoSequenceTags = new LinkedList<>();
     private final List<FLVTag> audioSequenceTags = new LinkedList<>();
+    private final List<FLVTag> scriptSequenceTags = new LinkedList<>();
 
     private final _ThumbnailSessionListener thumbnailGenerator = new _ThumbnailSessionListener();
 
@@ -65,6 +67,7 @@ public class Session {
         }
         this.videoSequenceTags.clear();
         this.audioSequenceTags.clear();
+        this.scriptSequenceTags.clear();
         this.provider = provider;
     }
 
@@ -78,8 +81,16 @@ public class Session {
     }
 
     public void tag(FLVTag tag) {
-        if (tag.data().isSequenceHeader() && (tag.type() == FLVTagType.VIDEO || tag.type() == FLVTagType.AUDIO)) {
-            List<FLVTag> sequenceTags = tag.type() == FLVTagType.VIDEO ? this.videoSequenceTags : this.audioSequenceTags;
+        boolean isScriptSequence = tag.type() == FLVTagType.SCRIPT && ((FLVScriptTagData) tag.data()).methodName().equals("onMetaData");
+        if (tag.data().isSequenceHeader() || isScriptSequence) {
+            List<FLVTag> sequenceTags;
+            if (tag.type() == FLVTagType.VIDEO) {
+                sequenceTags = this.videoSequenceTags;
+            } else if (tag.type() == FLVTagType.AUDIO) {
+                sequenceTags = this.audioSequenceTags;
+            } else {
+                sequenceTags = this.scriptSequenceTags;
+            }
 
             long currentSeqTs = sequenceTags.isEmpty() ? 0 : sequenceTags.get(0).timestamp();
             if (tag.timestamp() > currentSeqTs) {
@@ -188,6 +199,7 @@ public class Session {
 
         if (this.provider != null) {
             List<FLVTag> sequenceTags = new LinkedList<>();
+            sequenceTags.addAll(this.scriptSequenceTags);
             sequenceTags.addAll(this.videoSequenceTags);
             sequenceTags.addAll(this.audioSequenceTags);
             FLVSequence seq = new FLVSequence(sequenceTags.toArray(new FLVTag[0]));
