@@ -2,9 +2,11 @@ package co.casterlabs.quark.protocol.rtmp.egress;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.ThreadFactory;
 
 import co.casterlabs.flv4j.actionscript.amf0.String0;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
+import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.flv4j.flv.tags.audio.FLVAudioTagData;
 import co.casterlabs.flv4j.flv.tags.script.FLVScriptTagData;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
@@ -22,6 +24,7 @@ import co.casterlabs.quark.core.auth.User;
 import co.casterlabs.quark.core.session.FLVSequence;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionListener;
+import co.casterlabs.quark.core.util.CircularBuffer;
 import co.casterlabs.quark.protocol.rtmp.RTMPConnection;
 import co.casterlabs.quark.protocol.rtmp.RTMPState;
 
@@ -32,6 +35,11 @@ public class RTMPPullSessionListener extends SessionListener {
     private static final String0 SET_DATA_FRAME = new String0("@setDataFrame");
     private static final int BUFFER_LENGTH = 1000; // arbitrary?
 
+    private static final int MAX_OUTSTANDING_VIDEO_PACKETS = 30; // at 30 fps, this is ~1 second of video.
+    private static final ThreadFactory VIDEO_THREAD_FACTORY = Thread.ofVirtual().name("RTMP Pull - Tag Queue", 0).factory();
+
+    private final CircularBuffer<FLVTag> videoBuffer = new CircularBuffer<>(MAX_OUTSTANDING_VIDEO_PACKETS);
+
     private final RTMPConnection rtmp;
     private Session session;
 
@@ -40,6 +48,11 @@ public class RTMPPullSessionListener extends SessionListener {
 
     public RTMPPullSessionListener(RTMPConnection rtmp) {
         this.rtmp = rtmp;
+
+        this.videoBuffer.readAsync(
+            VIDEO_THREAD_FACTORY,
+            (tag) -> this.writeOut(this.session, tag)
+        );
     }
 
     public void play(String name) {
@@ -150,7 +163,11 @@ public class RTMPPullSessionListener extends SessionListener {
             return;
         }
 
-        this.writeOut(session, tag);
+        if (tag.type() == FLVTagType.VIDEO) {
+            this.videoBuffer.submit(tag);
+        } else {
+            this.writeOut(session, tag);
+        }
     }
 
     @Override
@@ -160,6 +177,7 @@ public class RTMPPullSessionListener extends SessionListener {
 
     @Override
     public void onClose(Session session) {
+        this.videoBuffer.close();
         this.rtmp.close(true); // junk value.
     }
 
