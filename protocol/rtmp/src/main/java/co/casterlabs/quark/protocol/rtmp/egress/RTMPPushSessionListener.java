@@ -17,8 +17,9 @@ import co.casterlabs.flv4j.actionscript.io.ASWriter;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.audio.FLVAudioTagData;
 import co.casterlabs.flv4j.flv.tags.script.FLVScriptTagData;
+import co.casterlabs.flv4j.flv.tags.video.FLVStandardVideoTagData;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
-import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
+import co.casterlabs.flv4j.flv.tags.video.FLVVideoTagData;
 import co.casterlabs.flv4j.rtmp.RTMPReader;
 import co.casterlabs.flv4j.rtmp.RTMPWriter;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageAudio;
@@ -143,7 +144,7 @@ public class RTMPPushSessionListener extends SessionListener {
                 try {
                     int ts24 = (int) (tag.timestamp() - this.offset) & 0xFFFFFF;
 
-                    if (tag.data() instanceof FLVVideoPayload video) {
+                    if (tag.data() instanceof FLVVideoTagData video) {
                         ns.sendMessage(
                             ts24,
                             new RTMPMessageVideo(video)
@@ -190,7 +191,7 @@ public class RTMPPushSessionListener extends SessionListener {
 
                 if (this.offset == -1) {
                     boolean sessionHasVideo = session.info.video.length > 0;
-                    boolean isVideoKeyFrame = tag.data() instanceof FLVVideoPayload video && video.frameType() == FLVVideoFrameType.KEY_FRAME;
+                    boolean isVideoKeyFrame = tag.data() instanceof FLVStandardVideoTagData video && video.frameType() == FLVVideoFrameType.KEY_FRAME;
 
                     if (!sessionHasVideo || isVideoKeyFrame) {
                         this.offset = tag.timestamp();

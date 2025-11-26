@@ -9,22 +9,25 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 
+import co.casterlabs.flv4j.actionscript.io.ASByteView;
+import co.casterlabs.flv4j.codecs.video.avc1.AVCDecoderConfigurationRecord;
+import co.casterlabs.flv4j.codecs.video.avc1.AVCNalu;
+import co.casterlabs.flv4j.codecs.video.avc1.AVCNaluType;
+import co.casterlabs.flv4j.codecs.video.avc1.AVCNalus;
+import co.casterlabs.flv4j.codecs.video.avc1.AVCPacketType;
+import co.casterlabs.flv4j.codecs.video.avc1.AVCVideoData;
 import co.casterlabs.flv4j.flv.FLVFileHeader;
 import co.casterlabs.flv4j.flv.muxing.NonSeekableFLVDemuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
+import co.casterlabs.flv4j.flv.tags.video.FLVStandardVideoTagData;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoCodec;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
-import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
-import co.casterlabs.flv4j.flv.tags.video.data.AVCVideoData;
-import co.casterlabs.flv4j.flv.tags.video.data.AVCVideoData.AVCPacketType;
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionProvider;
-import co.casterlabs.quark.core.util.ArrayView;
 import co.casterlabs.quark.core.util.PublicPortRange;
 import co.casterlabs.quark.core.util.RandomIdGenerator;
-import co.casterlabs.quark.protocol.webrtc.AVCDecoderConfigurationRecord;
 import co.casterlabs.quark.protocol.webrtc.WebRTCBinPrep;
 import co.casterlabs.quark.protocol.webrtc.WebRTCEnv;
 import co.casterlabs.rakurai.json.Rson;
@@ -152,8 +155,8 @@ public class WebRTCProvider implements SessionProvider {
     }
 
     private class Demuxer extends NonSeekableFLVDemuxer {
-        private ArrayView lastSPS = ArrayView.EMPTY;
-        private ArrayView lastPPS = ArrayView.EMPTY;
+        private AVCNalu lastSPS = new AVCNalu(new ASByteView(new byte[0])); // junk data.
+        private AVCNalu lastPPS = new AVCNalu(new ASByteView(new byte[0]));
 
         @Override
         protected void onHeader(FLVFileHeader header) {} // ignore.
@@ -166,13 +169,12 @@ public class WebRTCProvider implements SessionProvider {
             long newTagTimestamp = (tag.timestamp() + dtsOffset) & 0xFFFFFFFFL; // rewrite with our offset
 
             if (WebRTCEnv.EXP_WHIP_AVC_AUTO_RECONFIG && // We have a pretty Naive implementation for this feature.
-                tag.data() instanceof FLVVideoPayload video &&
+                tag.data() instanceof FLVStandardVideoTagData video &&
                 video.codec() == FLVVideoCodec.H264 &&
                 video.frameType() == FLVVideoFrameType.KEY_FRAME &&
                 video.data() instanceof AVCVideoData avc &&
-                avc.type() == AVCPacketType.NALU &&
-                avc.data().length > 5) {
-                this.checkNALUs(newTagTimestamp, avc.data());
+                avc.packetData() instanceof AVCNalus nalus) {
+                this.checkNALUs(newTagTimestamp, nalus);
             }
 
             tag = new FLVTag(
@@ -185,30 +187,20 @@ public class WebRTCProvider implements SessionProvider {
             session.tag(tag);
         }
 
-        private void checkNALUs(long timestamp, byte[] nalus) {
+        private void checkNALUs(long timestamp, AVCNalus nalus) {
             // We need to sniff NALUs to see if it's an SPS/PPS packet. If so, we need to
             // check our known SPS/PPS to see if it's different, and if so, send a new
             // AVCDecoderConfigurationRecord.
 
-            ArrayView foundSPS = null;
-            ArrayView foundPPS = null;
+            AVCNalu foundSPS = null;
+            AVCNalu foundPPS = null;
 
-            for (int idx = 0; idx < nalus.length;) {
-                int size = ((nalus[idx] & 0xFF) << 24) |
-                    ((nalus[idx + 1] & 0xFF) << 16) |
-                    ((nalus[idx + 2] & 0xFF) << 8) |
-                    (nalus[idx + 3] & 0xFF);
-
-                int naluType = nalus[idx + 4] & 0x1F;
-
-                if (naluType == 7) { // SPS
-                    foundSPS = new ArrayView(nalus, idx + 4, size);
-                } else if (naluType == 8) { // PPS
-                    foundPPS = new ArrayView(nalus, idx + 4, size);
+            for (AVCNalu nalu : nalus.nalus()) {
+                if (nalu.type() == AVCNaluType.SPS) { // SPS
+                    foundSPS = nalu;
+                } else if (nalu.type() == AVCNaluType.PPS) { // PPS
+                    foundPPS = nalu;
                 }
-
-                idx += 4; // advance past size
-                idx += size; // advance past NALU
             }
 
             if (foundSPS == null || foundPPS == null) {
@@ -224,15 +216,23 @@ public class WebRTCProvider implements SessionProvider {
             this.lastSPS = foundSPS;
             this.lastPPS = foundPPS;
 
-            byte[] config = AVCDecoderConfigurationRecord.from(foundSPS, foundPPS);
+            AVCDecoderConfigurationRecord config = AVCDecoderConfigurationRecord.from(
+                1, 1, 2, 3, 0xFF,
+                new AVCNalu[] {
+                        foundSPS
+                },
+                new AVCNalu[] {
+                        foundPPS
+                }
+            );
 
             logger.debug("Found new SPS/PPS, sending a new sequence header...");
             session.tag(
                 new FLVTag(
-                    FLVTagType.VIDEO, timestamp, 0, new FLVVideoPayload(
+                    FLVTagType.VIDEO, timestamp, 0, FLVStandardVideoTagData.from(
                         FLVVideoFrameType.KEY_FRAME.id,
                         FLVVideoCodec.H264.id,
-                        new AVCVideoData(
+                        AVCVideoData.from(
                             AVCPacketType.SEQUENCE_HEADER.id,
                             0,
                             config

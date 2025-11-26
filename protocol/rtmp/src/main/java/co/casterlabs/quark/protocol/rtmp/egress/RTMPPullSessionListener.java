@@ -9,7 +9,7 @@ import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.flv4j.flv.tags.audio.FLVAudioTagData;
 import co.casterlabs.flv4j.flv.tags.script.FLVScriptTagData;
-import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
+import co.casterlabs.flv4j.flv.tags.video.FLVVideoTagData;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageAudio;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageData0;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageUserControl;
@@ -109,7 +109,7 @@ public class RTMPPullSessionListener extends SessionListener {
 
             if (tag.data() instanceof FLVAudioTagData audio) {
                 this.rtmp.stream.sendMessage(dts32, new RTMPMessageAudio(audio));
-            } else if (tag.data() instanceof FLVVideoPayload video) {
+            } else if (tag.data() instanceof FLVVideoTagData video) {
                 this.rtmp.stream.sendMessage(dts32, new RTMPMessageVideo(video));
             } else if (tag.data() instanceof FLVScriptTagData script) {
                 this.rtmp.stream.sendMessage(

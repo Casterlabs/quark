@@ -13,9 +13,9 @@ import co.casterlabs.flv4j.flv.tags.audio.FLVAudioFormat;
 import co.casterlabs.flv4j.flv.tags.audio.FLVStandardAudioTagData;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTagData;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTrack;
+import co.casterlabs.flv4j.flv.tags.video.FLVStandardVideoTagData;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoCodec;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
-import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.session.info.SessionInfo;
 import co.casterlabs.quark.core.session.info.StreamInfo;
@@ -37,7 +37,7 @@ class _CodecsSessionListener extends SessionListener {
     private void process(FLVTag tag) {
         if (tag.type() == FLVTagType.SCRIPT) return; // ignore.
 
-        if (tag.data() instanceof FLVVideoPayload vstd) {
+        if (tag.data() instanceof FLVStandardVideoTagData vstd) {
             // Note that we do not support the ex video payload yet. TODO
             if (this.info.video.length == 0) {
                 this.info.video = new VideoStreamInfo[] {
@@ -72,7 +72,7 @@ class _CodecsSessionListener extends SessionListener {
             }
         }
 
-        if (tag.data() instanceof FLVVideoPayload video) {
+        if (tag.data() instanceof FLVStandardVideoTagData video) {
             // Note that we do not support the ex video payload yet. TODO
             VideoStreamInfo info = this.info.video[0];
 
@@ -140,6 +140,9 @@ class _CodecsSessionListener extends SessionListener {
             case SCREEN ->        "fsv1";
             case SCREEN_2 ->      "fsv2";
             case SORENSON_H263 -> "flv1";
+            case NS_HEVC -> "hvc1";
+            case NS_MPEG4 -> "mp4v";
+            case NS_REALH263 -> "h263";
             case JPEG -> null;
             default -> null;
         };
@@ -154,11 +157,13 @@ class _CodecsSessionListener extends SessionListener {
             case ADPCM ->      "swfa";
             case G711_ALAW ->  "alaw";
             case G711_MULAW -> "ulaw";
-            case LPCM ->       "lpcm";
             case LPCM_LE ->    "lpcm";
             case MP3, MP3_8 -> "mp3 ";
             case SPEEX ->      "spx ";
+            case LPCM_PLATFORM_ENDIAN -> "lpcm";
             case NELLYMOSER, NELLYMOSER_16_MONO, NELLYMOSER_8_MONO -> "nmos";
+            case NS_MP2 -> "mp2a";
+            case NS_OPUS -> "Opus";
             case DEVICE_SPECIFIC -> null;
             default -> null;
         };

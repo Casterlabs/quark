@@ -6,8 +6,8 @@ import java.io.OutputStream;
 import co.casterlabs.flv4j.flv.FLVFileHeader;
 import co.casterlabs.flv4j.flv.muxing.StreamFLVMuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
+import co.casterlabs.flv4j.flv.tags.video.FLVStandardVideoTagData;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
-import co.casterlabs.flv4j.flv.tags.video.FLVVideoPayload;
 import co.casterlabs.quark.core.session.FLVSequence;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionListener;
@@ -60,7 +60,7 @@ public abstract class FLVSessionListener extends SessionListener {
 
         if (!this.hasOffset) {
             boolean sessionHasVideo = session.info.video.length > 0;
-            boolean isVideoKeyFrame = tag.data() instanceof FLVVideoPayload video && video.frameType() == FLVVideoFrameType.KEY_FRAME;
+            boolean isVideoKeyFrame = tag.data() instanceof FLVStandardVideoTagData video && video.frameType() == FLVVideoFrameType.KEY_FRAME;
 
             if (!sessionHasVideo || isVideoKeyFrame) {
                 this.hasOffset = true;

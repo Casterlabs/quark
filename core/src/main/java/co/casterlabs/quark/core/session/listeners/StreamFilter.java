@@ -1,9 +1,9 @@
 package co.casterlabs.quark.core.session.listeners;
 
-import java.util.Arrays;
-
 import org.jetbrains.annotations.Nullable;
 
+import co.casterlabs.flv4j.actionscript.io.ASByteView;
+import co.casterlabs.flv4j.codecs.audio.aac.AACAudioData;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.flv4j.flv.tags.audio.FLVAudioChannels;
@@ -11,8 +11,6 @@ import co.casterlabs.flv4j.flv.tags.audio.FLVAudioFormat;
 import co.casterlabs.flv4j.flv.tags.audio.FLVAudioRate;
 import co.casterlabs.flv4j.flv.tags.audio.FLVAudioSampleSize;
 import co.casterlabs.flv4j.flv.tags.audio.FLVStandardAudioTagData;
-import co.casterlabs.flv4j.flv.tags.audio.data.AudioData;
-import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioMultitrackType;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTagData;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTrack;
 import co.casterlabs.rakurai.json.Rson;
@@ -65,12 +63,12 @@ public record StreamFilter(
                                     FLVTagType.AUDIO,
                                     tag.timestamp(),
                                     tag.streamId(),
-                                    new FLVStandardAudioTagData(
+                                    FLVStandardAudioTagData.from(
                                         FLVAudioFormat.AAC.id,
                                         FLVAudioRate.KHZ_44.id, // also on page 77, these values are hard-coded
                                         FLVAudioSampleSize.BIT_16.id,
                                         FLVAudioChannels.STEREO.id,
-                                        new AudioData(stdFlvAacPayload)
+                                        new AACAudioData(new ASByteView(stdFlvAacPayload))
                                     )
                                 );
                             }
@@ -88,16 +86,13 @@ public record StreamFilter(
                                     FLVTagType.AUDIO,
                                     tag.timestamp(),
                                     tag.streamId(),
-                                    new FLVExAudioTagData(
+                                    FLVExAudioTagData.from(
                                         aex.rawType(),
                                         aex.modifiers(),
-                                        FLVExAudioMultitrackType.ONE_TRACK.id,
-                                        Arrays.asList(
-                                            new FLVExAudioTrack(
-                                                track.codec(),
-                                                0, // Sole audio track :^)
-                                                track.data()
-                                            )
+                                        new FLVExAudioTrack(
+                                            track.codec(),
+                                            0, // Sole audio track :^)
+                                            track.data()
                                         )
                                     )
                                 );
