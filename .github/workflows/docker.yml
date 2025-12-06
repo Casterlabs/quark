@@ -19,6 +19,11 @@ jobs:
           distribution: temurin
           cache: maven
 
+      - name: 🔧 Set up Go 1.25
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+
       - name: 🔧 Set up QEMU
         uses: docker/setup-qemu-action@v3
 

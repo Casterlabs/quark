@@ -30,7 +30,7 @@ RUN <<EOF
 EOF
 
 # Quark
-COPY ./target/quark.jar /home/container
+COPY ./bootstrap/target/quark.jar /home/container
 
 # Healthcheck
 HEALTHCHECK --interval=5s --timeout=5s --retries=6 --start-period=5s \
