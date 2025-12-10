@@ -17,6 +17,7 @@ public class FFplaySessionListener extends FLVProcessSessionListener {
             "-x", "1280",
             "-y", "720",
             "-volume", "50",
+            "-strict", "0",
             "-f", "flv",
             "-"
         );

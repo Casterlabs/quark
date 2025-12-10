@@ -59,6 +59,7 @@ class _ThumbnailSessionListener extends SessionListener {
                 "ffmpeg",
                 "-hide_banner",
                 "-loglevel", Quark.FFLL,
+                "-strict", "0",
                 "-f", "flv",
                 "-i", "-",
                 "-frames:v", "1",

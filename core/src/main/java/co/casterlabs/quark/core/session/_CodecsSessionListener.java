@@ -195,6 +195,7 @@ class _CodecsSessionListener extends SessionListener {
                 "ffprobe",
                 "-hide_banner",
                 "-v", "quiet",
+                "-strict", "0",
                 "-print_format", "json",
                 "-show_entries", "stream=pix_fmt",
                 "-show_streams",
