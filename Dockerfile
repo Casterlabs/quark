@@ -14,8 +14,8 @@ RUN <<EOF
     mkdir /home/container/lib/ffmpeg
     cd /home/container/lib/ffmpeg
 
-    curl -L -o x86_64.tar.xz "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linux64-lgpl-shared-7.1.tar.xz"
-    curl -L -o aarch64.tar.xz "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linuxarm64-lgpl-shared-7.1.tar.xz"
+    curl -L -o x86_64.tar.xz "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.0-latest-linux64-lgpl-shared-8.0.tar.xz"
+    curl -L -o aarch64.tar.xz "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.0-latest-linuxarm64-lgpl-shared-8.0.tar.xz"
     
     # Move the FFmpeg binaries and libs to add it to the path
     echo "Using $(arch).tar.xz"
