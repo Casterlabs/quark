@@ -60,6 +60,20 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
             "-f", "mp3",
             "-"
         ),
+        "flac", new MuxFormat(
+            /*mime*/"audio/flac",
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "quiet",
+            "-strict", "0",
+            "-i", "-",
+            "-vn",
+            "-c:a", "flac",
+            "-af", "aformat=s32:192000",
+            "-write_header", "true",
+            "-f", "flac",
+            "-"
+        ),
 
         // Passthrough remuxing:
         // Can use https://github.com/xqq/mpegts.js for both ts and flv
