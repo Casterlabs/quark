@@ -18,7 +18,7 @@ services:
       # Experimental
       QUARK_EXP_VIRTUAL_THREAD_HEAVY_IO: false # Unstable.
       QUARK_EXP_HLS: false # Enable per-session HLS output.
-      JAVA_OPTS: '' # Anything you want to pass to the JVM.
+      JAVA_OPTS: "" # Anything you want to pass to the JVM.
     ports:
       - 1935:1935
       - 8080:8080 # BYO reverse proxy for SSL :)
