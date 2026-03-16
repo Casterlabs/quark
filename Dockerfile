@@ -37,6 +37,7 @@ HEALTHCHECK --interval=5s --timeout=5s --retries=6 --start-period=5s \
     CMD curl -f "http://localhost:$HTTP_PORT/_healthcheck" || exit 1
 
 # Entrypoint
-CMD [ "java", "-jar", "quark.jar" ]
+CMD ["sh", "-c", "java $JAVA_OPTS -jar quark.jar"]
+
 EXPOSE $HTTP_PORT/tcp
 EXPOSE $RTMP_PORT/tcp
