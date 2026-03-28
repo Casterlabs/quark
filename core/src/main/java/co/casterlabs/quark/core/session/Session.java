@@ -222,7 +222,13 @@ public class Session {
             sequenceTags.addAll(this.videoSequenceTags);
             sequenceTags.addAll(this.audioSequenceTags);
             FLVSequence seq = new FLVSequence(sequenceTags.toArray(new FLVTag[0]));
-            listener.onSequence(this, seq);
+            try {
+                listener.onSequence(this, seq);
+            } catch (Throwable t) {
+                t.printStackTrace();
+                listener.onClose(this);
+                return; // Do not add the listener; it failed to initialize.
+            }
         }
 
         Map<String, SessionListener> map = this.listenerMap.acquire();
