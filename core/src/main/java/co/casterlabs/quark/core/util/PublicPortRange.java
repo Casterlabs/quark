@@ -16,6 +16,13 @@ public class PublicPortRange {
         throw new IllegalStateException("No ephermal ports available.");
     }
 
+    /**
+     * @throws ArrayIndexOutOfBoundsException if the port is out of range. You
+     *                                        should only call this method with
+     *                                        ports that were returned by
+     *                                        acquirePort() and have not yet been
+     *                                        released.
+     */
     public static synchronized void releasePort(int port) {
         int portIndex = port - BASE_PORT;
         portInUse[portIndex] = false;
