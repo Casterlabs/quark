@@ -88,7 +88,10 @@ public class Webhooks {
 
             return res.id;
         } catch (IOException e) {
-            e.printStackTrace();
+            FastLogger.logStatic(LogLevel.SEVERE, "Failed to contact webhook for SESSION_STARTING, rejecting stream: %s", e.getMessage());
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
             return null;
         }
     }
@@ -151,6 +154,7 @@ public class Webhooks {
                             EgressConfiguration config = Rson.DEFAULT.fromJson(configElem, configurationClass);
                             config.create(session);
                         } catch (Exception e) {
+                            FastLogger.logStatic(LogLevel.WARNING, "Failed to create egress of type '%s' for session '%s': %s", type, session.id, e.getMessage());
                             if (Quark.DEBUG) {
                                 e.printStackTrace();
                             }
