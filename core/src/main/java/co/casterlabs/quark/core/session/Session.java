@@ -119,9 +119,7 @@ public class Session {
                 try {
                     listener.onSequence(this, seq);
                 } catch (Throwable t) {
-                    if (Quark.DEBUG) {
-                        t.printStackTrace();
-                    }
+                    t.printStackTrace();
                 }
             }
             return;
@@ -140,9 +138,7 @@ public class Session {
             try {
                 listener.onTag(this, tag);
             } catch (Throwable t) {
-                if (Quark.DEBUG) {
-                    t.printStackTrace();
-                }
+                t.printStackTrace();
             }
         }
     }
