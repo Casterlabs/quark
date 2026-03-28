@@ -270,7 +270,7 @@ public class RTMPPushSessionListener extends SessionListener {
 
         @Override
         public void onClose(@Nullable Throwable reason) {
-            if (Quark.DEBUG) {
+            if (Quark.DEBUG && reason != null) {
                 reason.printStackTrace();
             }
             outbound = null;
