@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 import co.casterlabs.flv4j.flv.FLVFileHeader;
 import co.casterlabs.flv4j.flv.muxing.NonSeekableFLVDemuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
-import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Sessions;
 import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.Session;
@@ -50,9 +49,7 @@ public class PipelineSessionListener extends FLVProcessSessionListener {
                     try {
                         provider.demuxer.start(this.stdout());
                     } catch (IOException e) {
-                        if (Quark.DEBUG) {
-                            e.printStackTrace();
-                        }
+                        e.printStackTrace();
                     } finally {
                         this.destroyProc();
                         provider.close(true);
