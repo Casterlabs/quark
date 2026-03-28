@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.concurrent.ThreadFactory;
 
 import javax.net.ssl.SSLSocketFactory;
 
@@ -95,14 +96,28 @@ public class RTMPPushSessionListener extends SessionListener {
 
         InetSocketAddress address = new InetSocketAddress(host, port);
 
-        Socket sock = switch (protocol) {
-            case "rtmp" -> new Socket();
-            case "rtmps" -> SSLSocketFactory.getDefault().createSocket();
-            default -> throw new IllegalArgumentException("Unsupported protocol: " + protocol);
-        };
-        sock.connect(address);
+        Socket sock = null;
+        try {
+            sock = switch (protocol) {
+                case "rtmp" -> new Socket();
+                case "rtmps" -> SSLSocketFactory.getDefault().createSocket();
+                default -> throw new IllegalArgumentException("Unsupported protocol: " + protocol);
+            };
+            sock.connect(address);
 
-        this.outbound = new Outbound(sock, app, this.tcURL, this.key);
+            this.outbound = new Outbound(sock, app, this.tcURL, this.key);
+            this.outbound.connect();
+        } catch (Throwable t) {
+            if (Quark.DEBUG) {
+                t.printStackTrace();
+            }
+            if (this.outbound != null) {
+                this.outbound.close();
+            }
+            if (sock != null) {
+                sock.close();
+            }
+        }
     }
 
     @Override
@@ -129,14 +144,17 @@ public class RTMPPushSessionListener extends SessionListener {
     }
 
     private class Outbound extends ClientNetConnection {
+        private static final ThreadFactory THREAD_FACTORY = Threads.heavyIo("RTMP Outbound");
+
         private final Socket socket;
+        private final ConnectArgs connectArgs;
         private NetStream ns;
 
         private final SessionListener listener = new SessionListener() {
             private static final String0 SET_DATA_FRAME = new String0("@setDataFrame");
 
             private boolean hasGottenSequence = false;
-            private long offset = 0;
+            private long offset = -1;
 
             private void writeTag(FLVTag tag) {
                 tag = filter.transform(tag);
@@ -214,22 +232,23 @@ public class RTMPPushSessionListener extends SessionListener {
 
         };
 
-        private Outbound(Socket socket, @Nullable String app, String tcUrl, String key) throws IOException, InterruptedException, CallError {
+        private Outbound(Socket socket, @Nullable String app, String tcUrl, String key) throws IOException {
             super(
                 new RTMPReader(ASReader.from(socket.getInputStream())),
                 new RTMPWriter(new ASWriter(socket.getOutputStream()))
             );
 
             this.socket = socket;
+            this.connectArgs = new ConnectArgs()
+                .app(app)
+                .type("nonprivate")
+                .flashVersion("FMLE/3.0 (compatible; FMSc/1.0)") // shrug?
+                .swfUrl(tcUrl)
+                .tcUrl(tcUrl);
+        }
 
-            this.connect(
-                new ConnectArgs()
-                    .app(app)
-                    .type("nonprivate")
-                    .flashVersion("FMLE/3.0 (compatible; FMSc/1.0)") // shrug?
-                    .swfUrl(tcUrl)
-                    .tcUrl(tcUrl)
-            );
+        public void connect() throws IOException, InterruptedException, CallError {
+            this.connect(this.connectArgs, THREAD_FACTORY);
 
             this.call("releaseStream", Null0.INSTANCE, new String0(key));
             this.call("FCPublish", Null0.INSTANCE, new String0(key));
