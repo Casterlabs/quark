@@ -11,6 +11,10 @@ public class HLSProtocol {
 
     public static void start() {
         FileUtil.deleteRecursively(HLS_ROOT);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            FileUtil.deleteRecursively(HLS_ROOT);
+        }));
     }
 
 }
