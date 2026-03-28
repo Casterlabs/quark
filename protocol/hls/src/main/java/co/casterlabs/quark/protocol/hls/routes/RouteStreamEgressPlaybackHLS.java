@@ -55,7 +55,10 @@ public class RouteStreamEgressPlaybackHLS implements EndpointProvider {
 
             File file = new File(hlsDirectory, data.uriParameters().get("file"));
             try {
-                if (!file.getCanonicalPath().startsWith(hlsDirectory.getCanonicalPath())) {
+                // Append separator to prevent path traversal via prefix match
+                // (e.g. /hls/abc would otherwise pass the check for /hls/abcdef)
+                String canonicalDir = hlsDirectory.getCanonicalPath() + File.separator;
+                if (!file.getCanonicalPath().startsWith(canonicalDir)) {
                     // Attempted path traversal
                     return ApiResponse.FILE_NOT_FOUND.response();
                 }
@@ -66,7 +69,11 @@ public class RouteStreamEgressPlaybackHLS implements EndpointProvider {
                 return ApiResponse.FILE_NOT_FOUND.response();
             }
 
-            final String extension = file.getName().substring(file.getName().lastIndexOf(".") + 1);
+            int dotIndex = file.getName().lastIndexOf(".");
+            if (dotIndex == -1) {
+                return ApiResponse.FILE_NOT_FOUND.response();
+            }
+            final String extension = file.getName().substring(dotIndex + 1);
 
             String mime = switch (extension) {
                 case "m3u8" -> "application/vnd.apple.mpegurl";
