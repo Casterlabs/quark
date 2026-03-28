@@ -54,7 +54,7 @@ public class Webhooks {
                 .build()
         );
         try (Response res = call.execute()) {
-            String body = res.body().string();
+            String body = res.body() != null ? res.body().string() : "";
 
             if (!res.isSuccessful()) {
                 throw new IOException(res.code() + ": " + body);
