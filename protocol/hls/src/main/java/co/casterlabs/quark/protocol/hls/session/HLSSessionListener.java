@@ -22,13 +22,13 @@ public class HLSSessionListener extends FLVProcessSessionListener {
 
         try {
             File folder = new File(HLSProtocol.HLS_ROOT, session.id);
-            folder.mkdirs();
+            if (!folder.mkdirs()) {
+                throw new IOException("Failed to create folder: " + folder.getAbsolutePath());
+            }
 
             return new HLSSessionListener(StreamFilter.ALL_AUDIO, folder);
         } catch (IOException e) {
-            if (Quark.DEBUG) {
-                e.printStackTrace();
-            }
+            e.printStackTrace();
             return null;
         }
     };
