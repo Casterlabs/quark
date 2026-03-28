@@ -10,7 +10,7 @@
 
 # Common
 .DS_Store
-
+.factorypath
 .vscode/settings.json
 
 # Maven
