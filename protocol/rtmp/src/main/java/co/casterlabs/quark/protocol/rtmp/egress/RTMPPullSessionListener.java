@@ -42,7 +42,7 @@ public class RTMPPullSessionListener extends SessionListener {
     private final CircularBuffer<FLVTag> videoBuffer = new CircularBuffer<>(MAX_OUTSTANDING_VIDEO_PACKETS);
 
     private final RTMPConnection rtmp;
-    private Session session;
+    private volatile Session session;
 
     private String fid;
     private boolean hasGottenSequence = false;
