@@ -1,6 +1,7 @@
 package co.casterlabs.quark.protocol.hls.routes;
 
 import java.io.File;
+import java.io.IOException;
 
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Sessions;
@@ -53,22 +54,28 @@ public class RouteStreamEgressPlaybackHLS implements EndpointProvider {
             File hlsDirectory = new File(HLSProtocol.HLS_ROOT, qSession.id);
 
             File file = new File(hlsDirectory, data.uriParameters().get("file"));
+            try {
+                if (!file.getCanonicalPath().startsWith(hlsDirectory.getCanonicalPath())) {
+                    // Attempted path traversal
+                    return ApiResponse.FILE_NOT_FOUND.response();
+                }
+            } catch (IOException e) {
+                return ApiResponse.FILE_NOT_FOUND.response();
+            }
             if (!file.exists()) {
                 return ApiResponse.FILE_NOT_FOUND.response();
             }
-            if (!file.getCanonicalPath().startsWith(hlsDirectory.getCanonicalPath())) {
-                // Attempted path traversal
-                return ApiResponse.FILE_NOT_FOUND.response();
-            }
 
-            String mime = switch (file.getName().split("\\.")[1]) {
+            final String extension = file.getName().substring(file.getName().lastIndexOf(".") + 1);
+
+            String mime = switch (extension) {
                 case "m3u8" -> "application/vnd.apple.mpegurl";
                 case "ts" -> "video/mp2t";
                 case "mp4" -> "video/mp4";
                 default -> "application/octet-stream";
             };
 
-            String cacheControl = switch (file.getName().split("\\.")[1]) {
+            String cacheControl = switch (extension) {
                 case "m3u8" -> "private, max-age=0, no-store"; // ALWAYS retrieve a fresh copy.
 
                 // 3 minutes, we don't know the keyframe interval and the playlist size is
