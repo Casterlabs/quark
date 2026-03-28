@@ -205,12 +205,10 @@ class FLVResponseContent implements ResponseContent {
 
         SessionListener listener = new FLVSessionListener(this.filter) {
             {
+                this.trackResource(() -> {
+                    waitFor.complete(null);
+                });
                 this.init(out);
-            }
-
-            @Override
-            public void onClose(Session session) {
-                waitFor.complete(null);
             }
 
             @Override
@@ -289,8 +287,7 @@ class RemuxedResponseContent implements ResponseContent {
             }
 
             @Override
-            public void onClose(Session session) {
-                super.onClose(session);
+            protected void onClose0(Session session) {
                 waitFor.complete(null);
             }
 

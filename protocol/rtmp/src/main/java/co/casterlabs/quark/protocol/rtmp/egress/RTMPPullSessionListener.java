@@ -50,6 +50,9 @@ public class RTMPPullSessionListener extends SessionListener {
     public RTMPPullSessionListener(RTMPConnection rtmp) {
         this.rtmp = rtmp;
 
+        this.trackResource(this.videoBuffer);
+        this.trackResource(() -> this.rtmp.close(true)); // junk value.
+
         this.videoBuffer.readAsync(
             VIDEO_THREAD_FACTORY,
             (tag) -> this.writeOut(this.session, tag)
@@ -174,12 +177,6 @@ public class RTMPPullSessionListener extends SessionListener {
     @Override
     public String fid() {
         return this.fid;
-    }
-
-    @Override
-    public void onClose(Session session) {
-        this.videoBuffer.close();
-        this.rtmp.close(true); // junk value.
     }
 
     @Override

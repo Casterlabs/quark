@@ -127,9 +127,6 @@ class _CodecsSessionListener extends SessionListener {
     }
 
     @Override
-    public void onClose(Session session) {} // NOOP
-
-    @Override
     public String type() {
         return null;
     }
@@ -189,6 +186,9 @@ class _CodecsSessionListener extends SessionListener {
         // We intentionally break the state and leave updating set to true, otherwise
         // we'd go in an infinite loop of updates :P
     }
+
+    @Override
+    protected void onClose0(Session session) {} // NOOP, resource cleanup is below.
 
     private class FFprobeSessionListener extends FLVProcessSessionListener {
 

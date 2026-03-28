@@ -52,7 +52,7 @@ class _ThumbnailSessionListener extends SessionListener {
     }
 
     @Override
-    public void onClose(Session session) {}
+    protected void onClose0(Session session) {} // NOOP, resource cleanup is below.
 
     private class ThumbnailGenerator extends FLVProcessSessionListener {
 
@@ -90,9 +90,6 @@ class _ThumbnailSessionListener extends SessionListener {
         public String type() {
             return null;
         }
-
-        @Override
-        public void onClose(Session session) {}
 
     }
 

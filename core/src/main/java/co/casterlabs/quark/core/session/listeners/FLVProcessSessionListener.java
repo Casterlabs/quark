@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ProcessBuilder.Redirect;
 
-import co.casterlabs.quark.core.session.Session;
-
 public abstract class FLVProcessSessionListener extends FLVSessionListener {
     private final Process proc;
 
@@ -25,6 +23,8 @@ public abstract class FLVProcessSessionListener extends FLVSessionListener {
             .redirectInput(Redirect.PIPE)
             .start();
 
+        this.trackResource(this.proc::destroy);
+
         this.init(this.proc.getOutputStream());
     }
 
@@ -38,11 +38,6 @@ public abstract class FLVProcessSessionListener extends FLVSessionListener {
 
     protected InputStream stderr() {
         return this.proc.getErrorStream();
-    }
-
-    @Override
-    public void onClose(Session session) {
-        this.proc.destroy();
     }
 
     protected void destroyProc() {

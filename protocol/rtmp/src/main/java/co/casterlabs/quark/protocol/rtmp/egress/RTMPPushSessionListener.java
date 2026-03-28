@@ -121,7 +121,7 @@ public class RTMPPushSessionListener extends SessionListener {
     }
 
     @Override
-    public void onClose(Session session) {
+    protected void onClose0(Session session) {
         this.isClosed = true;
         if (this.outbound != null) {
             this.outbound.close();
@@ -211,9 +211,6 @@ public class RTMPPushSessionListener extends SessionListener {
             public @Nullable String type() {
                 return null; // Internal :^)
             }
-
-            @Override
-            public void onClose(Session session) {} // Handled above.
 
         };
 

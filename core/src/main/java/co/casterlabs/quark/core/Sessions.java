@@ -64,7 +64,7 @@ public class Sessions {
     private static class CloseListener extends SessionListener {
 
         @Override
-        public void onClose(Session session) {
+        protected void onClose0(Session session) {
             Map<String, Session> map = sessions.acquire();
             try {
                 map.remove(session.id);

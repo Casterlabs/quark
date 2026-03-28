@@ -103,7 +103,7 @@ public class WebRTCSessionListener extends FLVProcessSessionListener implements 
     }
 
     @Override
-    public void onClose(Session session) {
+    protected void onClose0(Session session) {
         this.close();
     }
 
@@ -116,7 +116,6 @@ public class WebRTCSessionListener extends FLVProcessSessionListener implements 
         }
 
         this.session.removeListener(this);
-        this.destroyProc();
     }
 
 }

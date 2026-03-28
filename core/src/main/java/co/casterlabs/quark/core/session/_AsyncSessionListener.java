@@ -28,6 +28,8 @@ class _AsyncSessionListener extends SessionListener {
                 this.delegate.onSequence(session, seq);
             }
         });
+
+        this.trackResource(this.buffer);
     }
 
     @Override
@@ -41,8 +43,7 @@ class _AsyncSessionListener extends SessionListener {
     }
 
     @Override
-    public void onClose(Session session) {
-        this.buffer.close();
+    protected void onClose0(Session session) {
         this.delegate.onClose(session);
     }
 
