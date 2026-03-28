@@ -134,7 +134,7 @@ public class Session {
         }
     }
 
-    public void close(boolean graceful) {
+    public synchronized void close(boolean graceful) {
         if (this.state != State.STARTING && this.state != State.RUNNING) return;
         this.state = State.CLOSING;
 
@@ -157,14 +157,21 @@ public class Session {
             }
         }
 
-        for (SessionListener listener : this.listeners.get()) {
-            try {
-                listener.onClose(this);
-            } catch (Throwable t) {
-                if (Quark.DEBUG) {
-                    t.printStackTrace();
+        Map<String, SessionListener> map = this.listenerMap.acquire();
+        try {
+            for (SessionListener listener : this.listeners.get()) {
+                try {
+                    listener.onClose(this);
+                } catch (Throwable t) {
+                    if (Quark.DEBUG) {
+                        t.printStackTrace();
+                    }
+                } finally {
+                    map.remove(listener.id);
                 }
             }
+        } finally {
+            this.listenerMap.release();
         }
 
         Webhooks.sessionEnded(this.id);
@@ -187,11 +194,11 @@ public class Session {
         return listeners;
     }
 
-    public void addAsyncListener(SessionListener listener) {
+    public synchronized void addAsyncListener(SessionListener listener) {
         this.addSyncListener(new _AsyncSessionListener(this, listener));
     }
 
-    public void addSyncListener(SessionListener listener) {
+    public synchronized void addSyncListener(SessionListener listener) {
         if (this.state == State.CLOSED) {
             listener.onClose(this);
             return;
@@ -215,7 +222,7 @@ public class Session {
         }
     }
 
-    public void removeListener(SessionListener identifier) {
+    public synchronized void removeListener(SessionListener identifier) {
         SessionListener removedFromMap;
 
         Map<String, SessionListener> map = this.listenerMap.acquire();
@@ -231,7 +238,7 @@ public class Session {
         removedFromMap.onClose(this);
     }
 
-    public void removeById(String id) {
+    public synchronized void removeById(String id) {
         for (SessionListener listener : this.listeners.get()) {
             if (id.equals(listener.id)) {
                 this.removeListener(listener);
@@ -239,7 +246,7 @@ public class Session {
         }
     }
 
-    public void removeByFid(String fid) {
+    public synchronized void removeByFid(String fid) {
         for (SessionListener listener : this.listeners.get()) {
             if (fid.equals(listener.fid())) {
                 this.removeListener(listener);
