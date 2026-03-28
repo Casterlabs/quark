@@ -35,7 +35,7 @@ public class Webhooks {
         .writeTimeout(180, TimeUnit.SECONDS)
         .build();
 
-    private static final ExecutorService ASYNC_WEBHOOKS = Executors.newCachedThreadPool();
+    private static final ExecutorService ASYNC_WEBHOOKS = Executors.newFixedThreadPool(32, Threads.misc("Async Webhook Thread"));
 
     private static <T> T post(String type, Object data, Class<T> expected) throws IOException {
         JsonObject payload = new JsonObject()
