@@ -48,7 +48,9 @@ public abstract class StreamInfo {
                 this.codec = ff.getString("codec_name");
             }
 
-            this.channels = ff.getNumber("channels").intValue();
+            if (ff.containsKey("channels")) {
+                this.channels = ff.getNumber("channels").intValue();
+            }
 
             if (ff.containsKey("sample_rate")) {
                 this.sampleRate = Double.parseDouble(ff.getString("sample_rate"));
