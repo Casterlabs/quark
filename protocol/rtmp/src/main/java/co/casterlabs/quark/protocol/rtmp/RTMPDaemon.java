@@ -50,6 +50,12 @@ public class RTMPDaemon {
                                 if ("An established connection was aborted by the software in your host machine".equals(t.getMessage())) {
                                     throw new EndOfStreamException(t);
                                 }
+                                if ("Connection reset".equals(t.getMessage())) {
+                                    throw new EndOfStreamException(t);
+                                }
+                                if ("Read timed out".equals(t.getMessage())) {
+                                    throw new EndOfStreamException(t);
+                                }
 
                                 throw t;
                             }
