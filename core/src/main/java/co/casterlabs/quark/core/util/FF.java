@@ -18,10 +18,11 @@ public class FF {
     // Must be ran in the static initializer to ensure that we know whether we can
     // use ffmpeg or not before we try to use it.
     private static boolean check(String executable) {
+        Process proc = null;
         try {
-            Process proc = new ProcessBuilder(executable, "-version")
+            proc = new ProcessBuilder(executable, "-version")
                 .redirectInput(Redirect.PIPE)
-                .redirectError(Redirect.PIPE)
+                .redirectError(Redirect.DISCARD)
                 .redirectOutput(Redirect.PIPE)
                 .start();
 
@@ -36,6 +37,10 @@ public class FF {
             }
         } catch (IOException | InterruptedException e) {
             FastLogger.logStatic(LogLevel.WARNING, "An error occurred while checking for %s:\n%s", executable, e);
+        } finally {
+            if (proc != null) {
+                proc.destroyForcibly();
+            }
         }
         return false;
     }
