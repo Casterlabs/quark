@@ -6,7 +6,7 @@ import co.casterlabs.rakurai.json.annotating.JsonClass;
 
 @JsonClass(exposeAll = true)
 public class SessionInfo {
-    public VideoStreamInfo[] video = {};
-    public AudioStreamInfo[] audio = {};
+    public volatile VideoStreamInfo[] video = {};
+    public volatile AudioStreamInfo[] audio = {};
 
 }

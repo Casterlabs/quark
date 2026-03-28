@@ -17,7 +17,7 @@ public abstract class StreamInfo {
 
     public final int id;
     public final BitrateEstimator bitrate = new BitrateEstimator();
-    public String codec;
+    public volatile String codec;
 
     public @JsonExclude volatile long lastUpdated = 0;
     public @JsonExclude volatile boolean updating = false;
@@ -30,9 +30,9 @@ public abstract class StreamInfo {
 
     @JsonClass(exposeAll = true)
     public static class AudioStreamInfo extends StreamInfo {
-        public double sampleRate = -1;
-        public int channels = -1;
-        public String layout;
+        public volatile double sampleRate = -1;
+        public volatile int channels = -1;
+        public volatile String layout;
 
         public AudioStreamInfo(int id, @Nullable String codec) {
             super(id);
@@ -64,15 +64,15 @@ public abstract class StreamInfo {
 
     @JsonClass(exposeAll = true)
     public static class VideoStreamInfo extends StreamInfo {
-        public int width = -1;
-        public int height = -1;
-        public double frameRate = -1;
-        public String pixelFormat;
-        public String colorSpace;
-        public String aspectRatio;
+        public volatile int width = -1;
+        public volatile int height = -1;
+        public volatile double frameRate = -1;
+        public volatile String pixelFormat;
+        public volatile String colorSpace;
+        public volatile String aspectRatio;
 
-        public int keyFrameInterval = -1; // seconds
-        public @JsonExclude long lastKeyFrame = -1L;
+        public volatile int keyFrameInterval = -1; // seconds
+        public @JsonExclude volatile long lastKeyFrame = -1L;
 
         public VideoStreamInfo(int id, String codec) {
             super(id);
