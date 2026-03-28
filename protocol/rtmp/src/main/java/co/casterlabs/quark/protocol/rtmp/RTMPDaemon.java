@@ -27,54 +27,59 @@ public class RTMPDaemon {
     }
 
     private static void run() {
-        try (ServerSocket serverSocket = new ServerSocket()) {
-            serverSocket.bind(new InetSocketAddress(RTMPEnv.RTMP_PORT));
-            LOGGER.info("Listening on port %d...", RTMPEnv.RTMP_PORT);
+        while (true) {
+            try (ServerSocket serverSocket = new ServerSocket()) {
+                serverSocket.bind(new InetSocketAddress(RTMPEnv.RTMP_PORT));
+                LOGGER.info("Listening on port %d...", RTMPEnv.RTMP_PORT);
 
-            while (true) {
-                try {
-                    Socket sock = serverSocket.accept();
+                while (true) {
+                    try {
+                        Socket sock = serverSocket.accept();
 
-                    RTMP_CONNECTION_TF.newThread(() -> {
-                        try (sock) {
-                            sock.setTcpNoDelay(true);
-                            sock.setSoTimeout(SO_TIMEOUT);
+                        RTMP_CONNECTION_TF.newThread(() -> {
+                            try (sock) {
+                                sock.setTcpNoDelay(true);
+                                sock.setSoTimeout(SO_TIMEOUT);
 
-                            try (
-                                SocketConnection conn = new SocketConnection(sock);
-                                RTMPConnection rtmp = new RTMPConnection(conn)) {
-                                rtmp.handle(RTMP_MISC_TF);
+                                try (
+                                    SocketConnection conn = new SocketConnection(sock);
+                                    RTMPConnection rtmp = new RTMPConnection(conn)) {
+                                    rtmp.handle(RTMP_MISC_TF);
+                                } catch (Throwable t) {
+                                    if ("Socket closed".equals(t.getMessage())) {
+                                        throw new EndOfStreamException(t);
+                                    }
+                                    if ("The pipe has been ended".equals(t.getMessage())) {
+                                        throw new EndOfStreamException(t);
+                                    }
+                                    if ("An established connection was aborted by the software in your host machine".equals(t.getMessage())) {
+                                        throw new EndOfStreamException(t);
+                                    }
+                                    if ("Connection reset".equals(t.getMessage())) {
+                                        throw new EndOfStreamException(t);
+                                    }
+                                    if ("Read timed out".equals(t.getMessage())) {
+                                        throw new EndOfStreamException(t);
+                                    }
+
+                                    throw t;
+                                }
+                            } catch (EndOfStreamException ignored) {
+                                return;
                             } catch (Throwable t) {
-                                if ("Socket closed".equals(t.getMessage())) {
-                                    throw new EndOfStreamException(t);
-                                }
-                                if ("The pipe has been ended".equals(t.getMessage())) {
-                                    throw new EndOfStreamException(t);
-                                }
-                                if ("An established connection was aborted by the software in your host machine".equals(t.getMessage())) {
-                                    throw new EndOfStreamException(t);
-                                }
-                                if ("Connection reset".equals(t.getMessage())) {
-                                    throw new EndOfStreamException(t);
-                                }
-                                if ("Read timed out".equals(t.getMessage())) {
-                                    throw new EndOfStreamException(t);
-                                }
-
-                                throw t;
+                                LOGGER.warn("Uncaught:\n%s", t);
                             }
-                        } catch (EndOfStreamException ignored) {
-                            return;
-                        } catch (Throwable t) {
-                            LOGGER.warn("Uncaught:\n%s", t);
-                        }
-                    }).start();
-                } catch (Throwable t) {
-                    LOGGER.warn("Uncaught:\n%s", t);
+                        }).start();
+                    } catch (Throwable t) {
+                        LOGGER.warn("Uncaught:\n%s", t);
+                    }
                 }
+            } catch (Throwable t) {
+                LOGGER.warn("Server socket failure, restarting in 5s:\n%s", t);
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ignored) {}
             }
-        } catch (Throwable t) {
-            LOGGER.warn("Uncaught:\n%s", t);
         }
     }
 
