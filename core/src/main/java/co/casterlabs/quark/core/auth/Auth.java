@@ -11,6 +11,8 @@ import com.auth0.jwt.interfaces.JWTVerifier;
 
 import co.casterlabs.quark.core.Quark;
 import lombok.NonNull;
+import xyz.e3ndr.fastloggingframework.logging.FastLogger;
+import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
 public class Auth {
     private static final String[] EMPTY_ARR = {};
@@ -26,6 +28,8 @@ public class Auth {
 
             verifier = JWT.require(signingAlg)
                 .build();
+        } else {
+            FastLogger.logStatic(LogLevel.WARNING, "Quark is running without authentication! This is not recommended for production environments.");
         }
 
         if (Quark.AUTH_ANON_PREGEX != null && !Quark.AUTH_ANON_PREGEX.isEmpty()) {
