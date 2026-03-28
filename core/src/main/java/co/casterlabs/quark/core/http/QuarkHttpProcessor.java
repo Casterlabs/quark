@@ -41,6 +41,7 @@ public class QuarkHttpProcessor implements Postprocessor.Http<Object>, Preproces
                     e.printStackTrace();
                 }
                 context.respondEarly(ApiResponse.UNAUTHORIZED.response());
+                return;
             }
         }
 
@@ -50,6 +51,7 @@ public class QuarkHttpProcessor implements Postprocessor.Http<Object>, Preproces
             qSession = Sessions.getSession(sessionId, false);
             if (qSession == null) {
                 context.respondEarly(ApiResponse.SESSION_NOT_FOUND.response());
+                return;
             }
         }
 
