@@ -21,14 +21,14 @@ public class BitrateEstimator {
         }
     }
 
-    public void sample(int sizeBytes, long timestampMillis) {
+    public synchronized void sample(int sizeBytes, long timestampMillis) {
         Sample sample = this.samples[this.sampleWriteIdx];
         sample.sizeBytes = sizeBytes;
         sample.timestampMillis = timestampMillis;
         this.sampleWriteIdx = (this.sampleWriteIdx + 1) % WINDOW_SIZE; // circular
     }
 
-    public long estimate() {
+    public synchronized long estimate() {
         long totalBytes = 0;
         long minTime = Long.MAX_VALUE;
         long maxTime = Long.MIN_VALUE;
