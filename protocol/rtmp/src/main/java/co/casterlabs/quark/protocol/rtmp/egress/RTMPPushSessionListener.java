@@ -108,6 +108,7 @@ public class RTMPPushSessionListener extends SessionListener {
             this.outbound = new Outbound(sock, app, this.tcURL, this.key);
             this.outbound.connect();
         } catch (Throwable t) {
+            FastLogger.logStatic(LogLevel.WARNING, "RTMP push connection failed for '%s': %s", this.tcURL, t.getMessage());
             if (Quark.DEBUG) {
                 t.printStackTrace();
             }
