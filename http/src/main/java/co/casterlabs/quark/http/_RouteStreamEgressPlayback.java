@@ -239,7 +239,9 @@ class FLVResponseContent implements ResponseContent {
         try {
             this.qSession.addAsyncListener(listener);
             waitFor.get();
-        } catch (InterruptedException | ExecutionException ignored) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException ignored) {
             // NOOP
         } finally {
             this.qSession.removeListener(listener);
@@ -319,7 +321,9 @@ class RemuxedResponseContent implements ResponseContent {
         try {
             this.qSession.addAsyncListener(listener);
             waitFor.get();
-        } catch (InterruptedException | ExecutionException ignored) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException ignored) {
             // NOOP
         } finally {
             this.qSession.removeListener(listener);
