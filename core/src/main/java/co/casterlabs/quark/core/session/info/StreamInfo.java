@@ -50,9 +50,11 @@ public abstract class StreamInfo {
 
             this.channels = ff.getNumber("channels").intValue();
 
-            this.sampleRate = Double.parseDouble(ff.getString("sample_rate"));
-            if (Double.isNaN(this.sampleRate) || Double.isInfinite(this.sampleRate)) {
-                this.sampleRate = -1;
+            if (ff.containsKey("sample_rate")) {
+                this.sampleRate = Double.parseDouble(ff.getString("sample_rate"));
+                if (Double.isNaN(this.sampleRate) || Double.isInfinite(this.sampleRate)) {
+                    this.sampleRate = -1;
+                }
             }
 
             if (ff.containsKey("channel_layout")) {
