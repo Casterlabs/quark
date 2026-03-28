@@ -1,6 +1,7 @@
 package co.casterlabs.quark.http;
 
 import co.casterlabs.quark.core.Quark;
+import co.casterlabs.quark.core.Sessions;
 import co.casterlabs.quark.core.auth.AuthenticationException;
 import co.casterlabs.quark.core.auth.User;
 import co.casterlabs.quark.core.http.ApiResponse;
@@ -29,7 +30,6 @@ public class _RouteStreamIngress implements EndpointProvider {
     }, postprocessor = QuarkHttpProcessor.class, preprocessor = QuarkHttpProcessor.class)
     public HttpResponse onIngressFile(HttpSession session, EndpointData<EndpointContext> data) {
         User user = data.attachment().user();
-        Session qSession = data.attachment().session();
 
         try {
             user.checkAdmin();
@@ -39,6 +39,12 @@ public class _RouteStreamIngress implements EndpointProvider {
             }
 
             IngressFileBody body = Rson.DEFAULT.fromJson(session.body().string(), IngressFileBody.class);
+
+            // The preprocessor always uses create:false, so qSession will be null for this
+            // route (no :sessionId in the path). We must create/retrieve the session from
+            // the body id, which is the source-of-truth for this endpoint.
+            Session qSession = Sessions.getSession(body.id, true);
+
             new FFmpegProvider(qSession, body.source, body.loop);
 
             return ApiResponse.success(StandardHttpStatus.CREATED);
