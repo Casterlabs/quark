@@ -41,12 +41,11 @@ import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 public class RTMPSessionProvider implements SessionProvider, MessageHandler {
     private static final ByteString STR_SET_DATA_FRAME = new ByteString("@setDataFrame");
 
-    private long dtsOffset;
-
     private final RTMPConnection rtmp;
-    private Session session;
 
-    private boolean jammed = false;
+    private volatile Session session;
+    private volatile long dtsOffset;
+    private volatile boolean jammed = false;
 
     private JsonObject metadata = JsonObject.EMPTY_OBJECT;
 

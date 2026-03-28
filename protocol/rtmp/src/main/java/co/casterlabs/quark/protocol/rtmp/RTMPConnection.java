@@ -29,7 +29,7 @@ public class RTMPConnection extends ServerNetConnection implements AutoCloseable
     public final FastLogger logger;
 
     public ConnectArgs connectArgs;
-    public RTMPState state = RTMPState.INITIALIZING;
+    public volatile RTMPState state = RTMPState.INITIALIZING;
 
     @Nullable
     public ServerNetStream stream;
@@ -88,7 +88,7 @@ public class RTMPConnection extends ServerNetConnection implements AutoCloseable
         };
     }
 
-    public void close(boolean graceful) {
+    public synchronized void close(boolean graceful) {
         if (this.state == RTMPState.CLOSING) return;
 
         this.logger.debug("Closing...");

@@ -23,12 +23,16 @@ public class RTMPDaemon {
     public static void start() {
         if (RTMPEnv.RTMP_PORT <= 0) return; // Disabled
 
-        Threads.MISC_THREAD_BUILDER.name("RTMP Server").start(() -> {
-            try (ServerSocket serverSocket = new ServerSocket()) {
-                serverSocket.bind(new InetSocketAddress(RTMPEnv.RTMP_PORT));
-                LOGGER.info("Listening on port %d...", RTMPEnv.RTMP_PORT);
+        Threads.MISC_THREAD_BUILDER.name("RTMP Server").start(RTMPDaemon::run);
+    }
 
-                while (true) {
+    private static void run() {
+        try (ServerSocket serverSocket = new ServerSocket()) {
+            serverSocket.bind(new InetSocketAddress(RTMPEnv.RTMP_PORT));
+            LOGGER.info("Listening on port %d...", RTMPEnv.RTMP_PORT);
+
+            while (true) {
+                try {
                     Socket sock = serverSocket.accept();
 
                     RTMP_CONNECTION_TF.newThread(() -> {
@@ -65,11 +69,13 @@ public class RTMPDaemon {
                             LOGGER.warn("Uncaught:\n%s", t);
                         }
                     }).start();
+                } catch (Throwable t) {
+                    LOGGER.warn("Uncaught:\n%s", t);
                 }
-            } catch (Throwable t) {
-                LOGGER.warn("Uncaught:\n%s", t);
             }
-        });
+        } catch (Throwable t) {
+            LOGGER.warn("Uncaught:\n%s", t);
+        }
     }
 
 }
