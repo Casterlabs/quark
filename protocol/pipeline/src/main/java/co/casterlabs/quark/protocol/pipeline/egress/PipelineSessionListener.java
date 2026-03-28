@@ -8,8 +8,8 @@ import org.jetbrains.annotations.Nullable;
 import co.casterlabs.flv4j.flv.FLVFileHeader;
 import co.casterlabs.flv4j.flv.muxing.NonSeekableFLVDemuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
-import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Sessions;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionProvider;
 import co.casterlabs.quark.core.session.listeners.FLVProcessSessionListener;
@@ -34,7 +34,7 @@ public class PipelineSessionListener extends FLVProcessSessionListener {
             .put("resultId", resultId);
 
         if (resultId != null) {
-            Quark.HEAVY_IO_THREAD_BUILDER
+            Threads.HEAVY_IO_THREAD_BUILDER
                 .name(
                     String.format(
                         "Pipeline Egress - fid=%s - resultId=%s",

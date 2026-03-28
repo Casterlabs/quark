@@ -6,9 +6,11 @@ import java.lang.ProcessBuilder.Redirect;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadFactory;
 
 import co.casterlabs.commons.io.streams.StreamUtil;
 import co.casterlabs.quark.core.Quark;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.auth.AuthenticationException;
 import co.casterlabs.quark.core.auth.User;
 import co.casterlabs.quark.core.http.ApiResponse;
@@ -249,6 +251,8 @@ class FLVResponseContent implements ResponseContent {
 }
 
 class RemuxedResponseContent implements ResponseContent {
+    private static final ThreadFactory THREAD_FACTORY = Threads.lightIo("FFmpeg -> HTTP");
+
     private final StreamFilter filter;
     private final Session qSession;
     private final String fid;
@@ -275,14 +279,13 @@ class RemuxedResponseContent implements ResponseContent {
         ) {
 
             {
-                Thread.ofVirtual().name("FFmpeg -> HTTP", 0)
-                    .start(() -> {
-                        try {
-                            StreamUtil.streamTransfer(this.stdout(), out, recommendedBufferSize);
-                        } catch (IOException e) {} finally {
-                            waitFor.complete(null);
-                        }
-                    });
+                THREAD_FACTORY.newThread(() -> {
+                    try {
+                        StreamUtil.streamTransfer(this.stdout(), out, recommendedBufferSize);
+                    } catch (IOException e) {} finally {
+                        waitFor.complete(null);
+                    }
+                }).start();
             }
 
             @Override

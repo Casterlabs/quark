@@ -32,6 +32,7 @@ import co.casterlabs.flv4j.rtmp.net.client.ClientNetConnection;
 import co.casterlabs.flv4j.rtmp.net.rpc.CallError;
 import co.casterlabs.flv4j.rtmp.net.rpc.RPCPromise;
 import co.casterlabs.quark.core.Quark;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.FLVSequence;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionListener;
@@ -67,7 +68,7 @@ public class RTMPPushSessionListener extends SessionListener {
         this.tcURL = address;
         this.key = key;
 
-        Quark.HEAVY_IO_THREAD_BUILDER.name("RTMP Egress Kickstart", 0).start(() -> {
+        Threads.HEAVY_IO_THREAD_BUILDER.name("RTMP Egress Kickstart", 0).start(() -> {
             try {
                 this.reconnect();
             } catch (Throwable t) {
@@ -279,7 +280,7 @@ public class RTMPPushSessionListener extends SessionListener {
 
             session.removeListener(this.listener);
 
-            Quark.HEAVY_IO_THREAD_BUILDER.name("RTMP Egress Restart", 0).start(() -> {
+            Threads.HEAVY_IO_THREAD_BUILDER.name("RTMP Egress Restart", 0).start(() -> {
                 try {
                     Thread.sleep(5000); // Be gentle :)
                     reconnect();

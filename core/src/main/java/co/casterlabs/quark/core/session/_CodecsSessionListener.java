@@ -3,6 +3,7 @@ package co.casterlabs.quark.core.session;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ThreadFactory;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -17,6 +18,7 @@ import co.casterlabs.flv4j.flv.tags.video.FLVStandardVideoTagData;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoCodec;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
 import co.casterlabs.quark.core.Quark;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.info.SessionInfo;
 import co.casterlabs.quark.core.session.info.StreamInfo;
 import co.casterlabs.quark.core.session.info.StreamInfo.AudioStreamInfo;
@@ -31,6 +33,8 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 class _CodecsSessionListener extends SessionListener {
+    private static final ThreadFactory THREAD_FACTORY = Threads.lightIo("Codec Stream Probe");
+
     private final Session session;
     private final SessionInfo info;
 
@@ -204,7 +208,7 @@ class _CodecsSessionListener extends SessionListener {
                 "-"
             );
 
-            Thread.ofVirtual().name("Stream Probe", 0).start(() -> {
+            THREAD_FACTORY.newThread(() -> {
                 try {
                     // Wait for the result, then copy it.
                     String str = StreamUtil.toString(this.stdout(), StandardCharsets.UTF_8).replace("\r", "").replace("\n", "").replace(" ", "");
@@ -224,7 +228,7 @@ class _CodecsSessionListener extends SessionListener {
                 } finally {
                     session.removeListener(this);
                 }
-            });
+            }).start();
         }
 
         @Override

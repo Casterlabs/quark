@@ -2,15 +2,19 @@ package co.casterlabs.quark.core.session;
 
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
+import java.util.concurrent.ThreadFactory;
 
 import co.casterlabs.commons.io.streams.StreamUtil;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.quark.core.Quark;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.quark.core.session.listeners.StreamFilter;
 import co.casterlabs.quark.core.util.FF;
 
 class _ThumbnailSessionListener extends SessionListener {
+    private static final ThreadFactory THREAD_FACTORY = Threads.lightIo("Thumbnail Generator");
+
     private volatile long lastThumbnail = 0;
     private volatile boolean isGeneratingThumbnail = false;
     volatile byte[] thumbnail = {};
@@ -68,20 +72,18 @@ class _ThumbnailSessionListener extends SessionListener {
                 "-"
             );
 
-            Thread.ofVirtual()
-                .name("Thumbnail Generator", 0)
-                .start(() -> {
-                    try {
-                        thumbnail = StreamUtil.toBytes(this.stdout());
-                    } catch (IOException e) {
-                        if (Quark.DEBUG) {
-                            e.printStackTrace();
-                        }
-                    } finally {
-                        lastThumbnail = System.currentTimeMillis();
-                        isGeneratingThumbnail = false;
+            THREAD_FACTORY.newThread(() -> {
+                try {
+                    thumbnail = StreamUtil.toBytes(this.stdout());
+                } catch (IOException e) {
+                    if (Quark.DEBUG) {
+                        e.printStackTrace();
                     }
-                });
+                } finally {
+                    lastThumbnail = System.currentTimeMillis();
+                    isGeneratingThumbnail = false;
+                }
+            }).start();
         }
 
         @Override

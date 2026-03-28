@@ -3,6 +3,7 @@ package co.casterlabs.quark.core.session;
 import java.util.concurrent.ThreadFactory;
 
 import co.casterlabs.flv4j.flv.tags.FLVTag;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.util.CircularBuffer;
 
 /**
@@ -10,7 +11,7 @@ import co.casterlabs.quark.core.util.CircularBuffer;
  * block.
  */
 class _AsyncSessionListener extends SessionListener {
-    private static final ThreadFactory THREAD_FACTORY = Thread.ofVirtual().name("Async Session Listener - Write Queue", 0).factory();
+    private static final ThreadFactory THREAD_FACTORY = Threads.lightIo("Async Session Listener - Write Queue");
     private static final int MAX_OUTSTANDING_PACKETS = 500; // at 30fps, this is ~16 seconds of buffer.
 
     private final CircularBuffer<Object> buffer = new CircularBuffer<>(MAX_OUTSTANDING_PACKETS);

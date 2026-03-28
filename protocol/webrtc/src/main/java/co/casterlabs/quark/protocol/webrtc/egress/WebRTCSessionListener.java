@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 
-import co.casterlabs.quark.core.Quark;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.quark.core.session.listeners.StreamFilter;
@@ -24,7 +24,7 @@ import co.casterlabs.rakurai.json.element.JsonObject;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 
 public class WebRTCSessionListener extends FLVProcessSessionListener implements Closeable {
-    private static final ThreadFactory TF = Quark.HEAVY_IO_THREAD_BUILDER.name("WebRTC Listener", 0).factory();
+    private static final ThreadFactory TF = Threads.heavyIo("WebRTC Listener");
 
     public static final Map<String, WebRTCSessionListener> listeners = new ConcurrentHashMap<>();
 

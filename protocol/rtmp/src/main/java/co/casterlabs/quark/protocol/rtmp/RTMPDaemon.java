@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import co.casterlabs.flv4j.EndOfStreamException;
-import co.casterlabs.quark.core.Quark;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.extensibility.QuarkEntrypoint;
 import co.casterlabs.quark.core.util.SocketConnection;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
@@ -17,13 +17,13 @@ public class RTMPDaemon {
     private static final FastLogger LOGGER = new FastLogger();
     private static final int SO_TIMEOUT = (int) TimeUnit.MINUTES.toMillis(1);
 
-    private static final ThreadFactory RTMP_CONNECTION_TF = Quark.HEAVY_IO_THREAD_BUILDER.name("RTMP Connection", 0).factory();
-    private static final ThreadFactory RTMP_MISC_TF = Thread.ofVirtual().name("RTMP Misc", 0).factory();
+    private static final ThreadFactory RTMP_CONNECTION_TF = Threads.heavyIo("RTMP Connection");
+    private static final ThreadFactory RTMP_MISC_TF = Threads.misc("RTMP Misc");
 
     public static void start() {
         if (RTMPEnv.RTMP_PORT <= 0) return; // Disabled
 
-        Thread.ofPlatform().name("RTMP Server").start(() -> {
+        Threads.MISC_THREAD_BUILDER.name("RTMP Server").start(() -> {
             try (ServerSocket serverSocket = new ServerSocket()) {
                 serverSocket.bind(new InetSocketAddress(RTMPEnv.RTMP_PORT));
                 LOGGER.info("Listening on port %d...", RTMPEnv.RTMP_PORT);

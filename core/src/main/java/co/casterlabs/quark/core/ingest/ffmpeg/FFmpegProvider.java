@@ -7,13 +7,13 @@ import java.util.concurrent.ThreadFactory;
 import co.casterlabs.flv4j.flv.FLVFileHeader;
 import co.casterlabs.flv4j.flv.muxing.NonSeekableFLVDemuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
-import co.casterlabs.quark.core.Quark;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionProvider;
 import co.casterlabs.rakurai.json.element.JsonObject;
 
 public class FFmpegProvider implements SessionProvider {
-    private static final ThreadFactory TF = Quark.HEAVY_IO_THREAD_BUILDER.name("FFmpeg Provider", 0).factory();
+    private static final ThreadFactory TF = Threads.heavyIo("FFmpeg Provider");
 
     private final Demuxer demuxer = new Demuxer();
 

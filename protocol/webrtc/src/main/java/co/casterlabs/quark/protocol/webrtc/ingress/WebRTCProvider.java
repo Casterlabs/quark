@@ -23,7 +23,7 @@ import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.flv4j.flv.tags.video.FLVStandardVideoTagData;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoCodec;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
-import co.casterlabs.quark.core.Quark;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionProvider;
 import co.casterlabs.quark.core.util.PublicPortRange;
@@ -36,7 +36,7 @@ import lombok.SneakyThrows;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 
 public class WebRTCProvider implements SessionProvider {
-    private static final ThreadFactory TF = Quark.HEAVY_IO_THREAD_BUILDER.name("WebRTC Provider", 0).factory();
+    private static final ThreadFactory TF = Threads.heavyIo("WebRTC Provider");
 
     public static final Map<String, WebRTCProvider> providers = new ConcurrentHashMap<>();
 

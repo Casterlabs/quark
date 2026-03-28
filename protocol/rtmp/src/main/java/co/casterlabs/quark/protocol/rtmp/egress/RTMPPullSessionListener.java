@@ -18,6 +18,7 @@ import co.casterlabs.flv4j.rtmp.chunks.control.RTMPSetBufferLengthControlMessage
 import co.casterlabs.flv4j.rtmp.chunks.control.RTMPStreamEOFControlMessage;
 import co.casterlabs.flv4j.rtmp.net.NetStatus;
 import co.casterlabs.quark.core.Sessions;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.auth.Auth;
 import co.casterlabs.quark.core.auth.AuthenticationException;
 import co.casterlabs.quark.core.auth.User;
@@ -36,7 +37,7 @@ public class RTMPPullSessionListener extends SessionListener {
     private static final int BUFFER_LENGTH = 1000; // arbitrary?
 
     private static final int MAX_OUTSTANDING_VIDEO_PACKETS = 30; // at 30 fps, this is ~1 second of video.
-    private static final ThreadFactory VIDEO_THREAD_FACTORY = Thread.ofVirtual().name("RTMP Pull - Tag Queue", 0).factory();
+    private static final ThreadFactory VIDEO_THREAD_FACTORY = Threads.lightIo("RTMP Pull - Tag Queue");
 
     private final CircularBuffer<FLVTag> videoBuffer = new CircularBuffer<>(MAX_OUTSTANDING_VIDEO_PACKETS);
 

@@ -36,9 +36,7 @@ public class Quark {
     /**
      * Whether or not to use Virtual Threads for heavy-IO tasks.
      */
-    private static final @Experimental boolean EXP_VIRTUAL_THREAD_HEAVY_IO = "true".equalsIgnoreCase(System.getenv("QUARK_EXP_VIRTUAL_THREAD_HEAVY_IO"));
-
-    public static final Thread.Builder HEAVY_IO_THREAD_BUILDER = Quark.EXP_VIRTUAL_THREAD_HEAVY_IO ? Thread.ofVirtual() : Thread.ofPlatform();
+    static final @Experimental boolean EXP_VIRTUAL_THREAD_HEAVY_IO = "true".equalsIgnoreCase(System.getenv("QUARK_EXP_VIRTUAL_THREAD_HEAVY_IO"));
 
     static {
         System.setProperty("fastloggingframework.wrapsystem", "true");
