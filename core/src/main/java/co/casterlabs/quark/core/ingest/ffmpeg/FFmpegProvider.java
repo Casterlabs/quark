@@ -7,7 +7,6 @@ import java.util.concurrent.ThreadFactory;
 import co.casterlabs.flv4j.flv.FLVFileHeader;
 import co.casterlabs.flv4j.flv.muxing.NonSeekableFLVDemuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
-import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionProvider;
@@ -60,9 +59,7 @@ public class FFmpegProvider implements SessionProvider {
             try {
                 this.demuxer.start(this.proc.getInputStream());
             } catch (IOException e) {
-                if (Quark.DEBUG) {
-                    e.printStackTrace();
-                }
+                e.printStackTrace();
             } finally {
                 this.close(true);
             }
