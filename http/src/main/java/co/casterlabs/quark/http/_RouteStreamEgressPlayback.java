@@ -208,7 +208,11 @@ class FLVResponseContent implements ResponseContent {
                 this.trackResource(() -> {
                     waitFor.complete(null);
                 });
-                this.init(out);
+                try {
+                    this.init(out);
+                } catch (Throwable t) {
+                    waitFor.completeExceptionally(t);
+                }
             }
 
             @Override
