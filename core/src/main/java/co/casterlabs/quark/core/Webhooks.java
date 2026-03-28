@@ -88,9 +88,7 @@ public class Webhooks {
 
             return res.id;
         } catch (IOException e) {
-            if (Quark.DEBUG) {
-                e.printStackTrace();
-            }
+            e.printStackTrace();
             return null;
         }
     }
@@ -160,9 +158,7 @@ public class Webhooks {
                     }
                 }
             } catch (IOException e) {
-                if (Quark.DEBUG) {
-                    e.printStackTrace();
-                }
+                e.printStackTrace();
             }
         });
     }
@@ -208,9 +204,7 @@ public class Webhooks {
             new FFmpegProvider(session, res.source, res.loop); // Jelly!
             return true;
         } catch (IOException e) {
-            if (Quark.DEBUG) {
-                e.printStackTrace();
-            }
+            e.printStackTrace();
             return false;
         }
     }
@@ -243,9 +237,7 @@ public class Webhooks {
                     null
                 );
             } catch (IOException e) {
-                if (Quark.DEBUG) {
-                    e.printStackTrace();
-                }
+                e.printStackTrace();
             }
         });
     }
