@@ -161,7 +161,7 @@ public class RTMPPushSessionListener extends SessionListener {
                 if (tag == null) return; // tag should be dropped!
 
                 try {
-                    int ts24 = (int) (tag.timestamp() - this.offset) & 0xFFFFFF;
+                    int ts24 = (int) ((tag.timestamp() - this.offset) & 0xFFFFFFL);
 
                     if (tag.data() instanceof FLVVideoTagData video) {
                         ns.sendMessage(
