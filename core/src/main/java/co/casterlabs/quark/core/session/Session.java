@@ -35,7 +35,7 @@ public class Session {
      * @apiNote Must not be modified.
      */
     public volatile long prevDts = 0;
-    private SessionProvider provider;
+    private volatile SessionProvider provider;
 
     private final List<FLVTag> videoSequenceTags = new LinkedList<>();
     private final List<FLVTag> audioSequenceTags = new LinkedList<>();
@@ -64,7 +64,7 @@ public class Session {
         }
     }
 
-    public void setProvider(SessionProvider provider) {
+    public synchronized void setProvider(SessionProvider provider) {
         if (this.provider != null) {
             this.provider.jam();
         }
