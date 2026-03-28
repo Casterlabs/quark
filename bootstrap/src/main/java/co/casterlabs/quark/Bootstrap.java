@@ -57,7 +57,16 @@ public class Bootstrap {
                 QuarkStaticSessionListener annotation = clazz.getAnnotation(QuarkStaticSessionListener.class);
                 FastLogger.logStatic(LogLevel.DEBUG, "Registering static session listener: %s (async=%s)", clazz.getName(), annotation.async());
 
-                Function<Session, SessionListener> factory = (Function<Session, SessionListener>) clazz.getField("FACTORY").get(null);
+                Function<Session, SessionListener> factory;
+                try {
+                    factory = (Function<Session, SessionListener>) clazz.getField("FACTORY").get(null);
+                } catch (NoSuchFieldException e) {
+                    throw new IllegalStateException(
+                        "@QuarkStaticSessionListener class " + clazz.getName() +
+                            " must declare a public static field named FACTORY of type Function<Session, SessionListener>",
+                        e
+                    );
+                }
 
                 if (annotation.async()) {
                     _Extensibility.asyncStaticSessionListeners.add(factory);
