@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ProcessBuilder.Redirect;
+import java.util.concurrent.TimeUnit;
 
 public abstract class FLVProcessSessionListener extends FLVSessionListener {
     private final Process proc;
@@ -23,7 +24,7 @@ public abstract class FLVProcessSessionListener extends FLVSessionListener {
             .redirectInput(Redirect.PIPE)
             .start();
 
-        this.trackResource(this.proc::destroy);
+        this.trackResource(this::destroyProc);
 
         this.init(this.proc.getOutputStream());
     }
@@ -42,6 +43,10 @@ public abstract class FLVProcessSessionListener extends FLVSessionListener {
 
     protected void destroyProc() {
         this.proc.destroy();
+        try {
+            this.proc.waitFor(5, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {}
+        this.proc.destroyForcibly();
     }
 
 }

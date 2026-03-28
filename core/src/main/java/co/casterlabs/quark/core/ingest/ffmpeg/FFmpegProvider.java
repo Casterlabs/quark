@@ -77,7 +77,7 @@ public class FFmpegProvider implements SessionProvider {
 
     @Override
     public void close(boolean graceful) {
-        this.proc.destroy();
+        this.proc.destroyForcibly();
 
         if (!this.jammed) {
             this.session.close(graceful);
