@@ -88,6 +88,11 @@ public class Session {
         return this.thumbnailGenerator.thumbnail;
     }
 
+    /**
+     * @apiNote This must only be called by the provider. This is not thread safe.
+     *          Breaking these contracts will cause undefined behavior in the
+     *          session and may cause crashes.
+     */
     public void tag(FLVTag tag) {
         boolean isScriptSequence = tag.type() == FLVTagType.SCRIPT && ((FLVScriptTagData) tag.data()).methodName().equals("onMetaData");
         if (tag.data().isSequenceHeader() || isScriptSequence) {
