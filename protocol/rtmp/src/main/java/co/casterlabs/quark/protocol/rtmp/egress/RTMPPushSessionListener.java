@@ -275,12 +275,14 @@ public class RTMPPushSessionListener extends SessionListener {
         public void close() {
             session.removeListener(this.listener); // don't send video after calling deleteStream/FCUnpublish.
 
-            try {
-                this.ns.call("FCUnpublish", Null0.INSTANCE, new String0(key));
-            } catch (Throwable ignored) {}
-            try {
-                this.ns.deleteStream();
-            } catch (Throwable ignored) {}
+            if (this.ns != null) {
+                try {
+                    this.ns.call("FCUnpublish", Null0.INSTANCE, new String0(key));
+                } catch (Throwable ignored) {}
+                try {
+                    this.ns.deleteStream();
+                } catch (Throwable ignored) {}
+            }
 
             try {
                 this.socket.close();
