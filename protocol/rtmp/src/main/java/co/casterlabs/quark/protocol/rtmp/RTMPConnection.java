@@ -17,6 +17,7 @@ import co.casterlabs.flv4j.rtmp.net.rpc.CallError;
 import co.casterlabs.flv4j.rtmp.net.server.ServerNetConnection;
 import co.casterlabs.flv4j.rtmp.net.server.ServerNetStream;
 import co.casterlabs.quark.core.util.SocketConnection;
+import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.protocol.rtmp.egress.RTMPPullSessionListener;
 import co.casterlabs.quark.protocol.rtmp.ingress.RTMPSessionProvider;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
@@ -42,7 +43,9 @@ public class RTMPConnection extends ServerNetConnection implements AutoCloseable
         this.onCall = (method, args) -> {
             if (method.equals("FCUnpublish")) {
                 this.logger.debug("Stream closed by client.");
-                close(true);
+                // Dispatch close() asynchronously to avoid calling it on the RTMP read thread
+                // while the read thread may be holding (or be called from) a synchronized block.
+                Threads.MISC_THREAD_BUILDER.name("RTMP FCUnpublish Close", 0).start(() -> close(true));
             }
             return null;
         };
