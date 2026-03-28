@@ -15,6 +15,8 @@ public class FF {
 
     public static void init() {} // dummy
 
+    // Must be ran in the static initializer to ensure that we know whether we can
+    // use ffmpeg or not before we try to use it.
     private static boolean check(String executable) {
         try {
             Process proc = new ProcessBuilder(executable, "-version")

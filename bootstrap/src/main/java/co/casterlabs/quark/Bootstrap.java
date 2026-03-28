@@ -71,6 +71,10 @@ public class Bootstrap {
                 clazz.getMethod("start").invoke(null);
             }
 
+            // Reflections is a memory hog, so we can free it up now that we're done with
+            // it. Reflectios can cause the heap to grow substantially, so our gc() calls
+            // help _suggest_ to the garbage collector to release some of the heap back to
+            // the OS.
             reflections = null;
             System.gc();
             System.gc();

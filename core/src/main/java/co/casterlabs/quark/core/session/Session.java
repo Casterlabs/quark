@@ -31,6 +31,9 @@ public class Session {
     public final long createdAt = System.currentTimeMillis();
     public final String id;
 
+    /**
+     * @apiNote Must not be modified.
+     */
     public volatile long prevDts = 0;
     private SessionProvider provider;
 
@@ -76,6 +79,11 @@ public class Session {
         return this.provider.metadata();
     }
 
+    /**
+     * @apiNote This is the direct thumbnail data, it must NOT be modified _ever_.
+     *          If you want to modify it, make a copy first. Modifying this data
+     *          will cause undefined behavior in the session and may cause crashes.
+     */
     public byte[] thumbnail() {
         return this.thumbnailGenerator.thumbnail;
     }
@@ -138,6 +146,9 @@ public class Session {
         if (this.state != State.STARTING && this.state != State.RUNNING) return;
         this.state = State.CLOSING;
 
+        // We intentionally lock the session while we call the webhook.
+        // This is to guarantee the state the session either enters CLOSED or goes back
+        // to RUNNING safely.
         if (Webhooks.sessionEnding(this, graceful, this.metadata())) {
             this.state = State.RUNNING;
             return; // We're getting jammed!

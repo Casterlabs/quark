@@ -66,7 +66,10 @@ public class Webhooks {
     /* ---------------- */
 
     /**
-     * @return null, if the session was disallowed.
+     * @return  null, if the session was disallowed.
+     * 
+     * @apiNote This call _has_ to block, as we need to know whether or not to allow
+     *          the session before proceeding.
      */
     public static String sessionStarting(String protocol, String ip, @Nullable String url, @Nullable String app, String key, @Nullable JsonObject metadata) {
         if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return key; // dummy mode.
@@ -100,6 +103,9 @@ public class Webhooks {
     /* Session Started  */
     /* ---------------- */
 
+    /**
+     * @apiNote This is a non-blocking call.
+     */
     public static void sessionStarted(Session session, @Nullable JsonObject metadata) {
         if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return; // dummy mode.
 
@@ -177,7 +183,10 @@ public class Webhooks {
     /* ---------------- */
 
     /**
-     * @return whether or not the session is being jammed.
+     * @return  whether or not the session is being jammed.
+     * 
+     * @apiNote This call _has_ to block, as we need to know whether or not to jam
+     *          the session before proceeding.
      */
     public static boolean sessionEnding(Session session, boolean wasGraceful, JsonElement metadata) {
         if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return false; // dummy mode.
@@ -215,6 +224,9 @@ public class Webhooks {
     /*  Session Ended   */
     /* ---------------- */
 
+    /**
+     * @apiNote This is a non-blocking call.
+     */
     public static void sessionEnded(String id) {
         if (Quark.WEBHOOK_URL == null || Quark.WEBHOOK_URL.isEmpty()) return; // dummy mode.
 
