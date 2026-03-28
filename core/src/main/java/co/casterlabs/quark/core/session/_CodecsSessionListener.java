@@ -68,7 +68,8 @@ class _CodecsSessionListener extends SessionListener {
                 int trackId = track.id();
 
                 if (this.info.audio.length <= trackId || this.info.audio[trackId] == null) {
-                    AudioStreamInfo[] newAudio = new AudioStreamInfo[this.info.audio.length + 1];
+                    int newLength = Math.max(this.info.audio.length + 1, trackId + 1);
+                    AudioStreamInfo[] newAudio = new AudioStreamInfo[newLength];
                     System.arraycopy(this.info.audio, 0, newAudio, 0, this.info.audio.length);
                     newAudio[trackId] = new AudioStreamInfo(trackId, track.codec().string());
                     this.info.audio = newAudio;
@@ -78,6 +79,8 @@ class _CodecsSessionListener extends SessionListener {
 
         if (tag.data() instanceof FLVStandardVideoTagData video) {
             // Note that we do not support the ex video payload yet. TODO
+            if (this.info.video.length == 0) return; // not yet initialized
+
             VideoStreamInfo info = this.info.video[0];
 
             if (video.frameType() == FLVVideoFrameType.KEY_FRAME) {
