@@ -212,6 +212,11 @@ class FLVResponseContent implements ResponseContent {
             }
 
             @Override
+            protected void onClose0(Session session) {
+                waitFor.complete(null);
+            }
+
+            @Override
             public String type() {
                 return "HTTP_PLAYBACK";
             }
@@ -244,7 +249,7 @@ class FLVResponseContent implements ResponseContent {
 
     @Override
     public void close() throws IOException {
-        // NOOP
+        // NOOP this will only be called after write() returns.
     }
 }
 
@@ -324,6 +329,6 @@ class RemuxedResponseContent implements ResponseContent {
 
     @Override
     public void close() throws IOException {
-        // NOOP
+        // NOOP this will only be called after write() returns.
     }
 }
