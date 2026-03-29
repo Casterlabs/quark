@@ -2,13 +2,40 @@ name: docker
 
 on:
   push:
-    branches:
-      - main
+  release:
+    types: [created]
 
 jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+      - name: 🏷️ Set VERSION
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            RAW="${{ github.ref_name }}"
+
+            VERSION=$(echo "$RAW" \
+              | tr '[:upper:]' '[:lower:]' \
+              | sed -E 's/[^a-z0-9._-]+/-/g' \
+              | sed -E 's/-+/-/g' \
+              | sed -E 's/^[.-]+|[.-]+$//g')
+
+            VERSION="rolling-$VERSION"
+          fi
+
+          # Enforce max length (128 chars for Docker tags)
+          VERSION=$(echo "$VERSION" | cut -c1-128)
+
+          # Fallback if somehow empty (edge-case paranoia)
+          if [ -z "$VERSION" ]; then
+            VERSION="rolling-unknown"
+          fi
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Using VERSION=$VERSION"
+
       - name: 📩 Checkout code
         uses: actions/checkout@v3
 
@@ -43,4 +70,5 @@ jobs:
       - name: ⚙️ Build & Push image
         env:
           GH_REPO: ${{github.repository}}
-        run: docker buildx build --platform=linux/amd64,linux/arm64/v8 --tag ghcr.io/${GH_REPO,,}:latest --push .
+          VERSION: ${{ env.VERSION }}
+        run: docker buildx build --platform=linux/amd64,linux/arm64/v8 --tag ghcr.io/${GH_REPO,,}:${VERSION} --push .
