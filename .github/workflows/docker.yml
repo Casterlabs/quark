@@ -69,6 +69,17 @@ jobs:
 
       - name: ⚙️ Build & Push image
         env:
-          GH_REPO: ${{github.repository}}
+          GH_REPO: ${{ github.repository }}
           VERSION: ${{ env.VERSION }}
-        run: docker buildx build --platform=linux/amd64,linux/arm64/v8 --tag ghcr.io/${GH_REPO,,}:${VERSION} --push .
+          IS_RELEASE: ${{ github.event_name == 'release' }}
+        run: |
+          TAGS="--tag ghcr.io/${GH_REPO,,}:${VERSION}"
+
+          if [ "$IS_RELEASE" = "true" ]; then
+            TAGS="$TAGS --tag ghcr.io/${GH_REPO,,}:latest"
+          fi
+
+          docker buildx build \
+            --platform=linux/amd64,linux/arm64/v8 \
+            $TAGS \
+            --push .
