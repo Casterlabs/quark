@@ -38,6 +38,18 @@ public class Quark {
      */
     static final @Experimental boolean EXP_VIRTUAL_THREAD_HEAVY_IO = "true".equalsIgnoreCase(System.getenv("QUARK_EXP_VIRTUAL_THREAD_HEAVY_IO"));
 
+    /**
+     * The URL to send analytics data to. Null to disable analytics.
+     */
+    static final @Experimental @Nullable String EXP_ANALYTICS_URL = System.getenv("QUARK_EXP_ANALYTICS_URL");
+
+    /**
+     * The frequency in seconds in which analytics data should be sent. Set to a
+     * higher value to reduce load on the analytics server. This also affects the
+     * collection rate internally.
+     */
+    static final @Experimental long EXP_ANALYTICS_INTERVAL = TimeUnit.SECONDS.toMillis(Integer.parseInt(System.getenv().getOrDefault("QUARK_EXP_ANALYTICS_INTERVAL", "60")));
+
     static {
         System.setProperty("fastloggingframework.wrapsystem", "true");
 

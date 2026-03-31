@@ -9,6 +9,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 
+import org.jetbrains.annotations.Nullable;
+
 import co.casterlabs.flv4j.actionscript.io.ASByteView;
 import co.casterlabs.flv4j.codecs.video.avc1.AVCDecoderConfigurationRecord;
 import co.casterlabs.flv4j.codecs.video.avc1.AVCNalu;
@@ -23,6 +25,9 @@ import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.flv4j.flv.tags.video.FLVStandardVideoTagData;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoCodec;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
+import co.casterlabs.quark.core.Analytics;
+import co.casterlabs.quark.core.Analytics.Usage;
+import co.casterlabs.quark.core.Analytics.UsageProvider;
 import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionProvider;
@@ -76,13 +81,33 @@ public class WebRTCProvider implements SessionProvider {
             .redirectInput(Redirect.PIPE)
             .start();
 
-        TF.newThread(() -> {
+        Thread t = TF.newThread(() -> {
             try {
                 this.demuxer.start(this.proc.getInputStream());
             } catch (IOException ignored) {} finally {
                 this.close(true);
             }
-        }).start();
+        });
+        t.start();
+
+        Analytics.startCollecting(t::isAlive, new UsageProvider() {
+            private long reportedBytes = 0;
+
+            @Override
+            public @Nullable Usage get(long deltaDuration) {
+                long deltaBytes = demuxer.getBytesRead() - this.reportedBytes;
+                this.reportedBytes += deltaBytes;
+
+                return new Usage(
+                    session.id,
+                    resourceId,
+                    "WEBRTC",
+                    false,
+                    deltaDuration,
+                    deltaBytes
+                );
+            }
+        });
 
         TF.newThread(() -> {
             try (Scanner scanner = new Scanner(this.proc.getErrorStream())) {

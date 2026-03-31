@@ -39,3 +39,10 @@ This document lists the environment variables used to configure Quark.
 | Variable        | Default | Description                                                                   |
 | :-------------- | :------ | :---------------------------------------------------------------------------- |
 | `QUARK_EXP_HLS` | `false` | **Experimental.** Whether or not to generate a HLS playlist for each session. |
+
+## Analytics
+
+| Variable                       | Default | Description                                                                         |
+| :----------------------------- | :------ | :---------------------------------------------------------------------------------- |
+| `QUARK_EXP_ANALYTICS_URL`      | `null`  | **Experimental.** The URL to send analytics data to. Null to disable analytics.     |
+| `QUARK_EXP_ANALYTICS_INTERVAL` | `60`    | **Experimental.** The interval (in seconds) at which analytics data should be sent. |

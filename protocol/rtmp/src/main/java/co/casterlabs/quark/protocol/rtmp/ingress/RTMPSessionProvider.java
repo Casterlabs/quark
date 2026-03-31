@@ -2,6 +2,7 @@ package co.casterlabs.quark.protocol.rtmp.ingress;
 
 import java.io.IOException;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 
 import co.casterlabs.flv4j.actionscript.amf0.AMF0Type;
 import co.casterlabs.flv4j.actionscript.amf0.AMF0Type.ObjectLike;
@@ -23,6 +24,8 @@ import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageData0;
 import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageVideo;
 import co.casterlabs.flv4j.rtmp.net.NetStatus;
 import co.casterlabs.flv4j.rtmp.net.rpc.RPCHandler.MessageHandler;
+import co.casterlabs.quark.core.Analytics;
+import co.casterlabs.quark.core.Analytics.Usage;
 import co.casterlabs.quark.core.Sessions;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionProvider;
@@ -48,6 +51,8 @@ public class RTMPSessionProvider implements SessionProvider, MessageHandler {
     private volatile boolean jammed = false;
 
     private JsonObject metadata = JsonObject.EMPTY_OBJECT;
+
+    private final AtomicLong bytesRead = new AtomicLong(0);
 
     public RTMPSessionProvider(RTMPConnection rtmp) {
         this.rtmp = rtmp;
@@ -105,6 +110,18 @@ public class RTMPSessionProvider implements SessionProvider, MessageHandler {
 
             this.rtmp.stream.onMessage = this;
             this.rtmp.stream.setStatus(NetStatus.NS_PUBLISH_START);
+
+            Analytics.startCollecting(
+                () -> this.rtmp.state == RTMPState.PROVIDING,
+                (long deltaDuration) -> new Usage(
+                    this.session.id,
+                    null,
+                    "RTMP",
+                    false,
+                    deltaDuration,
+                    this.bytesRead.getAndSet(0)
+                )
+            );
         }
     }
 
@@ -147,6 +164,7 @@ public class RTMPSessionProvider implements SessionProvider, MessageHandler {
 
 //        this.rtmp.logger.trace("Audio packet: %s", message);
         FLVTag tag = new FLVTag(FLVTagType.AUDIO, dts, 0, message.payload());
+        this.bytesRead.addAndGet(tag.size());
         this.session.tag(tag);
     }
 
@@ -161,6 +179,7 @@ public class RTMPSessionProvider implements SessionProvider, MessageHandler {
 
 //        this.rtmp.logger.trace("Video packet: %s", message);
         FLVTag tag = new FLVTag(FLVTagType.VIDEO, dts, 0, message.payload());
+        this.bytesRead.addAndGet(tag.size());
         this.session.tag(tag);
     }
 

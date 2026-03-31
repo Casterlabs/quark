@@ -31,7 +31,7 @@ public class PipelineEgressConfiguration implements EgressConfiguration {
 
     @Override
     public void create(Session session) throws IOException, DependencyException {
-        session.addAsyncListener(new PipelineSessionListener(this.filter, this.foreignId, this.resultId, this.command));
+        session.addAsyncListener(new PipelineSessionListener(session.id, this.filter, this.foreignId, this.resultId, this.command));
     }
 
 }

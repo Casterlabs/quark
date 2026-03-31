@@ -150,3 +150,28 @@ Triggered when a session has fully ended. This is an asynchronous webhook.
 **Response:**
 
 Ignored.
+
+### `ANALYTICS`
+
+Sent periodically and is configured via `QUARK_EXP_ANALYTICS_URL` and `QUARK_EXP_ANALYTICS_INTERVAL`. This is an asynchronous webhook that reports watch duration and data usage for ingresses and egresses. This can be used for internal metrics or metered usage.
+
+**Request Data:**
+
+| Field    | Type  | Description                                             |
+| :------- | :---- | :------------------------------------------------------ |
+| `usages` | Array | The collected usage data during the analytics interval. |
+
+**Usage Data Format:**
+
+| Field           | Type    | Description                                                                         |
+| :-------------- | :------ | :---------------------------------------------------------------------------------- |
+| `sessionId`     | String  | The session ID associated with this usage data.                                     |
+| `foreignId`     | String? | The egress' foreign ID associated with this usage data.                             |
+| `type`          | String  | The source type, e.g RTMP, HLS, HTTP_PLAYBACK.                                      |
+| `isEgress`      | Boolean | Whether this usage data is for an egress (`true`) or an ingress (`false`).          |
+| `deltaDuration` | Long    | The duration of time (in milliseconds) that has elapsed during this usage interval. |
+| `deltaBytes`    | Long    | The number of bytes transferred during this usage interval.                         |
+
+**Response:**
+
+Ignored.

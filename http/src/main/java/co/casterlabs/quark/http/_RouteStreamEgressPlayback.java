@@ -9,6 +9,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadFactory;
 
 import co.casterlabs.commons.io.streams.StreamUtil;
+import co.casterlabs.quark.core.Analytics;
+import co.casterlabs.quark.core.Analytics.Usage;
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.auth.AuthenticationException;
@@ -21,6 +23,7 @@ import co.casterlabs.quark.core.session.SessionListener;
 import co.casterlabs.quark.core.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.quark.core.session.listeners.FLVSessionListener;
 import co.casterlabs.quark.core.session.listeners.StreamFilter;
+import co.casterlabs.quark.core.util.CountingOutputStream;
 import co.casterlabs.quark.core.util.FF;
 import co.casterlabs.rakurai.json.element.JsonObject;
 import co.casterlabs.rhs.HttpMethod;
@@ -199,8 +202,11 @@ class FLVResponseContent implements ResponseContent {
     private final Session qSession;
     private final String fid;
 
+    private volatile boolean closed = false;
+
     @Override
-    public void write(int recommendedBufferSize, OutputStream out) throws IOException {
+    public void write(int recommendedBufferSize, OutputStream __out) throws IOException {
+        OutputStream out = Analytics.ENABLED ? new CountingOutputStream(__out) : __out; // Skip counting if analytics is disabled, to save resources.
         CompletableFuture<Void> waitFor = new CompletableFuture<>();
 
         SessionListener listener = new FLVSessionListener(this.filter) {
@@ -213,6 +219,18 @@ class FLVResponseContent implements ResponseContent {
                 } catch (Throwable t) {
                     waitFor.completeExceptionally(t);
                 }
+
+                Analytics.startCollecting(
+                    () -> !closed,
+                    (long deltaDuration) -> new Usage(
+                        qSession.id,
+                        fid,
+                        "HTTP_PLAYBACK",
+                        true,
+                        deltaDuration,
+                        ((CountingOutputStream) out).resetBytesWritten()
+                    )
+                );
             }
 
             @Override
@@ -255,7 +273,9 @@ class FLVResponseContent implements ResponseContent {
 
     @Override
     public void close() throws IOException {
-        // NOOP this will only be called after write() returns.
+        // NB: We don't have to do any resource cleanup here, because the
+        // SessionListener will handle that for us.
+        this.closed = true;
     }
 }
 
@@ -278,7 +298,8 @@ class RemuxedResponseContent implements ResponseContent {
     }
 
     @Override
-    public void write(int recommendedBufferSize, OutputStream out) throws IOException {
+    public void write(int recommendedBufferSize, OutputStream __out) throws IOException {
+        OutputStream out = Analytics.ENABLED ? new CountingOutputStream(__out) : __out; // Skip counting if analytics is disabled, to save resources.
         CompletableFuture<Void> waitFor = new CompletableFuture<>();
 
         SessionListener listener = new FLVProcessSessionListener(
@@ -288,13 +309,26 @@ class RemuxedResponseContent implements ResponseContent {
         ) {
 
             {
-                THREAD_FACTORY.newThread(() -> {
+                Thread t = THREAD_FACTORY.newThread(() -> {
                     try {
                         StreamUtil.streamTransfer(this.stdout(), out, recommendedBufferSize);
                     } catch (IOException e) {} finally {
                         waitFor.complete(null);
                     }
-                }).start();
+                });
+                t.start();
+
+                Analytics.startCollecting(
+                    t::isAlive,
+                    (long deltaDuration) -> new Usage(
+                        qSession.id,
+                        fid,
+                        "HTTP_PLAYBACK",
+                        true,
+                        deltaDuration,
+                        ((CountingOutputStream) out).resetBytesWritten()
+                    )
+                );
             }
 
             @Override

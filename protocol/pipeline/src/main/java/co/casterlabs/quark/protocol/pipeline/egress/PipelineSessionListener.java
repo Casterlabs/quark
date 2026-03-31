@@ -8,6 +8,9 @@ import org.jetbrains.annotations.Nullable;
 import co.casterlabs.flv4j.flv.FLVFileHeader;
 import co.casterlabs.flv4j.flv.muxing.NonSeekableFLVDemuxer;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
+import co.casterlabs.quark.core.Analytics;
+import co.casterlabs.quark.core.Analytics.Usage;
+import co.casterlabs.quark.core.Analytics.UsageProvider;
 import co.casterlabs.quark.core.Sessions;
 import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.Session;
@@ -21,7 +24,9 @@ public class PipelineSessionListener extends FLVProcessSessionListener {
     private final String fid;
     private final JsonObject metadata;
 
-    public PipelineSessionListener(StreamFilter filter, String fid, @Nullable String resultId, String... command) throws IOException {
+    private volatile boolean destroyed = false;
+
+    public PipelineSessionListener(String sessionId, StreamFilter filter, String fid, @Nullable String resultId, String... command) throws IOException {
         super(
             filter,
             resultId == null ? Redirect.DISCARD : Redirect.PIPE, Redirect.INHERIT,
@@ -33,8 +38,30 @@ public class PipelineSessionListener extends FLVProcessSessionListener {
             .put("command", Rson.DEFAULT.toJson(command))
             .put("resultId", resultId);
 
+        Analytics.startCollecting(() -> !this.destroyed, new UsageProvider() {
+            private long reportedBytes = 0;
+
+            @Override
+            public @Nullable Usage get(long deltaDuration) {
+                long deltaBytes = bytesWritten() - this.reportedBytes;
+                this.reportedBytes += deltaBytes;
+
+                return new Usage(
+                    sessionId,
+                    fid,
+                    "PIPELINE",
+                    true,
+                    deltaDuration,
+                    deltaBytes
+                );
+            }
+        });
+
         if (resultId != null) {
-            Threads.HEAVY_IO_THREAD_BUILDER
+            Session qSession = Sessions.getSession(resultId, true);
+            PipelineProvider provider = new PipelineProvider(qSession);
+
+            Thread t = Threads.HEAVY_IO_THREAD_BUILDER
                 .name(
                     String.format(
                         "Pipeline Egress - fid=%s - resultId=%s",
@@ -43,9 +70,6 @@ public class PipelineSessionListener extends FLVProcessSessionListener {
                     )
                 )
                 .start(() -> {
-                    Session qSession = Sessions.getSession(resultId, true);
-                    PipelineProvider provider = new PipelineProvider(qSession);
-
                     try {
                         provider.demuxer.start(this.stdout());
                     } catch (IOException e) {
@@ -55,7 +79,32 @@ public class PipelineSessionListener extends FLVProcessSessionListener {
                         provider.close(true);
                     }
                 });
+
+            Analytics.startCollecting(t::isAlive, new UsageProvider() {
+                private long reportedBytes = 0;
+
+                @Override
+                public @Nullable Usage get(long deltaDuration) {
+                    long deltaBytes = provider.demuxer.getBytesRead() - this.reportedBytes;
+                    this.reportedBytes += deltaBytes;
+
+                    return new Usage(
+                        resultId,
+                        fid,
+                        "PIPELINE",
+                        false,
+                        deltaDuration,
+                        deltaBytes
+                    );
+                }
+            });
         }
+    }
+
+    @Override
+    protected void onClose0(Session session) {
+        this.destroyed = true;
+        super.onClose0(session);
     }
 
     @Override

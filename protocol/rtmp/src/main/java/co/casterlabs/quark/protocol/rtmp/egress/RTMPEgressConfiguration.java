@@ -39,7 +39,7 @@ public class RTMPEgressConfiguration implements EgressConfiguration {
                 throw new DependencyException("FFmpeg is not enabled.");
             }
 
-            session.addAsyncListener(new FFmpegRTMPSessionListener(this.filter, this.url, this.foreignId));
+            session.addAsyncListener(new FFmpegRTMPSessionListener(session.id, this.filter, this.url, this.foreignId));
         }
     }
 

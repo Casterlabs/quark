@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.net.ssl.SSLSocketFactory;
 
@@ -32,6 +33,8 @@ import co.casterlabs.flv4j.rtmp.net.NetStream;
 import co.casterlabs.flv4j.rtmp.net.client.ClientNetConnection;
 import co.casterlabs.flv4j.rtmp.net.rpc.CallError;
 import co.casterlabs.flv4j.rtmp.net.rpc.RPCPromise;
+import co.casterlabs.quark.core.Analytics;
+import co.casterlabs.quark.core.Analytics.Usage;
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.FLVSequence;
@@ -57,6 +60,7 @@ public class RTMPPushSessionListener extends SessionListener {
 
     private Outbound outbound;
     private volatile boolean isClosed = false;
+    private final AtomicLong bytesWritten = new AtomicLong(0);
 
     public RTMPPushSessionListener(Session session, StreamFilter filter, String fid, String address, String key) {
         this.session = session;
@@ -78,6 +82,18 @@ public class RTMPPushSessionListener extends SessionListener {
                 }
             }
         });
+
+        Analytics.startCollecting(
+            () -> !this.isClosed,
+            (long deltaDuration) -> new Usage(
+                session.id,
+                fid,
+                "RTMP",
+                true,
+                deltaDuration,
+                this.bytesWritten.getAndSet(0)
+            )
+        );
     }
 
     private void reconnect() throws IOException, InterruptedException, CallError {
@@ -160,6 +176,8 @@ public class RTMPPushSessionListener extends SessionListener {
             private void writeTag(FLVTag tag) {
                 tag = filter.transform(tag);
                 if (tag == null) return; // tag should be dropped!
+
+                bytesWritten.addAndGet(tag.size());
 
                 try {
                     int ts24 = (int) ((tag.timestamp() - this.offset) & 0xFFFFFFL);

@@ -3,6 +3,7 @@ package co.casterlabs.quark.protocol.rtmp.egress;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicLong;
 
 import co.casterlabs.flv4j.actionscript.amf0.String0;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
@@ -17,6 +18,8 @@ import co.casterlabs.flv4j.rtmp.chunks.RTMPMessageVideo;
 import co.casterlabs.flv4j.rtmp.chunks.control.RTMPSetBufferLengthControlMessage;
 import co.casterlabs.flv4j.rtmp.chunks.control.RTMPStreamEOFControlMessage;
 import co.casterlabs.flv4j.rtmp.net.NetStatus;
+import co.casterlabs.quark.core.Analytics;
+import co.casterlabs.quark.core.Analytics.Usage;
 import co.casterlabs.quark.core.Sessions;
 import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.auth.Auth;
@@ -46,6 +49,8 @@ public class RTMPPullSessionListener extends SessionListener {
 
     private String fid;
     private boolean hasGottenSequence = false;
+
+    private final AtomicLong bytesWritten = new AtomicLong(0);
 
     public RTMPPullSessionListener(RTMPConnection rtmp) {
         this.rtmp = rtmp;
@@ -101,6 +106,18 @@ public class RTMPPullSessionListener extends SessionListener {
 
                 this.rtmp.state = RTMPState.PLAYING;
                 this.session.addAsyncListener(this);
+
+                Analytics.startCollecting(
+                    () -> this.rtmp.state == RTMPState.PLAYING,
+                    (long deltaDuration) -> new Usage(
+                        this.session.id,
+                        this.fid,
+                        "RTMP",
+                        true,
+                        deltaDuration,
+                        this.bytesWritten.getAndSet(0)
+                    )
+                );
             } catch (IOException | InterruptedException ignored) {
                 this.rtmp.close(true);
             }
@@ -110,6 +127,8 @@ public class RTMPPullSessionListener extends SessionListener {
     private void writeOut(Session session, FLVTag tag) {
         try {
             int dts32 = (int) (tag.timestamp() & 0xFFFFFFFFL);
+
+            this.bytesWritten.addAndGet(tag.size());
 
             if (tag.data() instanceof FLVAudioTagData audio) {
                 this.rtmp.stream.sendMessage(dts32, new RTMPMessageAudio(audio));

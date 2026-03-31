@@ -31,6 +31,11 @@ public abstract class FLVSessionListener extends SessionListener {
         );
     }
 
+    protected long bytesWritten() {
+        if (this.playbackMuxer == null) return 0;
+        return this.playbackMuxer.getBytesWritten();
+    }
+
     private void writeTag(Session session, FLVTag tag) {
         if (this.playbackMuxer == null) return; // Invalid state?
 

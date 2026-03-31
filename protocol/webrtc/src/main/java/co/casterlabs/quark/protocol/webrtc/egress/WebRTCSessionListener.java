@@ -11,6 +11,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 
+import org.jetbrains.annotations.Nullable;
+
+import co.casterlabs.quark.core.Analytics;
+import co.casterlabs.quark.core.Analytics.Usage;
+import co.casterlabs.quark.core.Analytics.UsageProvider;
 import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.listeners.FLVProcessSessionListener;
@@ -37,6 +42,8 @@ public class WebRTCSessionListener extends FLVProcessSessionListener implements 
     private final JsonObject metadata = new JsonObject().put("state", "checking");
 
     public final CompletableFuture<JsonObject> sdpAnswer = new CompletableFuture<>();
+
+    private volatile boolean isClosed = false;
 
     public WebRTCSessionListener(Session session, String sdpOffer, int assignedPort, StreamFilter filter) throws IOException {
         super(
@@ -81,6 +88,25 @@ public class WebRTCSessionListener extends FLVProcessSessionListener implements 
             }
         }).start();
 
+        Analytics.startCollecting(() -> !this.isClosed, new UsageProvider() {
+            private long reportedBytes = 0;
+
+            @Override
+            public @Nullable Usage get(long deltaDuration) {
+                long deltaBytes = bytesWritten() - this.reportedBytes;
+                this.reportedBytes += deltaBytes;
+
+                return new Usage(
+                    session.id,
+                    resourceId,
+                    "WEBRTC",
+                    true,
+                    deltaDuration,
+                    deltaBytes
+                );
+            }
+        });
+
         this.onExit(() -> {
             PublicPortRange.releasePort(this.assignedPort);
             this.close();
@@ -109,6 +135,7 @@ public class WebRTCSessionListener extends FLVProcessSessionListener implements 
 
     @Override
     public void close() {
+        this.isClosed = true;
         listeners.remove(this.resourceId);
 
         if (!this.sdpAnswer.isDone()) {

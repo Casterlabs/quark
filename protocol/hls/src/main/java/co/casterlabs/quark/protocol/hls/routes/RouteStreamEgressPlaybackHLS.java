@@ -3,6 +3,8 @@ package co.casterlabs.quark.protocol.hls.routes;
 import java.io.File;
 import java.io.IOException;
 
+import co.casterlabs.quark.core.Analytics;
+import co.casterlabs.quark.core.Analytics.Usage;
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Sessions;
 import co.casterlabs.quark.core.auth.Auth;
@@ -91,6 +93,34 @@ public class RouteStreamEgressPlaybackHLS implements EndpointProvider {
                 // go with 3 minutes. It's not perfect, but it's better than nothing.
                 default -> "public, max-age=180";
             };
+
+            if (Analytics.ENABLED && !extension.equals("m3u8")) {
+                long duration = 0;
+                long fileSize = file.length();
+
+                if (qSession.info.video.length > 0) {
+                    long keyframeInterval = qSession.info.video[0].keyFrameInterval;
+                    double frameRate = qSession.info.video[0].frameRate;
+
+                    if (keyframeInterval > 0 && frameRate > 0) {
+                        double durationSeconds = keyframeInterval / frameRate;
+                        duration = (long) (durationSeconds * 1000);
+                    }
+                }
+
+                // NB: This isn't perfect since it doesn't account for range requests nor
+                // cancelled requests, but it's better than nothing.
+                Analytics.record(
+                    new Usage(
+                        qSession.id,
+                        user.id(),
+                        "HLS_PLAYBACK",
+                        true,
+                        duration,
+                        fileSize
+                    )
+                );
+            }
 
             return HttpResponse.newRangedFileResponse(session, StandardHttpStatus.OK, file)
                 .mime(mime)
