@@ -68,6 +68,50 @@ You can configure egresses (outputs) for the session or terminate it immediately
 }
 ```
 
+#### Sample RTMP Egress Configuration
+
+| Field       | Type    | Description                                      |
+| :---------- | :------ | :----------------------------------------------- |
+| `foreignId` | String? | An optional identifier for your reference.       |
+| `url`       | String  | The RTMP URL to which the stream should be sent. |
+| `filter`    | Object? | See [Stream filters](#stream-filters)            |
+
+```json
+{
+  "foreignId": "rtmp-egress-1",
+  "url": "rtmp://example.com/live/stream",
+  "filter": {
+    "autoStreamSelection": -1
+  }
+}
+```
+
+#### Sample Pipeline Egress Configuration
+
+| Field       | Type     | Description                                                                                   |
+| :---------- | :------- | :-------------------------------------------------------------------------------------------- |
+| `foreignId` | String?  | An optional identifier for your reference.                                                    |
+| `resultId`  | String?  | Allows you to send the result of this pipeline to a new session id, a _pipeline_ if you will. |
+| `command`   | String[] | The command to execute in the pipeline for this egress.                                       |
+| `filter`    | Object?  | See [Stream filters](#stream-filters)                                                         |
+
+The input to the command will be FLV data from the session. The stdout will be captured (as FLV) and sent to the `resultId` session if specified, otherwise it will be discarded.
+
+```json
+{
+  "foreignId": "pipeline-egress-1",
+  "resultId": "pipeline-ingress",
+  "command": ["foo", "bar"],
+  "filter": {
+    "autoStreamSelection": -1
+  }
+}
+```
+
+#### Stream filters
+
+Stream filters allow you to control which streams from a session are included in an egress. The `autoStreamSelection` field can be used to automatically select streams based on their index. Setting it to `-1` will include all streams, `-2` for none of the streams, or the index of a specific stream to include only that stream.
+
 ### `SESSION_ENDING`
 
 Triggered when a session is ending. This is a synchronous webhook.
