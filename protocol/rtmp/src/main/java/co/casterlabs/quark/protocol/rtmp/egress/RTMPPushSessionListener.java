@@ -249,6 +249,9 @@ public class RTMPPushSessionListener extends SessionListener {
                 return null; // Internal :^)
             }
 
+            @Override
+            protected void onClose0(Session session) {} // NOOP, resource cleanup is above.
+
         };
 
         private Outbound(Socket socket, @Nullable String app, String tcUrl, String key) throws IOException {
