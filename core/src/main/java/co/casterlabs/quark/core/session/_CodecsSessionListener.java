@@ -136,6 +136,7 @@ class _CodecsSessionListener extends SessionListener {
 
     /* https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h */
     private static @Nullable String flvToFourCC(FLVVideoCodec codec) {
+        if (codec == null) return null;
         // @formatter:off
         return switch (codec) {
             case H264 ->          "avc1";
@@ -155,6 +156,7 @@ class _CodecsSessionListener extends SessionListener {
 
     /* https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h */
     private static @Nullable String flvToFourCC(FLVAudioFormat format) {
+        if (format == null) return null;
         // @formatter:off
         return switch (format) {
             case AAC ->        "mp4a";
