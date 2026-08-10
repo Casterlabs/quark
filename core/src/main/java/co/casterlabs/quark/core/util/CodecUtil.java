@@ -100,8 +100,8 @@ public class CodecUtil {
             case "av1" -> "av01";
 
             // VP8 & VP9
-            case "vp8" -> "VP80";
-            case "vp9" -> "VP90";
+            case "vp8" -> "vp08";
+            case "vp9" -> "vp09";
 
             // Theora
             case "theora", "theo" -> "theo";
@@ -182,8 +182,8 @@ public class CodecUtil {
                 case "avc1" -> rfc6381Avc(fourCC, ff);
                 case "hvc1" -> rfc6381Hevc(fourCC, ff);
                 case "av01" -> rfc6381Av1(ff);
-                case "VP80" -> rfc6381Vpx("vp08", ff);
-                case "VP90" -> rfc6381Vpx("vp09", ff);
+                case "vp08" -> rfc6381Vpx("vp08", ff);
+                case "vp09" -> rfc6381Vpx("vp09", ff);
                 case "mp4a" -> rfc6381Aac(ff);
 
                 // No parameters in RFC 6381 for these - the fourCC-ish literal *is* the string
