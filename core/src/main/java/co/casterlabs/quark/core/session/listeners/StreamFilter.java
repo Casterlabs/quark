@@ -24,6 +24,7 @@ import lombok.NonNull;
 
 @JsonClass(serializer = StreamFilterSerializer.class)
 public record StreamFilter(
+    // TODO video
     int audioStreamSelection // magic values: -1 for all, -2 for none
 ) {
     public static final StreamFilter ALL_AUDIO = new StreamFilter(-1);

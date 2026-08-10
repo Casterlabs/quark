@@ -13,6 +13,9 @@ import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTagData;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTrack;
 import co.casterlabs.flv4j.flv.tags.video.FLVStandardVideoTagData;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
+import co.casterlabs.flv4j.flv.tags.video.ex.FLVExVideoFrameType;
+import co.casterlabs.flv4j.flv.tags.video.ex.FLVExVideoTagData;
+import co.casterlabs.flv4j.flv.tags.video.ex.FLVExVideoTrack;
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Threads;
 import co.casterlabs.quark.core.session.info.SessionInfo;
@@ -39,45 +42,52 @@ class _CodecsSessionListener extends SessionListener {
         if (tag.type() == FLVTagType.SCRIPT) return; // ignore.
 
         if (tag.data() instanceof FLVStandardVideoTagData vstd) {
-            // Note that we do not support the ex video payload yet. TODO
             if (this.info.video.length == 0) {
                 this.info.video = new VideoStreamInfo[] {
                         new VideoStreamInfo(0, CodecUtil.flvToFourCC(vstd.codec()))
                 };
+            } else if (this.info.video[0] == null) {
+                this.info.video[0] = new VideoStreamInfo(0, CodecUtil.flvToFourCC(vstd.codec()));
+            }
+        } else if (tag.data() instanceof FLVExVideoTagData vex) {
+            for (FLVExVideoTrack track : vex.tracks()) {
+                int trackId = track.id();
+
+                if (this.info.video.length <= trackId) {
+                    int newLength = Math.max(this.info.video.length + 1, trackId + 1);
+                    VideoStreamInfo[] newVideo = new VideoStreamInfo[newLength];
+                    System.arraycopy(this.info.video, 0, newVideo, 0, this.info.video.length);
+                    newVideo[trackId] = new VideoStreamInfo(trackId, track.codec().string());
+                    this.info.video = newVideo;
+                } else if (this.info.video[trackId] == null) {
+                    this.info.video[trackId] = new VideoStreamInfo(trackId, track.codec().string());
+                }
             }
         } else if (tag.data() instanceof FLVStandardAudioTagData astd) {
-            if (this.info.audio.length == 0 || this.info.audio[0] == null) {
-                AudioStreamInfo std = new AudioStreamInfo(0, CodecUtil.flvToFourCC(astd.format()));
-
-                if (this.info.audio.length == 0) {
-                    this.info.audio = new AudioStreamInfo[] {
-                            std
-                    };
-                } else {
-                    AudioStreamInfo[] newAudio = new AudioStreamInfo[this.info.audio.length + 1];
-                    System.arraycopy(this.info.audio, 0, newAudio, 1, this.info.audio.length);
-                    newAudio[0] = std;
-                    this.info.audio = newAudio;
-                }
+            if (this.info.audio.length == 0) {
+                this.info.audio = new AudioStreamInfo[] {
+                        new AudioStreamInfo(0, CodecUtil.flvToFourCC(astd.format()))
+                };
+            } else if (this.info.audio[0] == null) {
+                this.info.audio[0] = new AudioStreamInfo(0, CodecUtil.flvToFourCC(astd.format()));
             }
         } else if (tag.data() instanceof FLVExAudioTagData aex) {
             for (FLVExAudioTrack track : aex.tracks()) {
                 int trackId = track.id();
 
-                if (this.info.audio.length <= trackId || this.info.audio[trackId] == null) {
+                if (this.info.audio.length <= trackId) {
                     int newLength = Math.max(this.info.audio.length + 1, trackId + 1);
                     AudioStreamInfo[] newAudio = new AudioStreamInfo[newLength];
                     System.arraycopy(this.info.audio, 0, newAudio, 0, this.info.audio.length);
                     newAudio[trackId] = new AudioStreamInfo(trackId, track.codec().string());
                     this.info.audio = newAudio;
+                } else if (this.info.audio[trackId] == null) {
+                    this.info.audio[trackId] = new AudioStreamInfo(trackId, track.codec().string());
                 }
             }
         }
 
         if (tag.data() instanceof FLVStandardVideoTagData video) {
-            // Note that we do not support the ex video payload yet. TODO
-            if (this.info.video.length == 0) return; // not yet initialized
-
             VideoStreamInfo info = this.info.video[0];
 
             if (video.frameType() == FLVVideoFrameType.KEY_FRAME) {
@@ -89,9 +99,23 @@ class _CodecsSessionListener extends SessionListener {
             info.bitrate.sample(video.size(), tag.timestamp());
 
             if (video.isSequenceHeader() || info.needsUpdate()) {
-                // Since we do not support the ex video payload, we rely on the update interval
-                // to keep us up-to-date. TODO :^)
                 update("v:0", info);
+            }
+        } else if (tag.data() instanceof FLVExVideoTagData vex) {
+            for (FLVExVideoTrack track : vex.tracks()) {
+                VideoStreamInfo info = this.info.video[track.id()];
+
+                if (vex.frameType() == FLVExVideoFrameType.KEY_FRAME || vex.frameType() == FLVExVideoFrameType.GENERATED_KEY_FRAME) {
+                    long diff = tag.timestamp() - info.lastKeyFrame;
+                    info.lastKeyFrame = tag.timestamp();
+                    info.keyFrameInterval = (int) (diff / 1000);
+                }
+
+                info.bitrate.sample(track.data().size(), tag.timestamp());
+
+                if (vex.isSequenceHeader() || info.needsUpdate()) {
+                    update("v:" + track.id(), info);
+                }
             }
         } else if (tag.data() instanceof FLVStandardAudioTagData astd) {
             AudioStreamInfo info = this.info.audio[0];
