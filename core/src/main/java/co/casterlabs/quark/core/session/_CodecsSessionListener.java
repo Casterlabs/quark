@@ -5,17 +5,13 @@ import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadFactory;
 
-import org.jetbrains.annotations.Nullable;
-
 import co.casterlabs.commons.io.streams.StreamUtil;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
-import co.casterlabs.flv4j.flv.tags.audio.FLVAudioFormat;
 import co.casterlabs.flv4j.flv.tags.audio.FLVStandardAudioTagData;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTagData;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTrack;
 import co.casterlabs.flv4j.flv.tags.video.FLVStandardVideoTagData;
-import co.casterlabs.flv4j.flv.tags.video.FLVVideoCodec;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoFrameType;
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Threads;
@@ -25,6 +21,7 @@ import co.casterlabs.quark.core.session.info.StreamInfo.AudioStreamInfo;
 import co.casterlabs.quark.core.session.info.StreamInfo.VideoStreamInfo;
 import co.casterlabs.quark.core.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.quark.core.session.listeners.StreamFilter;
+import co.casterlabs.quark.core.util.CodecUtil;
 import co.casterlabs.quark.core.util.FF;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.element.JsonArray;
@@ -45,12 +42,12 @@ class _CodecsSessionListener extends SessionListener {
             // Note that we do not support the ex video payload yet. TODO
             if (this.info.video.length == 0) {
                 this.info.video = new VideoStreamInfo[] {
-                        new VideoStreamInfo(0, flvToFourCC(vstd.codec()))
+                        new VideoStreamInfo(0, CodecUtil.flvToFourCC(vstd.codec()))
                 };
             }
         } else if (tag.data() instanceof FLVStandardAudioTagData astd) {
             if (this.info.audio.length == 0 || this.info.audio[0] == null) {
-                AudioStreamInfo std = new AudioStreamInfo(0, flvToFourCC(astd.format()));
+                AudioStreamInfo std = new AudioStreamInfo(0, CodecUtil.flvToFourCC(astd.format()));
 
                 if (this.info.audio.length == 0) {
                     this.info.audio = new AudioStreamInfo[] {
@@ -134,48 +131,6 @@ class _CodecsSessionListener extends SessionListener {
         return null;
     }
 
-    /* https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h */
-    private static @Nullable String flvToFourCC(FLVVideoCodec codec) {
-        if (codec == null) return null;
-        // @formatter:off
-        return switch (codec) {
-            case H264 ->          "avc1";
-            case ON2_VP6 ->       "vp6f";
-            case ON2_VP6_ALPHA -> "vp6a";
-            case SCREEN ->        "fsv1";
-            case SCREEN_2 ->      "fsv2";
-            case SORENSON_H263 -> "flv1";
-            case NS_HEVC -> "hvc1";
-            case NS_MPEG4 -> "mp4v";
-            case NS_REALH263 -> "h263";
-            case JPEG -> null;
-            default -> null;
-        };
-        // @formatter:on
-    }
-
-    /* https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h */
-    private static @Nullable String flvToFourCC(FLVAudioFormat format) {
-        if (format == null) return null;
-        // @formatter:off
-        return switch (format) {
-            case AAC ->        "mp4a";
-            case ADPCM ->      "swfa";
-            case G711_ALAW ->  "alaw";
-            case G711_MULAW -> "ulaw";
-            case LPCM_LE ->    "lpcm";
-            case MP3, MP3_8 -> "mp3 ";
-            case SPEEX ->      "spx ";
-            case LPCM_PLATFORM_ENDIAN -> "lpcm";
-            case NELLYMOSER, NELLYMOSER_16_MONO, NELLYMOSER_8_MONO -> "nmos";
-            case NS_MP2 -> "mp2a";
-            case NS_OPUS -> "Opus";
-            case DEVICE_SPECIFIC -> null;
-            default -> null;
-        };
-        // @formatter:on
-    }
-
     private void update(String map, StreamInfo toUpdate) {
         toUpdate.updating = true;
         if (!FF.canUseProbe) return;
@@ -206,7 +161,6 @@ class _CodecsSessionListener extends SessionListener {
                 "-v", "quiet",
                 "-strict", "0",
                 "-print_format", "json",
-                "-show_entries", "stream=pix_fmt",
                 "-show_streams",
                 "-select_streams", map,
                 "-f", "flv",

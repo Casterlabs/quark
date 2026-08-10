@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.Nullable;
 
 import co.casterlabs.quark.core.util.BitrateEstimator;
+import co.casterlabs.quark.core.util.CodecUtil;
 import co.casterlabs.rakurai.json.annotating.JsonClass;
 import co.casterlabs.rakurai.json.annotating.JsonExclude;
 import co.casterlabs.rakurai.json.element.JsonObject;
@@ -18,6 +19,7 @@ public abstract class StreamInfo {
     public final int id;
     public final BitrateEstimator bitrate = new BitrateEstimator();
     public volatile String codec;
+    public volatile String rfc6381;
 
     public @JsonExclude volatile long lastUpdated = 0;
     public @JsonExclude volatile boolean updating = false;
@@ -45,7 +47,11 @@ public abstract class StreamInfo {
             this.updating = false;
 
             if (this.codec == null && ff.containsKey("codec_name")) {
-                this.codec = ff.getString("codec_name");
+                this.codec = CodecUtil.normalizeToFourCC(ff.getString("codec_name"));
+            }
+
+            if (this.rfc6381 == null) {
+                this.rfc6381 = CodecUtil.rfc6381(this.codec, ff);
             }
 
             if (ff.containsKey("channels")) {
@@ -89,7 +95,11 @@ public abstract class StreamInfo {
             this.updating = false;
 
             if (this.codec == null && ff.containsKey("codec_name")) {
-                this.codec = ff.getString("codec_name");
+                this.codec = CodecUtil.normalizeToFourCC(ff.getString("codec_name"));
+            }
+
+            if (this.rfc6381 == null) {
+                this.rfc6381 = CodecUtil.rfc6381(this.codec, ff);
             }
 
             this.width = ff.getNumber("width").intValue();
