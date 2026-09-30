@@ -12,7 +12,7 @@ import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
 public class Quark {
     public static final boolean DEBUG = EnvHelper.bool("QUARK_DEBUG", false);
-    public static final String FFLL = DEBUG ? "level+warning" : "level+fatal";
+    public static final String FFLL = DEBUG ? "level+warning" : "level+error";
 
     /**
      * HMAC256 secret for signed JWTs.
