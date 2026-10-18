@@ -16,8 +16,8 @@ import co.casterlabs.flv4j.rtmp.net.NetStatus;
 import co.casterlabs.flv4j.rtmp.net.rpc.CallError;
 import co.casterlabs.flv4j.rtmp.net.server.ServerNetConnection;
 import co.casterlabs.flv4j.rtmp.net.server.ServerNetStream;
-import co.casterlabs.quark.core.util.SocketConnection;
 import co.casterlabs.quark.core.Threads;
+import co.casterlabs.quark.core.util.SocketConnection;
 import co.casterlabs.quark.protocol.rtmp.egress.RTMPPullSessionListener;
 import co.casterlabs.quark.protocol.rtmp.ingress.RTMPSessionProvider;
 import xyz.e3ndr.fastloggingframework.logging.FastLogger;
@@ -32,6 +32,8 @@ public class RTMPConnection extends ServerNetConnection implements AutoCloseable
     public ConnectArgs connectArgs;
     public volatile RTMPState state = RTMPState.INITIALIZING;
 
+    private volatile boolean isGracefulClosure = false;
+
     @Nullable
     public ServerNetStream stream;
 
@@ -42,10 +44,7 @@ public class RTMPConnection extends ServerNetConnection implements AutoCloseable
 
         this.onCall = (method, args) -> {
             if (method.equals("FCUnpublish")) {
-                this.logger.debug("Stream closed by client.");
-                // Dispatch close() asynchronously to avoid calling it on the RTMP read thread
-                // while the read thread may be holding (or be called from) a synchronized block.
-                Threads.MISC_THREAD_BUILDER.name("RTMP FCUnpublish Close", 0).start(() -> close(true));
+                this.onFCUnpublish();
             }
             return null;
         };
@@ -54,6 +53,15 @@ public class RTMPConnection extends ServerNetConnection implements AutoCloseable
     /* ---------------- */
     /*       RTMP       */
     /* ---------------- */
+
+    private void onFCUnpublish() {
+        this.logger.debug("Stream closed by client (FCUnpublish).");
+        // Dispatch close() asynchronously to avoid calling it on the RTMP read thread
+        // while the read thread may be holding (or be called from) a synchronized
+        // block. But, we go ahead and set the graceful flag here since it's cheap.
+        this.isGracefulClosure = true;
+        Threads.MISC_THREAD_BUILDER.name("RTMP FCUnpublish Close", 0).start(() -> close());
+    }
 
     @Override
     public ObjectLike connect(ConnectArgs args) throws IOException, InterruptedException, CallError {
@@ -73,6 +81,15 @@ public class RTMPConnection extends ServerNetConnection implements AutoCloseable
         }
 
         return this.stream = new ServerNetStream() {
+            {
+                this.onCall = (method, args) -> {
+                    if (method.equals("FCUnpublish")) {
+                        onFCUnpublish();
+                    }
+                    return null;
+                };
+            }
+
             @Override
             public void publish(String key, String type) throws IOException, InterruptedException {
                 provider.publish(key, type);
@@ -85,19 +102,27 @@ public class RTMPConnection extends ServerNetConnection implements AutoCloseable
 
             @Override
             public void deleteStream() throws IOException, InterruptedException {
-                logger.debug("Stream closed by client.");
+                logger.debug("Stream closed by client (deleteStream).");
                 close(true);
             }
         };
     }
 
-    public synchronized void close(boolean graceful) {
+    public void close(boolean graceful) {
+        if (graceful) {
+            this.isGracefulClosure = true;
+        }
+        this.close();
+    }
+
+    @Override
+    public synchronized void close() {
         if (this.state == RTMPState.CLOSING) return;
 
         this.logger.debug("Closing...");
         this.state = RTMPState.CLOSING;
 
-        this.provider.closeConnection(graceful);
+        this.provider.closeConnection(this.isGracefulClosure);
         this.listener.closeConnection();
 
         this.setStatus(NetStatus.NC_CONNECT_CLOSED);
@@ -108,11 +133,6 @@ public class RTMPConnection extends ServerNetConnection implements AutoCloseable
             this.logger.debug(e);
         }
         this.logger.debug("Closed!");
-    }
-
-    @Override
-    public void close() {
-        this.close(false);
     }
 
 }
