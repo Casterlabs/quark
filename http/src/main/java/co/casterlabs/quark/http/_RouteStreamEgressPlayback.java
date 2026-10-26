@@ -20,6 +20,7 @@ import co.casterlabs.quark.core.http.QuarkHttpProcessor;
 import co.casterlabs.quark.core.http.QuarkHttpProcessor.EndpointContext;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionListener;
+import co.casterlabs.quark.core.session.info.StreamInfo.AudioStreamInfo;
 import co.casterlabs.quark.core.session.listeners.FLVProcessSessionListener;
 import co.casterlabs.quark.core.session.listeners.FLVSessionListener;
 import co.casterlabs.quark.core.session.listeners.StreamFilter;
@@ -38,48 +39,6 @@ import lombok.RequiredArgsConstructor;
 
 public class _RouteStreamEgressPlayback implements EndpointProvider {
     private static final Map<String, MuxFormat> MUX_FORMATS = Map.of(
-        // Audio reencoding:
-        "opus", new MuxFormat(
-            /*mime*/"audio/ogg",
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel", "quiet",
-            "-strict", "0",
-            "-i", "-",
-            "-vn",
-            "-c:a", "libopus",
-            "-b:a", "320k",
-            "-f", "ogg",
-            "-"
-        ),
-        "mp3", new MuxFormat(
-            /*mime*/"audio/mpeg",
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel", "quiet",
-            "-strict", "0",
-            "-i", "-",
-            "-vn",
-            "-c:a", "mp3",
-            "-b:a", "320k",
-            "-f", "mp3",
-            "-"
-        ),
-        "flac", new MuxFormat(
-            /*mime*/"audio/flac",
-            "ffmpeg",
-            "-hide_banner",
-            "-loglevel", "quiet",
-            "-strict", "0",
-            "-i", "-",
-            "-vn",
-            "-c:a", "flac",
-            "-af", "aformat=s32:192000",
-            "-write_header", "true",
-            "-f", "flac",
-            "-"
-        ),
-
         // Passthrough remuxing:
         // Can use https://github.com/xqq/mpegts.js for both ts and flv
         "ts", new MuxFormat(
@@ -116,7 +75,59 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
         )
     );
 
+    private static final Map<String, AudioEncodeFormat> AUDIO_ENCODE_FORMATS = Map.of(
+        "opus", new AudioEncodeFormat(
+            /*mime*/"audio/ogg",
+            /*fourCC*/"Opus",
+            /*format*/"ogg",
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "quiet",
+            "-strict", "0",
+            "-i", "-",
+            "-vn",
+            "-c:a", "libopus",
+            "-b:a", "320k",
+            "-f", "ogg",
+            "-"
+        ),
+        "mp3", new AudioEncodeFormat(
+            /*mime*/"audio/mpeg",
+            /*fourCC*/"mp3 ",
+            /*format*/"mp3",
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "quiet",
+            "-strict", "0",
+            "-i", "-",
+            "-vn",
+            "-c:a", "mp3",
+            "-b:a", "320k",
+            "-f", "mp3",
+            "-"
+        ),
+        "flac", new AudioEncodeFormat(
+            /*mime*/"audio/flac",
+            /*fourCC*/"fLaC",
+            /*format*/"flac",
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "quiet",
+            "-strict", "0",
+            "-i", "-",
+            "-vn",
+            "-c:a", "flac",
+            "-af", "aformat=s32:192000",
+            "-write_header", "true",
+            "-f", "flac",
+            "-"
+        )
+    );
+
     private static record MuxFormat(String mime, String... command) {
+    }
+
+    private static record AudioEncodeFormat(String mime, String fourCC, String format, String... command) {
     }
 
     @HttpEndpoint(path = "/session/:sessionId/egress/playback/flv", allowedMethods = {
@@ -154,7 +165,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
     @HttpEndpoint(path = "/session/:sessionId/egress/playback/:format", allowedMethods = {
             HttpMethod.GET
     }, postprocessor = QuarkHttpProcessor.class, preprocessor = QuarkHttpProcessor.class)
-    public HttpResponse onMuxedPlayback(HttpSession session, EndpointData<EndpointContext> data) {
+    public HttpResponse onFormatPlayback(HttpSession session, EndpointData<EndpointContext> data) {
         User user = data.attachment().user();
         Session qSession = data.attachment().session();
 
@@ -165,19 +176,72 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
                 return ApiResponse.NOT_ENABLED.response();
             }
 
-            MuxFormat format = MUX_FORMATS.get(data.uriParameters().get("format"));
-            if (format == null) {
-                return ApiResponse.BAD_REQUEST.response();
-            }
-
             StreamFilter filter = StreamFilter.from(session.uri().query);
 
-            return new HttpResponse(
-                new RemuxedResponseContent(filter, qSession, user.id(), format.mime, format.command),
-                StandardHttpStatus.OK
-            )
-                .mime(format.mime)
-                .header("Cache-Control", "private, max-age=0, no-store");
+            // Check the remux formats. These are cheap and simple :^)
+            {
+                MuxFormat format = MUX_FORMATS.get(data.uriParameters().get("format"));
+                if (format != null) {
+                    return new HttpResponse(
+                        new RemuxedResponseContent(filter, qSession, user.id(), format.mime, format.command),
+                        StandardHttpStatus.OK
+                    )
+                        .mime(format.mime)
+                        .header("Cache-Control", "private, max-age=0, no-store");
+                }
+            }
+
+            // Check the encode formats.
+            {
+                AudioEncodeFormat format = AUDIO_ENCODE_FORMATS.get(data.uriParameters().get("format"));
+                if (format != null) {
+                    AudioStreamInfo audioStream;
+                    if (qSession.info.audio.length > 0 && filter.audioStreamSelection() == StreamFilter.ALL_AUDIO.audioStreamSelection()) {
+                        audioStream = qSession.info.audio[0]; // default to the first
+                    } else if (qSession.info.audio.length < filter.audioStreamSelection()) {
+                        audioStream = qSession.info.audio[filter.audioStreamSelection()];
+                    } else {
+                        return ApiResponse.BAD_REQUEST.response();
+                    }
+
+                    if (format.fourCC.equals(audioStream.codec)) {
+                        // We can use copy! No reencode required :^)
+                        String[] command = {
+                                "ffmpeg",
+                                "-hide_banner",
+                                "-loglevel",
+                                "quiet",
+                                "-strict",
+                                "0",
+                                "-i",
+                                "-",
+                                "-vn",
+                                "-c:a",
+                                "copy",
+                                "-f",
+                                "flac",
+                                "-"
+                        };
+
+                        return new HttpResponse(
+                            new RemuxedResponseContent(filter, qSession, user.id(), format.mime, command),
+                            StandardHttpStatus.OK
+                        )
+                            .mime(format.mime)
+                            .header("Cache-Control", "private, max-age=0, no-store");
+                    } else {
+                        // Reencode
+                        return new HttpResponse(
+                            new RemuxedResponseContent(filter, qSession, user.id(), format.mime, format.command),
+                            StandardHttpStatus.OK
+                        )
+                            .mime(format.mime)
+                            .header("Cache-Control", "private, max-age=0, no-store");
+                    }
+                }
+            }
+
+            return ApiResponse.BAD_REQUEST.response();
         } catch (AuthenticationException e) {
             if (Quark.DEBUG) {
                 e.printStackTrace();
