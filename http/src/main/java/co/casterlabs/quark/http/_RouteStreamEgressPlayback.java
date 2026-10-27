@@ -198,7 +198,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
                     AudioStreamInfo audioStream;
                     if (qSession.info.audio.length > 0 && filter.audioStreamSelection() == StreamFilter.ALL_AUDIO.audioStreamSelection()) {
                         audioStream = qSession.info.audio[0]; // default to the first
-                    } else if (qSession.info.audio.length < filter.audioStreamSelection()) {
+                    } else if (qSession.info.audio.length > filter.audioStreamSelection()) {
                         audioStream = qSession.info.audio[filter.audioStreamSelection()];
                     } else {
                         return ApiResponse.BAD_REQUEST.response();
