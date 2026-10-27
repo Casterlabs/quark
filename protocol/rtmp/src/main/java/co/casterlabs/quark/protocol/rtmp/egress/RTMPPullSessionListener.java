@@ -57,11 +57,6 @@ public class RTMPPullSessionListener extends SessionListener {
 
         this.trackResource(this.videoBuffer);
         this.trackResource(() -> this.rtmp.close(true)); // junk value.
-
-        this.videoBuffer.readAsync(
-            VIDEO_THREAD_FACTORY,
-            (tag) -> this.writeOut(this.session, tag)
-        );
     }
 
     public void play(String name) {
@@ -105,6 +100,12 @@ public class RTMPPullSessionListener extends SessionListener {
                 );
 
                 this.rtmp.state = RTMPState.PLAYING;
+
+                this.videoBuffer.readAsync(
+                    VIDEO_THREAD_FACTORY,
+                    (tag) -> this.writeOut(this.session, tag)
+                );
+
                 this.session.addAsyncListener(this);
 
                 Analytics.startCollecting(

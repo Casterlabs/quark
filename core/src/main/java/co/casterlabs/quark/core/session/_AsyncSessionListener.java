@@ -44,6 +44,7 @@ class _AsyncSessionListener extends SessionListener {
 
     @Override
     protected void onClose0(Session session) {
+        this.buffer.close();
         this.delegate.onClose(session);
     }
 
