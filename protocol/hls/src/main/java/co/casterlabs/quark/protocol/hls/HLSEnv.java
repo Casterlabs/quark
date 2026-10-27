@@ -11,4 +11,9 @@ public class HLSEnv {
      */
     public static final @Experimental boolean EXP_HLS = EnvHelper.bool("QUARK_EXP_HLS", false);
 
+    /**
+     * Whether or the generated playlist should be in fMP4 (true) or TS (false).
+     */
+    public static final @Experimental boolean EXP_HLS_FMP4 = EnvHelper.bool("QUARK_EXP_HLS_FMP4", false);
+
 }

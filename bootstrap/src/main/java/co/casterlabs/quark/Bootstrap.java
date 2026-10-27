@@ -14,6 +14,7 @@ import co.casterlabs.quark.core.extensibility.QuarkEntrypoint;
 import co.casterlabs.quark.core.extensibility.QuarkHttpEndpoint;
 import co.casterlabs.quark.core.extensibility.QuarkStaticSessionListener;
 import co.casterlabs.quark.core.extensibility._Extensibility;
+import co.casterlabs.quark.core.extensibility._Extensibility.StaticSessionListener;
 import co.casterlabs.quark.core.session.Session;
 import co.casterlabs.quark.core.session.SessionListener;
 import co.casterlabs.quark.core.util.FF;
@@ -68,11 +69,7 @@ public class Bootstrap {
                     );
                 }
 
-                if (annotation.async()) {
-                    _Extensibility.asyncStaticSessionListeners.add(factory);
-                } else {
-                    _Extensibility.syncStaticSessionListeners.add(factory);
-                }
+                _Extensibility.staticSessionListeners.add(new StaticSessionListener(factory, annotation));
             }
 
             for (Class<?> clazz : reflections.getTypesAnnotatedWith(QuarkEntrypoint.class)) {

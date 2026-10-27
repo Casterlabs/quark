@@ -36,9 +36,10 @@ This document lists the environment variables used to configure Quark.
 
 ## HLS
 
-| Variable        | Default | Description                                                                   |
-| :-------------- | :------ | :---------------------------------------------------------------------------- |
-| `QUARK_EXP_HLS` | `false` | **Experimental.** Whether or not to generate a HLS playlist for each session. |
+| Variable             | Default | Description                                                                                 |
+| :------------------- | :------ | :------------------------------------------------------------------------------------------ |
+| `QUARK_EXP_HLS`      | `false` | **Experimental.** Whether or not to generate a HLS playlist for each session.               |
+| `QUARK_EXP_HLS_FMP4` | `false` | **Experimental.** Whether or the generated playlist should be in fMP4 (true) or TS (false). |
 
 ## Analytics
 

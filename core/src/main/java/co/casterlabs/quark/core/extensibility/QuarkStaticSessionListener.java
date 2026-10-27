@@ -16,4 +16,10 @@ public @interface QuarkStaticSessionListener {
 
     boolean async() default false;
 
+    /**
+     * @return whether or not this static listener requires stream info to be known
+     *         before the factory is called.
+     */
+    boolean requiresInfo() default false;
+
 }

@@ -24,7 +24,10 @@ public class _Extensibility {
 
     public static final ApiFramework http = new ApiFramework();
 
-    public static final List<Function<Session, SessionListener>> syncStaticSessionListeners = new LinkedList<>();
-    public static final List<Function<Session, SessionListener>> asyncStaticSessionListeners = new LinkedList<>();
+    public static final List<StaticSessionListener> staticSessionListeners = new LinkedList<>();
+
+    public static record StaticSessionListener(Function<Session, SessionListener> factory, QuarkStaticSessionListener config) {
+
+    }
 
 }

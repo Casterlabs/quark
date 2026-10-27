@@ -81,6 +81,7 @@ public class RouteStreamEgressPlaybackHLS implements EndpointProvider {
                 case "m3u8" -> "application/vnd.apple.mpegurl";
                 case "ts" -> "video/mp2t";
                 case "mp4" -> "video/mp4";
+                case "m4s" -> "video/iso.segment";
                 default -> "application/octet-stream";
             };
 

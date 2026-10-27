@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 import co.casterlabs.commons.async.LockableResource;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
@@ -13,6 +12,7 @@ import co.casterlabs.flv4j.flv.tags.script.FLVScriptTagData;
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Webhooks;
 import co.casterlabs.quark.core.extensibility._Extensibility;
+import co.casterlabs.quark.core.extensibility._Extensibility.StaticSessionListener;
 import co.casterlabs.quark.core.session.info.SessionInfo;
 import co.casterlabs.quark.core.util.ModifiableArray;
 import co.casterlabs.rakurai.json.element.JsonArray;
@@ -42,6 +42,7 @@ public class Session {
     private final List<FLVTag> scriptSequenceTags = new LinkedList<>();
 
     private final _ThumbnailSessionListener thumbnailGenerator = new _ThumbnailSessionListener();
+    private final _CodecsSessionListener codecs = new _CodecsSessionListener(this, this.info);
 
     private volatile State state = State.STARTING;
 
@@ -50,17 +51,21 @@ public class Session {
 
         // Add built-in listeners
         this.addAsyncListener(this.thumbnailGenerator);
-        this.addAsyncListener(new _CodecsSessionListener(this, this.info));
+        this.addAsyncListener(this.codecs);
 
-        for (Function<Session, SessionListener> factory : _Extensibility.syncStaticSessionListeners) {
-            SessionListener listener = factory.apply(this);
+        for (StaticSessionListener ssl : _Extensibility.staticSessionListeners) {
+            if (ssl.config().requiresInfo()) {
+                continue; // We'll do these later.
+            }
+
+            SessionListener listener = ssl.factory().apply(this);
             if (listener == null) continue;
-            this.addSyncListener(listener);
-        }
-        for (Function<Session, SessionListener> factory : _Extensibility.asyncStaticSessionListeners) {
-            SessionListener listener = factory.apply(this);
-            if (listener == null) continue;
-            this.addAsyncListener(listener);
+
+            if (ssl.config().async()) {
+                this.addAsyncListener(listener);
+            } else {
+                this.addSyncListener(listener);
+            }
         }
     }
 
@@ -116,20 +121,44 @@ public class Session {
 
             FLVSequence seq = new FLVSequence(tag); // /shrug/
             for (SessionListener listener : this.listeners.get()) {
+                if (listener == this.codecs && this.state == State.STARTING) {
+                    continue; // We process the initial info synchronously.
+                }
+
                 try {
                     listener.onSequence(this, seq);
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
             }
+
+            if (this.state == State.STARTING) {
+                this.codecs.onSequence(this, seq); // Process synchronously.
+            }
             return;
         }
 
         if (this.state == State.STARTING) {
             // We made it past the sequence tags, so we should transition to RUNNING and
-            // send the STARTED webhook.
+            // send the STARTED webhook, as well as attaching any remaining session
+            // listeners.
             this.state = State.RUNNING;
             Webhooks.sessionStarted(this, provider.metadata());
+
+            for (StaticSessionListener ssl : _Extensibility.staticSessionListeners) {
+                if (!ssl.config().requiresInfo()) {
+                    continue; // We already did these!
+                }
+
+                SessionListener listener = ssl.factory().apply(this);
+                if (listener == null) continue;
+
+                if (ssl.config().async()) {
+                    this.addAsyncListener(listener);
+                } else {
+                    this.addSyncListener(listener);
+                }
+            }
         }
 
         this.prevDts = tag.timestamp();
