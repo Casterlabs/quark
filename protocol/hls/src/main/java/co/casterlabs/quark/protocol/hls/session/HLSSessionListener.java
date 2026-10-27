@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -52,7 +51,6 @@ public class HLSSessionListener extends FLVProcessSessionListener {
                 )
             );
 
-            System.out.println(Arrays.asList(session.info.video));
             if (session.info.video.length > 0 && "hvc1".equals(session.info.video[0].codec)) {
                 command.addAll(
                     List.of(
