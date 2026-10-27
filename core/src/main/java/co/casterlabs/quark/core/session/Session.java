@@ -9,6 +9,8 @@ import co.casterlabs.commons.async.LockableResource;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
 import co.casterlabs.flv4j.flv.tags.script.FLVScriptTagData;
+import co.casterlabs.flv4j.flv.tags.video.ex.FLVExVideoPacketType;
+import co.casterlabs.flv4j.flv.tags.video.ex.FLVExVideoTagData;
 import co.casterlabs.quark.core.Quark;
 import co.casterlabs.quark.core.Webhooks;
 import co.casterlabs.quark.core.extensibility._Extensibility;
@@ -99,6 +101,10 @@ public class Session {
      *          session and may cause crashes.
      */
     public void tag(FLVTag tag) {
+        if (tag.data() instanceof FLVExVideoTagData vex && vex.type() == FLVExVideoPacketType.METADATA) {
+            return; // TODO Figure out why FFMpeg hates this packet.
+        }
+
         boolean isScriptSequence = tag.type() == FLVTagType.SCRIPT && ((FLVScriptTagData) tag.data()).methodName().equals("onMetaData");
         if (tag.data().isSequenceHeader() || isScriptSequence) {
             List<FLVTag> sequenceTags;
