@@ -6,6 +6,15 @@ import java.util.regex.Pattern;
 
 import org.jetbrains.annotations.Nullable;
 
+import co.casterlabs.flv4j.codecs.audio.aac.AACAudioSpecificConfig;
+import co.casterlabs.flv4j.codecs.video.ChromaSubsampling;
+import co.casterlabs.flv4j.codecs.video.ColorPrimaries;
+import co.casterlabs.flv4j.codecs.video.MatrixCoefficients;
+import co.casterlabs.flv4j.codecs.video.TransferCharacteristics;
+import co.casterlabs.flv4j.codecs.video.av01.AV1CodecConfigurationRecord;
+import co.casterlabs.flv4j.codecs.video.avc1.AVCSPS;
+import co.casterlabs.flv4j.codecs.video.hvc1.HEVCSPS;
+import co.casterlabs.flv4j.codecs.video.vpx.VPCodecConfigurationRecord;
 import co.casterlabs.flv4j.flv.tags.audio.FLVAudioFormat;
 import co.casterlabs.flv4j.flv.tags.video.FLVVideoCodec;
 import co.casterlabs.rakurai.json.element.JsonElement;
@@ -14,6 +23,88 @@ import xyz.e3ndr.fastloggingframework.logging.FastLogger;
 import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
 public class CodecUtil {
+
+    public static String colorPrimaries(ColorPrimaries primaries) {
+        return switch (primaries) {
+            case BT709 -> "bt709";
+            case BT470M -> "bt470m";
+            case BT470BG -> "bt470bg";
+            case SMPTE170M -> "smpte170m";
+            case SMPTE240M -> "smpte240m";
+            case GENERIC_FILM -> "film";
+            case BT2020 -> "bt2020";
+            case SMPTE428 -> "smpte428";
+            case SMPTE431 -> "smpte431";
+            case SMPTE432 -> "smpte432";
+            case EBU3213 -> "ebu3213";
+
+            case UNSPECIFIED, UNKNOWN, RESERVED -> "unknown";
+        };
+    }
+
+    public static String colorTransfer(TransferCharacteristics transfer) {
+        return switch (transfer) {
+            case BT709 -> "bt709";
+            case BT470M -> "gamma22";
+            case BT470BG -> "gamma28";
+            case SMPTE170M -> "smpte170m";
+            case SMPTE240M -> "smpte240m";
+            case LINEAR -> "linear";
+            case LOG100 -> "log100";
+            case LOG100_SQRT10 -> "log316";
+            case IEC61966_2_4 -> "iec61966-2-4";
+            case BT1361 -> "bt1361e";
+            case SRGB -> "iec61966-2-1";
+            case BT2020_10 -> "bt2020-10";
+            case BT2020_12 -> "bt2020-12";
+            case SMPTE2084 -> "smpte2084";
+            case SMPTE428 -> "smpte428";
+            case HLG -> "arib-std-b67";
+
+            case UNSPECIFIED, UNKNOWN, RESERVED -> "unknown";
+        };
+    }
+
+    public static String colorSpace(MatrixCoefficients matrix) {
+        return switch (matrix) {
+            case IDENTITY -> "gbr";
+            case BT709 -> "bt709";
+            case FCC -> "fcc";
+            case BT470BG -> "bt470bg";
+            case SMPTE170M -> "smpte170m";
+            case SMPTE240M -> "smpte240m";
+            case YCGCO -> "ycgco";
+            case BT2020_NCL -> "bt2020nc";
+            case BT2020_CL -> "bt2020c";
+            case SMPTE2085 -> "smpte2085";
+            case CHROMAT_NCL -> "chroma-derived-nc";
+            case CHROMAT_CL -> "chroma-derived-c";
+            case ICTCP -> "ictcp";
+            case IPT_C2 -> "ipt-c2";
+            case YCGCO_RE -> "ycgco-re";
+            case YCGCO_RO -> "ycgco-ro";
+
+            case UNSPECIFIED, UNKNOWN, RESERVED -> "unknown";
+        };
+    }
+
+    public static String pixelFormat(ChromaSubsampling chroma, int bitDepth) {
+        String prefix = switch (chroma) {
+            case CS_400 -> "gray";
+            case CS_420 -> "yuv420p";
+            case CS_422 -> "yuv422p";
+            case CS_440 -> "yuv440p";
+            case CS_444 -> "yuv444p";
+
+            case UNSPECIFIED, RESERVED, UNKNOWN -> "unknown";
+        };
+
+        if (prefix.equals("unknown") || bitDepth == 8) {
+            return prefix;
+        }
+
+        return prefix + bitDepth + "le";
+    }
 
     /* https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h */
     public static @Nullable String flvToFourCC(FLVVideoCodec codec) {
@@ -45,7 +136,7 @@ public class CodecUtil {
             case G711_ALAW ->            "alaw";
             case G711_MULAW ->           "ulaw";
             case LPCM_LE ->              "lpcm";
-            case MP3, MP3_8 ->           "mp3 ";
+            case MP3, MP3_8 ->           ".mp3";
             case SPEEX ->                "spx ";
             case LPCM_PLATFORM_ENDIAN -> "lpcm";
             case NELLYMOSER, NELLYMOSER_16_MONO, NELLYMOSER_8_MONO -> "nmos";
@@ -112,7 +203,7 @@ public class CodecUtil {
             case "aac", "aac_latm" -> "mp4a";
 
             // MPEG audio
-            case "mp3", "mp3adu" -> "mp3 ";
+            case "mp3", "mp3adu" -> ".mp3";
             case "mp2" -> "mp2a";
             case "mp1" -> "mp1 ";
 
@@ -179,11 +270,12 @@ public class CodecUtil {
 
         try {
             return switch (fourCC) {
-                case "avc1" -> rfc6381Avc(fourCC, ff);
-                case "hvc1" -> rfc6381Hevc(fourCC, ff);
+                case "avc1" -> rfc6381Avc(ff);
+                case "hvc1" -> rfc6381Hevc(ff);
                 case "av01" -> rfc6381Av1(ff);
                 case "vp08" -> rfc6381Vpx("vp08", ff);
                 case "vp09" -> rfc6381Vpx("vp09", ff);
+
                 case "mp4a" -> rfc6381Aac(ff);
 
                 // No parameters in RFC 6381 for these - the fourCC-ish literal *is* the string
@@ -191,6 +283,7 @@ public class CodecUtil {
                 case "ec-3" -> "ec-3";
                 case "Opus" -> "opus";
                 case "fLaC" -> "flac";
+                case ".mp3" -> "mp3";
 
                 default -> fourCC;
             };
@@ -208,7 +301,7 @@ public class CodecUtil {
      * CC = constraint flags
      * LL = level_idc
      */
-    private static String rfc6381Avc(String fourCC, JsonObject ff) {
+    private static String rfc6381Avc(JsonObject ff) {
         String profile = looseString(ff.get("profile"), "Baseline");
         int level = looseNumber(ff.get("level"), 30).intValue(); // ffprobe already reports level*10 (raw level_idc)
 
@@ -239,6 +332,18 @@ public class CodecUtil {
     }
 
     /*
+     * AVC RFC 6381 format is:
+     * avc1.PPCCLL
+     *
+     * PP = profile_idc
+     * CC = constraint flags
+     * LL = level_idc
+     */
+    public static String rfc6381(AVCSPS sps) {
+        return String.format(Locale.ROOT, "avc1.%02X%02X%02X", sps.profileIdc(), sps.constraintFlags(), sps.levelIdc());
+    }
+
+    /*
      * HEVC RFC 6381 format is:
      * hvc1.<profile>.<compat>.<tier><level>[.<constraints>]
      *
@@ -248,7 +353,7 @@ public class CodecUtil {
      * level: general_level_idc
      * constraints: general_constraint_indicator_flags (6 bytes)
      */
-    private static String rfc6381Hevc(String fourCC, JsonObject ff) {
+    private static String rfc6381Hevc(JsonObject ff) {
         String profile = looseString(ff.get("profile"), "Main");
         int level = looseNumber(ff.get("level"), 93).intValue(); // ffprobe reports raw general_level_idc (level*30)
 
@@ -276,8 +381,8 @@ public class CodecUtil {
         String compatHex = Long.toHexString(compat).toUpperCase(Locale.ROOT);
 
         String base = String.format(
-            Locale.ROOT, "%s.%d.%s.%s%d",
-            fourCC, profileIdc, compatHex, tierChar, level
+            Locale.ROOT, "hvc1.%d.%s.%s%d",
+            profileIdc, compatHex, tierChar, level
         );
 
         long constraints = looseNumber(ff.get("constraintFlags"), 0).longValue();
@@ -288,6 +393,60 @@ public class CodecUtil {
             int b = (int) ((constraints >> (i * 8)) & 0xFF);
             sb.append('.').append(Integer.toHexString(b).toUpperCase(Locale.ROOT));
         }
+        return sb.toString();
+    }
+
+    /*
+     * HEVC RFC 6381 format is:
+     * hvc1.<profile-space><profile-idc>.<compat>.<tier><level>[.<constraints>]
+     *
+     * profile-space: general_profile_space (0-3, omitted when 0)
+     * profile-idc: general_profile_idc
+     * compat: general_profile_compatibility_flags (32-bit, reversed bit order)
+     * tier: general_tier_flag (0=Main, 1=High)
+     * level: general_level_idc
+     * constraints: general_constraint_indicator_flags (48-bit)
+     */
+    public static String rfc6381(HEVCSPS sps) {
+        StringBuilder sb = new StringBuilder("hvc1.");
+
+        if (sps.profileSpace() != 0) {
+            sb.append((char) ('A' + sps.profileSpace() - 1));
+        }
+
+        sb.append(sps.profileIdc()).append('.');
+
+        // Reverse the 32-bit compatibility flags.
+        long compat = Integer.toUnsignedLong(
+            Integer.reverse((int) sps.profileCompatibilityFlags())
+        );
+
+        sb.append(Long.toHexString(compat).toUpperCase(Locale.ROOT));
+
+        sb.append('.')
+            .append(sps.tierFlag() ? 'H' : 'L')
+            .append(sps.levelIdc());
+
+        // Constraint indicator flags are encoded as six bytes, big-endian.
+        long constraints = sps.constraintIndicatorFlags();
+
+        if (constraints != 0) {
+            int highestByte = 5;
+
+            // Trim trailing zero bytes.
+            while (highestByte >= 0
+                && ((constraints >>> (highestByte * 8)) & 0xFF) == 0) {
+                highestByte--;
+            }
+
+            for (int i = 5; i >= highestByte; i--) {
+                int b = (int) ((constraints >>> (i * 8)) & 0xFF);
+
+                sb.append('.')
+                    .append(Integer.toHexString(b).toUpperCase(Locale.ROOT));
+            }
+        }
+
         return sb.toString();
     }
 
@@ -322,6 +481,24 @@ public class CodecUtil {
     }
 
     /*
+     * AV1 RFC 6381 format is:
+     * av01.<profile>.<level><tier>.<depth>[.<colorPrimaries>.<transferCharacteristics>.<matrixCoefficients>[.<chromaSubsampling>]]
+     *
+     * profile: seq_profile
+     * level: seq_level_idx
+     * tier: seq_tier (0=Main, 1=High)
+     * depth: bits_per_raw_sample
+     * colorPrimaries: color_primaries (optional)
+     * transferCharacteristics: transfer_characteristics (optional)
+     * matrixCoefficients: matrix_coefficients (optional)
+     * chromaSubsampling: chroma_subsampling (optional)
+     */
+    public static String rfc6381(AV1CodecConfigurationRecord ccr) {
+        String tierChar = ccr.tier() == 1 ? "H" : "M";
+        return String.format(Locale.ROOT, "av01.%d.%02d%s.%02d", ccr.profile(), ccr.seqLevelIdx(), tierChar, ccr.bitDepth());
+    }
+
+    /*
      * VP8/VP9 RFC 6381 format is:
      * vp08/vp09.PP.LL.DD
      *
@@ -340,6 +517,18 @@ public class CodecUtil {
         int profileNum = m.find() ? Integer.parseInt(m.group(1)) : 0;
 
         return String.format(Locale.ROOT, "%s.%02d.%02d.%02d", base, profileNum, level, depth);
+    }
+
+    /*
+     * VP8/VP9 RFC 6381 format is:
+     * vp08/vp09.PP.LL.DD
+     *
+     * PP = profile (0-3)
+     * LL = level (0-63)
+     * DD = bits_per_raw_sample (8-12)
+     */
+    public static String rfc6381(String base, VPCodecConfigurationRecord ccr) {
+        return String.format(Locale.ROOT, "%s.%02d.%02d.%02d", base, ccr.profile(), ccr.level(), ccr.bitDepth());
     }
 
     /*
@@ -362,6 +551,16 @@ public class CodecUtil {
         };
 
         return String.format(Locale.ROOT, "mp4a.40.%d", objectType);
+    }
+
+    /*
+     * AAC RFC 6381 format is:
+     * mp4a.40.<objectType>
+     *
+     * objectType: MPEG-4 Audio Object Type (1-42)
+     */
+    public static String rfc6381(AACAudioSpecificConfig config) {
+        return String.format(Locale.ROOT, "mp4a.40.%d", config.audioObjectType());
     }
 
     private static Number looseNumber(JsonElement el, Number def) {

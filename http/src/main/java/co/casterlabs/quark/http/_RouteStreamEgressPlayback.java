@@ -93,7 +93,7 @@ public class _RouteStreamEgressPlayback implements EndpointProvider {
         ),
         "mp3", new AudioEncodeFormat(
             /*mime*/"audio/mpeg",
-            /*fourCC*/"mp3 ",
+            /*fourCC*/".mp3",
             /*format*/"mp3",
             "ffmpeg",
             "-hide_banner",

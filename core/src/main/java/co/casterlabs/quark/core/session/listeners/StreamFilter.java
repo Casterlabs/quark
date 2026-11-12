@@ -49,7 +49,6 @@ public record StreamFilter(
 
                         // https://github.com/videolan/vlc/blob/master/src/misc/fourcc_list.h
                         switch (track.codec().string()) {
-                            case "aac ":
                             case "mp4a": {
                                 byte[] aacSeqOrRaw = track.data().raw();
 
@@ -76,9 +75,7 @@ public record StreamFilter(
 
                             // TODO documentation on the other std audio formats is a little hard to come
                             // by. I would like to get MP3/MP3_8 working natively at some point.
-//                            case "mp3 ":
 //                            case ".mp3":
-//                            case "MP3 ":
 
                             default:
                                 // we can't convert it to a standard audio tag, so we need to remake the

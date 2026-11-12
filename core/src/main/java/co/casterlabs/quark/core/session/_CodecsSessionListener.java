@@ -6,8 +6,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadFactory;
 
 import co.casterlabs.commons.io.streams.StreamUtil;
+import co.casterlabs.flv4j.codecs.CodecData;
 import co.casterlabs.flv4j.flv.tags.FLVTag;
 import co.casterlabs.flv4j.flv.tags.FLVTagType;
+import co.casterlabs.flv4j.flv.tags.audio.FLVAudioFormat;
 import co.casterlabs.flv4j.flv.tags.audio.FLVStandardAudioTagData;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTagData;
 import co.casterlabs.flv4j.flv.tags.audio.ex.FLVExAudioTrack;
@@ -87,34 +89,32 @@ class _CodecsSessionListener extends SessionListener {
             }
         }
 
-        if (tag.data() instanceof FLVStandardVideoTagData video) {
+        if (tag.data() instanceof FLVStandardVideoTagData vstd) {
             VideoStreamInfo info = this.info.video[0];
 
-            if (video.frameType() == FLVVideoFrameType.KEY_FRAME) {
-                long diff = tag.timestamp() - info.lastKeyFrame;
-                info.lastKeyFrame = tag.timestamp();
-                info.keyFrameInterval = (int) (diff / 1000);
+            if (vstd.frameType() == FLVVideoFrameType.KEY_FRAME) {
+                info.updateKeyFrameInterval(tag.timestamp());
             }
 
-            info.bitrate.sample(video.size(), tag.timestamp());
+            info.actualFrameRate(tag.timestamp());
+            info.bitrate.sample(vstd.size(), tag.timestamp());
 
-            if (video.isSequenceHeader() || info.needsUpdate()) {
-                update("v:0", info);
+            if (vstd.isSequenceHeader() || info.needsUpdate()) {
+                update("v:0", info, vstd.data());
             }
         } else if (tag.data() instanceof FLVExVideoTagData vex) {
             for (FLVExVideoTrack track : vex.tracks()) {
                 VideoStreamInfo info = this.info.video[track.id()];
 
                 if (vex.frameType() == FLVExVideoFrameType.KEY_FRAME || vex.frameType() == FLVExVideoFrameType.GENERATED_KEY_FRAME) {
-                    long diff = tag.timestamp() - info.lastKeyFrame;
-                    info.lastKeyFrame = tag.timestamp();
-                    info.keyFrameInterval = (int) (diff / 1000);
+                    info.updateKeyFrameInterval(tag.timestamp());
                 }
 
+                info.actualFrameRate(tag.timestamp());
                 info.bitrate.sample(track.data().size(), tag.timestamp());
 
                 if (vex.isSequenceHeader() || info.needsUpdate()) {
-                    update("v:" + track.id(), info);
+                    update("v:" + track.id(), info, track.data());
                 }
             }
         } else if (tag.data() instanceof FLVStandardAudioTagData astd) {
@@ -122,8 +122,14 @@ class _CodecsSessionListener extends SessionListener {
 
             info.bitrate.sample(astd.size(), tag.timestamp());
 
-            if (astd.isSequenceHeader() || info.needsUpdate()) {
-                update("a:0", info);
+            // MP3 has no sequence header, so the packets will NOT be marked as such. But we
+            // can still pull information from them so we'll assume all MP3 packets are
+            // sequence headers for this case. The needsUpdate() check is to prevent us from
+            // constantly updating the info on every packet.
+            boolean needsMp3Update = (astd.format() == FLVAudioFormat.MP3 || astd.format() == FLVAudioFormat.MP3_8) && info.needsUpdate();
+
+            if (astd.isSequenceHeader() || needsMp3Update || info.needsUpdate()) {
+                update("a:0", info, astd.data());
             }
         } else if (tag.data() instanceof FLVExAudioTagData aex) {
             for (FLVExAudioTrack track : aex.tracks()) {
@@ -131,8 +137,10 @@ class _CodecsSessionListener extends SessionListener {
 
                 info.bitrate.sample(track.data().size(), tag.timestamp());
 
-                if (aex.isSequenceHeader() || info.needsUpdate()) {
-                    update("a:" + track.id(), info);
+                boolean needsMp3Update = info.needsUpdate() && track.codec().string().equals(".mp3");
+
+                if (aex.isSequenceHeader() || needsMp3Update || info.needsUpdate()) {
+                    update("a:" + track.id(), info, track.data());
                 }
             }
         }
@@ -155,8 +163,22 @@ class _CodecsSessionListener extends SessionListener {
         return null;
     }
 
-    private void update(String map, StreamInfo toUpdate) {
+    private void update(String map, StreamInfo toUpdate, CodecData data) {
         toUpdate.updating = true;
+
+        try {
+            if (toUpdate.probe(data)) {
+                // We were able to pull the info from the tag, no need to use ffprobe.
+                toUpdate.lastUpdated = System.currentTimeMillis();
+                toUpdate.updating = false;
+                return;
+            }
+        } catch (Exception e) {
+            if (Quark.DEBUG) {
+                e.printStackTrace();
+            }
+        }
+
         if (!FF.canUseProbe) return;
 
         try {

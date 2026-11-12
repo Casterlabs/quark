@@ -50,7 +50,7 @@
 		<dependency>
 			<groupId>co.casterlabs</groupId>
 			<artifactId>flv4j</artifactId>
-			<version>4776a33</version>
+			<version>8b9bb47</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
